@@ -596,7 +596,7 @@ Phase 0 generates `docs/missing_assets.md`. Send Karen ONE consolidated email �
 - [ ] **Booth numbers** for trade shows — all blank in Excel. Karen fills as she registers.
 - [ ] **National Fish Day date** — listed in Holidays tab with no date. Drop or specify.
 - [ ] **Twilio WhatsApp Business number provisioned** — dedicated number (NOT Karen's `+1-917-859-2787` personal number).
-- [ ] **API credentials in `.env`** — `ANTHROPIC_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`, `KAREN_WHATSAPP_NUMBER`, `BLOTATO_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`.
+- [ ] **API credentials in `.env`** — `ANTHROPIC_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`, `AUTHORIZED_NUMBERS` (comma-separated allowlist: Karen's `whatsapp:+19178592787` + dev numbers), `BLOTATO_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`.
 - [ ] **Supabase project provisioned** — production project with Storage bucket `post-images` and schema applied.
 - [ ] **Railway project provisioned** + env vars set.
 

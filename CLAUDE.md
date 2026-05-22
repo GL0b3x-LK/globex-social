@@ -116,7 +116,7 @@ ANTHROPIC_API_KEY=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_WHATSAPP_NUMBER=
-KAREN_WHATSAPP_NUMBER=
+AUTHORIZED_NUMBERS=
 BLOTATO_API_KEY=
 SUPABASE_URL=
 SUPABASE_KEY=
@@ -127,7 +127,7 @@ ENVIRONMENT=development|production
 - **Never auto-publish without approval.** Every post must go through the WhatsApp approval flow. This is a contract requirement, not a preference.
 - **Never use colors outside the brand palette** in templates. Karen will reject anything off-brand immediately.
 - **Never generate employee birthday posts.** Karen explicitly killed these. Don't resurface them.
-- **Never hardcode Karen's phone number** in source code. Use env vars.
+- **Never hardcode authorized phone numbers** in source code. `AUTHORIZED_NUMBERS` is a comma-separated allowlist (`whatsapp:+19178592787,whatsapp:+...`). Karen's number is the primary entry; dev/test numbers can be added so the developer can debug against the production bot without disrupting Karen.
 - **Never store API keys in code.** Use .env files locally, Railway env vars in production.
 - **Never use `print()` for logging.** Use Python's `logging` module with structured output.
 
