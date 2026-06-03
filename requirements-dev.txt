@@ -1,0 +1,8 @@
+# Local development + CI dependencies. Includes everything in requirements.txt.
+-r requirements.txt
+pytest
+pytest-asyncio
+respx
+ruff
+mypy
+openpyxl

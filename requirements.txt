@@ -1,0 +1,15 @@
+# Runtime dependencies (Railway installs these).
+# Pinned exact versions captured after first resolve via `pip freeze` — see Progress Log.
+fastapi
+uvicorn[standard]
+anthropic
+twilio
+supabase
+APScheduler
+playwright
+pydantic-settings
+httpx
+tenacity
+python-multipart
+tzdata
+psycopg[binary]
