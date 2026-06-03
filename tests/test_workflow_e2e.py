@@ -94,6 +94,10 @@ def harness(monkeypatch):
     monkeypatch.setattr("app.ai.generator.generate_freeform", lambda *a, **k: _async(_DRAFT))
     monkeypatch.setattr("app.ai.editor.apply_edit", lambda *a, **k: _async(_REVISED))
     monkeypatch.setattr(
+        "app.messaging.media.download_twilio_media",
+        lambda url: _async((b"fake-image-bytes", "image/jpeg")),
+    )
+    monkeypatch.setattr(
         "app.workflows.render_pipeline.render_and_store",
         lambda post_id, post, **k: _async(f"https://img.test/{post_id}.png"),
     )
@@ -172,3 +176,10 @@ async def test_approval_with_nothing_pending_is_a_no_op(harness) -> None:
 async def test_unauthorized_sender_is_ignored(harness) -> None:
     await on_demand.handle_incoming_message("whatsapp:+10000000000", "post about X", [])
     assert not harness.sent_media and not harness.sent_text
+
+
+async def test_image_only_message_still_generates(harness) -> None:
+    # An attached photo with no caption must build a post, not fall through to "clarify".
+    await on_demand.handle_incoming_message(PHONE, "", ["https://media.twiliocdn.test/x.jpg"])
+    assert len(harness.sent_media) == 1
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"

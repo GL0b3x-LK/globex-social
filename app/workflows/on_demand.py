@@ -10,6 +10,7 @@ import asyncio
 
 from app.ai import generator
 from app.ai import intent as ai_intent
+from app.ai.intent import Intent, IntentType
 from app.config import get_settings
 from app.db import approvals, posts
 from app.logging_config import get_logger
@@ -34,6 +35,14 @@ async def handle_incoming_message(from_phone: str, body: str, media_urls: list[s
     convo = await conversation.get_or_create(from_phone)
     state = conversation.state_of(convo)
     intent = await ai_intent.classify_intent(body, state.value)
+    # A photo with no clear text is still a request to build a post from it — don't
+    # let an image-only message fall through to "clarify".
+    if media_urls and intent.type in (IntentType.greeting, IntentType.unclear):
+        intent = Intent(
+            type=IntentType.new_post_request,
+            extracted_request=body or None,
+            confidence=intent.confidence,
+        )
     action = route(state, intent.type)
     log.info(
         "routing message",
