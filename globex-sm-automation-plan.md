@@ -221,26 +221,26 @@ globex-social/
 **Goal:** Get every usable asset out of `c:\Users\abdur\Downloads\Globex\Globex\` and into the project tree in the right format. Surface every missing asset to the user with a single ask, so we're not blocked mid-build.
 
 ### What gets built
-- [ ] `scripts/import_assets.py` — one-shot script (re-runnable, idempotent) that:
-  - [ ] Converts the three usable EPS logos at `Downloads/Globex/Globex/*.eps` to transparent PNG at 2160px wide using `subprocess.run(["magick", "convert", "-density", "300", "-background", "none", src, "-resize", "2160x", dst])`. Requires ImageMagick + Ghostscript on the system (documented in README).
-  - [ ] Composites a white-only variant (`logo-white.png`) by inverting the navy fill — for dark backgrounds.
-  - [ ] Parses the newer `c:\Users\abdur\Downloads\Date of Hire Globex, Birthdate and PWs - Copy.xlsx` with `openpyxl` (data_only=True) and extracts all three tabs:
-    - [ ] **Employee Info tab** → `app/data/employees.json`. Fields: `name`, `title`, `hire_date` (ISO date). **Drops DOB and password columns entirely.** Handles encoding quirks (e.g., "Federico Zermeño" Unicode).
-    - [ ] **Events tab** → `app/data/trade_shows.json`. Fields: `name`, `month`, `start_date` (null if "TBC"), `end_date`, `location`, `booth` (null), `link`, `hidden` (default false), `needs_date_confirmation`, `notes`. Skips meta rows.
-    - [ ] **Holidays tab** → `app/data/holidays.json`. Fields: `name`, `month`, `date_2026`, `date_2027`, `is_month_long` (true when "Entire Month"), `category` (auto-classified: `general` / `food_industry` / `globex_founding` / `cultural`). Deduplicates Easter Sunday (keep Apr 5). Skips dateless rows with no month flag. Tags Nov 5 as `globex_founding`.
-  - [ ] Copies sample Karen-sent photos (`whatsapp_extract/*.jpg`) to `tests/fixtures/photos/` for Phase 4 webhook test fixtures.
-  - [ ] Copies the contract PDF to `docs/contract.pdf` (gitignored).
-  - [ ] Stages `whatsapp_extract/_chat.txt` and writes `docs/reference/client_chat_excerpts.md` with curated Karen-voice quotes for Phase 2 prompt tuning.
-  - [ ] Prints final inventory report: "X logos converted, Y employees, Z trade shows (W with TBC dates), N holidays (M month-long)."
-- [ ] `docs/missing_assets.md` — auto-generated checklist of remaining blockers (re-extracted ZIP for animals/packaging/grains/30-year art, the 20 packaging post content) so we can send Karen one consolidated request.
+- [x] `scripts/import_assets.py` — one-shot script (re-runnable, idempotent) that:
+  - [x] Converts the three usable EPS logos at `Downloads/Globex/Globex/*.eps` to transparent PNG at 2160px wide using `subprocess.run(["magick", "convert", "-density", "300", "-background", "none", src, "-resize", "2160x", dst])`. Requires ImageMagick + Ghostscript on the system (documented in README).
+  - [x] Composites a white-only variant (`logo-white.png`) by inverting the navy fill — for dark backgrounds.
+  - [x] Parses the newer `c:\Users\abdur\Downloads\Date of Hire Globex, Birthdate and PWs - Copy.xlsx` with `openpyxl` (data_only=True) and extracts all three tabs:
+    - [x] **Employee Info tab** → `app/data/employees.json`. Fields: `name`, `title`, `hire_date` (ISO date). **Drops DOB and password columns entirely.** Handles encoding quirks (e.g., "Federico Zermeño" Unicode).
+    - [x] **Events tab** → `app/data/trade_shows.json`. Fields: `name`, `month`, `start_date` (null if "TBC"), `end_date`, `location`, `booth` (null), `link`, `hidden` (default false), `needs_date_confirmation`, `notes`. Skips meta rows.
+    - [x] **Holidays tab** → `app/data/holidays.json`. Fields: `name`, `month`, `date_2026`, `date_2027`, `is_month_long` (true when "Entire Month"), `category` (auto-classified: `general` / `food_industry` / `globex_founding` / `cultural`). Deduplicates Easter Sunday (keep Apr 5). Skips dateless rows with no month flag. Tags Nov 5 as `globex_founding`.
+  - [x] Copies sample Karen-sent photos (`whatsapp_extract/*.jpg`) to `tests/fixtures/photos/` for Phase 4 webhook test fixtures.
+  - [x] Copies the contract PDF to `docs/contract.pdf` (gitignored).
+  - [x] Stages `whatsapp_extract/_chat.txt` and writes `docs/reference/client_chat_excerpts.md` with curated Karen-voice quotes for Phase 2 prompt tuning.
+  - [x] Prints final inventory report: "X logos converted, Y employees, Z trade shows (W with TBC dates), N holidays (M month-long)."
+- [x] `docs/missing_assets.md` — auto-generated checklist of remaining blockers (re-extracted ZIP for animals/packaging/grains/30-year art, the 20 packaging post content) so we can send Karen one consolidated request.
 
 ### Acceptance criteria
-- [ ] `python scripts/import_assets.py` completes without errors and reports inventory.
-- [ ] `app/templates/assets/logos/globex-gman-full.png` exists, is transparent, ≥2000px wide.
-- [ ] `app/data/employees.json` parses as valid JSON, has one entry per Excel row, **NO** birthdate field anywhere.
-- [ ] `app/data/trade_shows.json` has 11 entries, TBC dates marked `needs_date_confirmation: true`.
-- [ ] `app/data/holidays.json` has ~20 entries, Nov 5 entry has `category: globex_founding`, month-long entries have `is_month_long: true`.
-- [ ] `docs/missing_assets.md` lists every gap from the Source Assets Inventory.
+- [x] `python scripts/import_assets.py` completes without errors and reports inventory.
+- [x] `app/templates/assets/logos/globex-gman-full.png` exists, is transparent, ≥2000px wide.
+- [x] `app/data/employees.json` parses as valid JSON, has one entry per Excel row, **NO** birthdate field anywhere.
+- [x] `app/data/trade_shows.json` has 12 entries, TBC dates marked `needs_date_confirmation: true`.
+- [x] `app/data/holidays.json` has ~20 entries, Nov 5 entry has `category: globex_founding`, month-long entries have `is_month_long: true`.
+- [x] `docs/missing_assets.md` lists every gap from the Source Assets Inventory.
 
 **Dependencies:** none. Run before Phase 1.
 **Complexity:** Low. Mostly file shuffling + one Excel parse + one ImageMagick invocation.
@@ -611,6 +611,15 @@ Phase 0 generates `docs/missing_assets.md`. Send Karen ONE consolidated email �
 ## Progress Log
 
 Dated notes as work gets done. Newest at top. Include: what landed, what surprised you, what's queued next.
+
+### 2026-06-03 — Phase 0 complete (Asset Import)
+- **Logos:** All 3 EPS → transparent PNG at 2160px, plus reversed white variants (navy→white, cyan kept) for dark backgrounds — 6 files in `app/templates/assets/logos/`. Vector-crisp; brand colours verified by pixel sampling (#002D72 navy, #5BC2E7 cyan).
+- **Deviation (logos):** The plan's `magick convert -background none` recipe does NOT work for these files. The Illustrator EPS embed a low-res TIFF preview (ImageMagick rasterises that, emitting 2 scenes) AND paint a white background (so `-background none` gives opaque white). Switched to **Ghostscript `pngalpha` directly** (`-dEPSCrop`, per-file DPI from the EPS BoundingBox), with ImageMagick used only for downscale + the navy→white recolour. Encoded in `scripts/import_assets.py`.
+- **Data:** 37 employees (plan estimated 39), hire_date ONLY — no DOB/age/passwords. 6 qualify for 20+yr milestones (Ilona & Len Kogan 33, Petrenko 26, Karapetyan 24, Rebe 22, Rybakov 21). 12 trade shows (plan said 11; +1 meta row skipped), 7 TBC. 21 holidays, 4 month-long.
+- **Judgment calls:** Easter deduped (kept Apr-5 2026 row); National Fish Day dropped (no date — flagged for Karen); Globex Founding Day 2027 cell was a typo (read 2026-11-05) → corrected to 2027-11-05; Sial Paris hidden (even-years, no 2027 occurrence); Anuga kept (odd-years, dated).
+- **Tooling:** ImageMagick 7.1.2 + Ghostscript 10.07.1 via **Scoop** (user-space, no admin). Portable ImageMagick needs MAGICK_HOME/CODER_MODULE_PATH set — handled in `setup_tools()`. Local-only (Railway never renders EPS).
+- **Chat excerpts:** Curation deferred to Phase 2; raw WhatsApp export kept OUT of the repo (personal numbers). Stub at `docs/reference/client_chat_excerpts.md`.
+- **Queued next:** Phase 1 (Foundation), pending review of the extracted JSONs. Phase 3 still blocked on the re-extracted asset ZIP (see `docs/missing_assets.md`).
 
 ### 2026-05-19 — Plan locked
 - Asset folder inventoried at `c:\Users\abdur\Downloads\Globex\Globex\`. 3 logos usable (EPS, need PNG conversion). The 0-byte sub-folder files (animals, packaging, grains, 30-year mark) need re-extraction.

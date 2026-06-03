@@ -1,0 +1,261 @@
+[
+  {
+    "name": "Ilona Kogan",
+    "title": "Vice President",
+    "hire_date": "1993-11-05",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Len Kogan",
+    "title": "President",
+    "hire_date": "1993-11-05",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Lana Petrenko",
+    "title": "Accounting Manager (AR/AP)",
+    "hire_date": "2000-09-18",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Zara Karapetyan",
+    "title": "Documentation/Logistics Specialist",
+    "hire_date": "2002-06-05",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Irina Rebe",
+    "title": "Director of Operations",
+    "hire_date": "2004-03-01",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Yakov Rybakov",
+    "title": "Controller",
+    "hire_date": "2005-05-31",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Svetlana Dushin",
+    "title": "Chief Financial Officer",
+    "hire_date": "2009-01-01",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Melena Kovziridze",
+    "title": "Administrative Assistant",
+    "hire_date": "2009-08-05",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Kristie Dowdy",
+    "title": "US Documentation Specialist",
+    "hire_date": "2010-08-30",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Larry Wisdom",
+    "title": "Sales - Middle East",
+    "hire_date": "2012-06-18",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Tony Burnes",
+    "title": "Vice President of Sales & Procurement",
+    "hire_date": "2014-02-03",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "David Solomon",
+    "title": "Senior Logistics Manager",
+    "hire_date": "2014-10-31",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Farruh Jurakulov",
+    "title": "Agribusiness Controller, Director of Operations",
+    "hire_date": "2015-01-05",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Debra Green",
+    "title": "Documentation/Logistics Specialist",
+    "hire_date": "2015-06-29",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Andrea Peterson",
+    "title": "Senior Operations Manager - Forwarding",
+    "hire_date": "2016-07-18",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Brad Davis",
+    "title": "Agribusiness Sales & Procurement",
+    "hire_date": "2017-04-24",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Lorenzo Giraldo",
+    "title": "Purchasing/Sales for Latin America & South Africa",
+    "hire_date": "2018-07-30",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Patricia (Trish) Ruiz",
+    "title": "Logistics Coordinator",
+    "hire_date": "2019-01-02",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Ryan Lapina",
+    "title": "Sales- Philippines",
+    "hire_date": "2019-06-10",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Alejandro Ramirez",
+    "title": "Sales-Latin America",
+    "hire_date": "2019-07-16",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Michael Shea",
+    "title": "Logistics Manager",
+    "hire_date": "2021-08-16",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Chang (Charles) Liang",
+    "title": "Sales- Greater China Region",
+    "hire_date": "2022-04-12",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Ana Kosheleva",
+    "title": "Sales-Africa",
+    "hire_date": "2022-04-18",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Matt Huey",
+    "title": "Director of Logistics",
+    "hire_date": "2022-09-26",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Joshua Nelson",
+    "title": "Sales & Procurement",
+    "hire_date": "2022-11-03",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Karen Joseph",
+    "title": "Office Manager",
+    "hire_date": "2023-05-08",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Konnor Temple",
+    "title": "Sales & Procurement - Asia",
+    "hire_date": "2023-07-10",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Felipe Carrillo",
+    "title": "Sales & Procurement",
+    "hire_date": "2023-10-02",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Ginnie Lavery",
+    "title": "Inventory Management",
+    "hire_date": "2023-10-02",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Federico Zermeño",
+    "title": "Sales & Procurement - Mexico",
+    "hire_date": "2023-11-13",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Jody Smith",
+    "title": "Manager - Sales & Procurement",
+    "hire_date": "2023-11-20",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Liz Dewar",
+    "title": "International Logisitics",
+    "hire_date": "2024-05-13",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Ash Garnett",
+    "title": "Sales & Procurement",
+    "hire_date": "2024-09-08",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Duane Guzman",
+    "title": "Sales- Philippines",
+    "hire_date": "2024-10-14",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Krystal Zhang",
+    "title": "Sales-China",
+    "hire_date": "2025-02-01",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Camila Haupenthal",
+    "title": "International Market Analyst",
+    "hire_date": "2025-09-16",
+    "department": null,
+    "active": true
+  },
+  {
+    "name": "Vadim Kaliankovich",
+    "title": "Sales-China",
+    "hire_date": "2026-03-18",
+    "department": null,
+    "active": true
+  }
+]

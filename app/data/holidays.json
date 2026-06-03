@@ -1,0 +1,212 @@
+[
+  {
+    "name": "New Year's Day",
+    "month": "January",
+    "date_2026": "2026-01-01",
+    "date_2027": "2027-01-01",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "National Hot Sauce Day",
+    "month": "January",
+    "date_2026": "2026-01-22",
+    "date_2027": "2027-01-22",
+    "is_month_long": false,
+    "category": "food_industry",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Lunar New Year",
+    "month": "February",
+    "date_2026": "2026-02-17",
+    "date_2027": "2027-02-06",
+    "is_month_long": false,
+    "category": "cultural",
+    "description": "Date varies year to year.",
+    "recurring": true
+  },
+  {
+    "name": "Ramadan",
+    "month": "February",
+    "date_2026": "2026-02-17",
+    "date_2027": "2027-02-08",
+    "is_month_long": false,
+    "category": "cultural",
+    "description": "Date varies year to year.",
+    "recurring": true
+  },
+  {
+    "name": "SuperBowl Sunday",
+    "month": "February",
+    "date_2026": "2026-02-08",
+    "date_2027": "2027-02-14",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Employee Appreciation Day",
+    "month": "March",
+    "date_2026": "2026-03-05",
+    "date_2027": "2027-03-05",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "International Women's Day",
+    "month": "March",
+    "date_2026": "2026-03-08",
+    "date_2027": "2027-03-08",
+    "is_month_long": false,
+    "category": "cultural",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "National Poultry Day",
+    "month": "March",
+    "date_2026": "2026-03-19",
+    "date_2027": "2027-03-19",
+    "is_month_long": false,
+    "category": "food_industry",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Easter Sunday",
+    "month": "April",
+    "date_2026": "2026-04-05",
+    "date_2027": "2027-03-28",
+    "is_month_long": false,
+    "category": "cultural",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Earth Day",
+    "month": "April",
+    "date_2026": "2026-04-22",
+    "date_2027": "2027-04-22",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Memorial Day",
+    "month": "May",
+    "date_2026": "2026-05-25",
+    "date_2027": "2027-05-31",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "National Beef Month",
+    "month": "May",
+    "date_2026": null,
+    "date_2027": null,
+    "is_month_long": true,
+    "category": "food_industry",
+    "description": "Month-long observance.",
+    "recurring": true
+  },
+  {
+    "name": "National Logistics Day",
+    "month": "June",
+    "date_2026": "2026-06-28",
+    "date_2027": "2027-06-28",
+    "is_month_long": false,
+    "category": "food_industry",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Independence Day",
+    "month": "July",
+    "date_2026": "2026-07-04",
+    "date_2027": "2027-07-04",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Labor Day",
+    "month": "September",
+    "date_2026": "2026-09-07",
+    "date_2027": "2027-09-06",
+    "is_month_long": false,
+    "category": "general",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "National Poultry Month",
+    "month": "September",
+    "date_2026": null,
+    "date_2027": null,
+    "is_month_long": true,
+    "category": "food_industry",
+    "description": "Month-long observance.",
+    "recurring": true
+  },
+  {
+    "name": "National Pork Month",
+    "month": "October",
+    "date_2026": null,
+    "date_2027": null,
+    "is_month_long": true,
+    "category": "food_industry",
+    "description": "Month-long observance.",
+    "recurring": true
+  },
+  {
+    "name": "National Seafood Month",
+    "month": "October",
+    "date_2026": null,
+    "date_2027": null,
+    "is_month_long": true,
+    "category": "food_industry",
+    "description": "Month-long observance.",
+    "recurring": true
+  },
+  {
+    "name": "Globex Founding Day",
+    "month": "November",
+    "date_2026": "2026-11-05",
+    "date_2027": "2027-11-05",
+    "is_month_long": false,
+    "category": "globex_founding",
+    "description": "Globex was founded November 5, 1993.",
+    "recurring": true
+  },
+  {
+    "name": "Thanksgiving",
+    "month": "November",
+    "date_2026": "2026-11-26",
+    "date_2027": "2027-11-25",
+    "is_month_long": false,
+    "category": "cultural",
+    "description": null,
+    "recurring": true
+  },
+  {
+    "name": "Happy Holidays",
+    "month": "December",
+    "date_2026": "2026-12-25",
+    "date_2027": "2027-12-25",
+    "is_month_long": false,
+    "category": "cultural",
+    "description": null,
+    "recurring": true
+  }
+]
