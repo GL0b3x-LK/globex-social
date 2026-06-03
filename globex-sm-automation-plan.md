@@ -252,32 +252,32 @@ globex-social/
 **Goal:** A FastAPI app that boots locally, connects to Supabase, and has Karen's data seeded. No business logic yet.
 
 ### What gets built
-- [ ] `pyproject.toml` / `requirements.txt` with locked deps: `fastapi`, `uvicorn[standard]`, `anthropic`, `twilio`, `supabase`, `apscheduler`, `playwright`, `pydantic-settings`, `httpx`, `tenacity`, `python-multipart`, `tzdata`, `pytest`, `pytest-asyncio`, `ruff`, `mypy`.
-- [ ] `app/config.py` — `Settings(BaseSettings)` loading env vars from `.env`. Required fields fail fast on boot with a clear error.
-- [ ] `app/main.py` — `FastAPI` app with `/health` returning `{"status": "ok", "supabase": "connected", "anthropic": "configured"}`. Lifespan hook validates connections on startup.
-- [ ] `app/logging_config.py` — JSON logger, correlation ID per request, no `print()` anywhere.
-- [ ] `app/db/client.py` — Supabase client singleton (`get_supabase() -> Client`).
-- [ ] `app/db/schema.sql` — all tables with constraints and indexes:
-  - [ ] `posts` (id uuid pk, content text, caption text, hashtags text[], template_type text, image_url text, status text check in (`draft`,`pending_approval`,`approved`,`edit_requested`,`published`,`cancelled`), event_id uuid null, event_type text null, created_at timestamptz, approved_at timestamptz null, published_at timestamptz null)
-  - [ ] `post_platforms` (id, post_id fk, platform check in (`instagram`,`facebook`,`linkedin`), published_at timestamptz, external_id text, status text, error_message text)
-  - [ ] `employees` (id, name, title, hire_date date, department text null, active boolean) — **no birthdate column ever**
-  - [ ] `holidays` (id, name, month text, date_2026 date null, date_2027 date null, is_month_long boolean default false, category text check in (`general`,`food_industry`,`globex_founding`,`cultural`), description text null, recurring boolean default true)
-  - [ ] `trade_shows` (id, name, month text, start_date date null, end_date date null, location text null, booth text null, link text null, sponsors text[] null, notes text null, hidden boolean default false, needs_date_confirmation boolean default false)
-  - [ ] `approval_history` (id, post_id fk, action text, feedback text null, created_at timestamptz)
-  - [ ] `conversations` (phone_number text pk, current_post_id uuid fk null, state text, context jsonb, updated_at timestamptz)
-  - [ ] `branded_packaging_rotation` (id uuid pk, slot_number int unique check 1-20, caption_template text, hashtags text[], image_asset_path text, last_posted_at timestamptz null, active boolean default true)
-- [ ] `app/db/{posts,employees,holidays,trade_shows,approvals,conversations,packaging_rotation}.py` — typed query helpers, no raw SQL in business code.
-- [ ] `scripts/apply_schema.py` — runs `schema.sql` against Supabase. Idempotent.
-- [ ] `scripts/seed_db.py` — idempotent upsert from `app/data/*.json`.
-- [ ] `tests/conftest.py` — fixtures for a test Supabase project (or fully mocked client).
-- [ ] `.env.example`, `.gitignore`, `README.md` with local setup steps.
+- [x] `pyproject.toml` / `requirements.txt` with locked deps: `fastapi`, `uvicorn[standard]`, `anthropic`, `twilio`, `supabase`, `apscheduler`, `playwright`, `pydantic-settings`, `httpx`, `tenacity`, `python-multipart`, `tzdata`, `pytest`, `pytest-asyncio`, `ruff`, `mypy`.
+- [x] `app/config.py` — `Settings(BaseSettings)` loading env vars from `.env`. Required fields fail fast on boot with a clear error.
+- [x] `app/main.py` — `FastAPI` app with `/health` returning `{"status": "ok", "supabase": "connected", "anthropic": "configured"}`. Lifespan hook validates connections on startup.
+- [x] `app/logging_config.py` — JSON logger, correlation ID per request, no `print()` anywhere.
+- [x] `app/db/client.py` — Supabase client singleton (`get_supabase() -> Client`).
+- [x] `app/db/schema.sql` — all tables with constraints and indexes:
+  - [x] `posts` (id uuid pk, content text, caption text, hashtags text[], template_type text, image_url text, status text check in (`draft`,`pending_approval`,`approved`,`edit_requested`,`published`,`cancelled`), event_id uuid null, event_type text null, created_at timestamptz, approved_at timestamptz null, published_at timestamptz null)
+  - [x] `post_platforms` (id, post_id fk, platform check in (`instagram`,`facebook`,`linkedin`), published_at timestamptz, external_id text, status text, error_message text)
+  - [x] `employees` (id, name, title, hire_date date, department text null, active boolean) — **no birthdate column ever**
+  - [x] `holidays` (id, name, month text, date_2026 date null, date_2027 date null, is_month_long boolean default false, category text check in (`general`,`food_industry`,`globex_founding`,`cultural`), description text null, recurring boolean default true)
+  - [x] `trade_shows` (id, name, month text, start_date date null, end_date date null, location text null, booth text null, link text null, sponsors text[] null, notes text null, hidden boolean default false, needs_date_confirmation boolean default false)
+  - [x] `approval_history` (id, post_id fk, action text, feedback text null, created_at timestamptz)
+  - [x] `conversations` (phone_number text pk, current_post_id uuid fk null, state text, context jsonb, updated_at timestamptz)
+  - [x] `branded_packaging_rotation` (id uuid pk, slot_number int unique check 1-20, caption_template text, hashtags text[], image_asset_path text, last_posted_at timestamptz null, active boolean default true)
+- [x] `app/db/{posts,employees,holidays,trade_shows,approvals,conversations,packaging_rotation}.py` — typed query helpers, no raw SQL in business code.
+- [x] `scripts/apply_schema.py` — runs `schema.sql` against Supabase. Idempotent.
+- [x] `scripts/seed_db.py` — idempotent upsert from `app/data/*.json`.
+- [x] `tests/conftest.py` — fixtures for a test Supabase project (or fully mocked client).
+- [x] `.env.example`, `.gitignore`, `README.md` with local setup steps.
 
 ### Acceptance criteria
-- [ ] `uvicorn app.main:app --reload` boots cleanly, logs the configured environment, `GET /health` returns 200 with all subsystems "ok".
-- [ ] `python scripts/apply_schema.py` creates all tables; running it twice is a no-op.
-- [ ] `python scripts/seed_db.py` populates employees/holidays/trade_shows; running it twice doesn't duplicate rows.
-- [ ] `pytest tests/test_db_helpers.py` passes — covers CRUD for each table.
-- [ ] `ruff check app/` and `mypy app/ --ignore-missing-imports` pass.
+- [x] `uvicorn app.main:app --reload` boots cleanly, logs the configured environment, `GET /health` returns 200 with all subsystems "ok".
+- [x] `python scripts/apply_schema.py` creates all tables; running it twice is a no-op.
+- [x] `python scripts/seed_db.py` populates employees/holidays/trade_shows; running it twice doesn't duplicate rows.
+- [x] `pytest tests/test_db_helpers.py` passes — covers CRUD for each table.
+- [x] `ruff check app/` and `mypy app/ --ignore-missing-imports` pass.
 
 **Dependencies:** Phase 0 (employees.json populated from Excel).
 **Complexity:** Medium. Lots of plumbing, no surprises.
@@ -611,6 +611,14 @@ Phase 0 generates `docs/missing_assets.md`. Send Karen ONE consolidated email �
 ## Progress Log
 
 Dated notes as work gets done. Newest at top. Include: what landed, what surprised you, what's queued next.
+
+### 2026-06-03 — Phase 1 complete (Foundation)
+- **Landed:** FastAPI app (config, JSON logging w/ correlation IDs, lifespan + correlation-id middleware), Supabase client + 8-table `schema.sql`, 7 typed query helpers, `apply_schema.py` (psycopg DDL) + idempotent `seed_db.py`, integration CRUD tests, README, pinned deps.
+- **All acceptance criteria PASS:** ruff clean · mypy clean (16 files) · `GET /health` = 200 `{supabase: connected, anthropic: configured}` · apply_schema idempotent · seed idempotent (37 employees / 21 holidays / 12 shows, no dupes on re-run) · 6/6 pytest CRUD tests green against live Supabase.
+- **Supabase gotcha (cost real time):** this project's Postgres is reachable ONLY via the pooler, and specifically the newer cluster `aws-1-us-east-1.pooler.supabase.com` — every `aws-0-*` region returned "Tenant or user not found", and the direct `db.<ref>.supabase.co` host has no DNS at all. DDL runs through psycopg on that pooler (user `postgres.<ref>`); all runtime access is supabase-py over REST (443). `SUPABASE_DB_URL` lives in local `.env`; Railway needs it as an env var at Phase 8.
+- **Free-tier risk:** the project auto-paused once (the earlier outage). Recommend Supabase Pro ($25/mo, no auto-pause) before launch.
+- **Type note:** supabase-py types `.data` as `list[JSON]`; added `rows()/row()/maybe_row()` cast wrappers in `db/client.py` so helpers stay mypy-clean — one place to cast, not 28.
+- **Queued next:** Phase 2 (Claude AI engine). Will mine `whatsapp_extract/_chat.txt` for Karen's voice (deferred from Phase 0) to build the brand block.
 
 ### 2026-06-03 — Phase 0 complete (Asset Import)
 - **Logos:** All 3 EPS → transparent PNG at 2160px, plus reversed white variants (navy→white, cyan kept) for dark backgrounds — 6 files in `app/templates/assets/logos/`. Vector-crisp; brand colours verified by pixel sampling (#002D72 navy, #5BC2E7 cyan).
