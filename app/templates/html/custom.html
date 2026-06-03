@@ -1,0 +1,17 @@
+{% extends "_canvas.html" %}
+{# custom — Karen sends a photo + description; AI writes the copy from scratch. #}
+{% block decor %}
+  {% if photo %}
+    <div class="media"><img src="{{ photo }}" alt=""></div>
+  {% else %}
+    <span class="ring ring--tr"></span><span class="ring ring--bl"></span>
+  {% endif %}
+{% endblock %}
+{% block content %}
+  <div class="stack-bottom">
+    {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
+    <div class="accent"></div>
+    <h1 class="headline">{{ headline }}</h1>
+    {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+  </div>
+{% endblock %}

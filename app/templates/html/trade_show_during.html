@@ -1,0 +1,17 @@
+{% extends "_canvas.html" %}
+{# trade_show_during — live on the floor, usually over an attached photo. #}
+{% block decor %}
+  {% if photo %}
+    <div class="media"><img src="{{ photo }}" alt=""></div>
+  {% else %}
+    <span class="ring ring--tr"></span><span class="ring ring--bl"></span>
+  {% endif %}
+{% endblock %}
+{% block content %}
+  <div class="stack-bottom">
+    <p class="eyebrow">{{ eyebrow|default("Live at") }}</p>
+    <div class="accent"></div>
+    <h1 class="headline">{{ headline }}</h1>
+    {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+  </div>
+{% endblock %}

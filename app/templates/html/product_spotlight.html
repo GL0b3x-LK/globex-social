@@ -1,0 +1,21 @@
+{% extends "_canvas.html" %}
+{# product_spotlight — protein/category feature. Animal illustration or product photo
+   slots into .col-art (from the re-extracted asset ZIP, or a Twilio photo). #}
+{% block decor %}{% endblock %}
+{% block content %}
+  <div class="split">
+    <div class="col-text">
+      <p class="eyebrow">{{ eyebrow|default("Product spotlight") }}</p>
+      <div class="accent"></div>
+      <h1 class="headline headline--sm">{{ headline }}</h1>
+      {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+    </div>
+    <div class="col-art">
+      {% if product_image %}
+        <img src="{{ product_image }}" alt="">
+      {% else %}
+        <div class="art-placeholder"><img src="{{ logos['gman_full'] }}" alt=""></div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

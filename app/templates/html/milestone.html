@@ -1,0 +1,15 @@
+{% extends "_canvas.html" %}
+{# milestone — employee anniversary, 20+ years only. Celebratory but professional. #}
+{% block content %}
+  <p class="eyebrow">{{ eyebrow|default("Celebrating") }}</p>
+  <div class="accent"></div>
+  <div class="figure-wrap">
+    <span class="figure">{{ figure }}</span>
+    <span class="figure-unit">{{ figure_unit|default("Years") }}</span>
+  </div>
+  <div class="person">
+    <div class="name">{{ name }}</div>
+    {% if role %}<div class="role">{{ role }}</div>{% endif %}
+  </div>
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+{% endblock %}

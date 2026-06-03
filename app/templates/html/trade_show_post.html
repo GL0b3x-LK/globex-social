@@ -1,0 +1,8 @@
+{% extends "_canvas.html" %}
+{# trade_show_post — thank attendees/partners after the show. #}
+{% block content %}
+  <p class="eyebrow">{{ eyebrow|default("Thank you") }}</p>
+  <div class="accent"></div>
+  <h1 class="headline">{{ headline }}</h1>
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+{% endblock %}

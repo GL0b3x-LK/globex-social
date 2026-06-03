@@ -1,0 +1,12 @@
+{% extends "_canvas.html" %}
+{# founding_anniversary — company milestone years. Celebratory navy hero. #}
+{% block content %}
+  <p class="eyebrow">{{ eyebrow|default("Celebrating") }}</p>
+  <div class="accent"></div>
+  <div class="figure-wrap">
+    <span class="figure">{{ figure }}</span>
+    <span class="figure-unit">{{ figure_unit|default("Years") }}</span>
+  </div>
+  {% if headline %}<p class="headline headline--sm" style="margin-top:24px">{{ headline }}</p>{% endif %}
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+{% endblock %}

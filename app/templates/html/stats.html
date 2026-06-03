@@ -1,0 +1,18 @@
+{% extends "_canvas.html" %}
+{# stats — shipment volumes, market data, company impact numbers. Navy hero. #}
+{% block content %}
+  <p class="eyebrow">{{ eyebrow|default("Globex by the numbers") }}</p>
+  <div class="accent"></div>
+  <div class="figure-wrap">
+    <span class="figure{% if figure|string|length > 4 %} figure--sm{% endif %}">{{ figure }}</span>
+    {% if figure_unit %}<span class="figure-unit">{{ figure_unit }}</span>{% endif %}
+  </div>
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+  {% if stat_items %}
+    <div class="stat-row">
+      {% for s in stat_items %}
+        <div class="item"><div class="v">{{ s.value }}</div><div class="l">{{ s.label }}</div></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}

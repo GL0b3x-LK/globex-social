@@ -1,0 +1,9 @@
+{% extends "_canvas.html" %}
+{# holiday — date-specific observance. Clean light/editorial. #}
+{% block content %}
+  <p class="eyebrow">{{ eyebrow|default("Today") }}</p>
+  <div class="accent"></div>
+  <h1 class="headline">{{ headline }}</h1>
+  {% if date_label %}<p class="eyebrow" style="margin-top:34px;letter-spacing:.16em">{{ date_label }}</p>{% endif %}
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+{% endblock %}

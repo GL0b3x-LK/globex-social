@@ -1,0 +1,239 @@
+/* Globex brand design system — injected into every render.
+   STRICTLY two brand colors (Pantone 288C navy #002D72, Pantone 2985C cyan #5BC2E7)
+   plus white. Opacity variants of navy/cyan are allowed for depth; no other hues. */
+
+:root {
+  --navy: #002d72;
+  --cyan: #5bc2e7;
+  --white: #ffffff;
+
+  /* palette-derived layers (still strictly navy/cyan) */
+  --navy-soft: rgba(0, 45, 114, 0.10);
+  --navy-65: rgba(0, 45, 114, 0.65);
+  --on-navy-72: rgba(255, 255, 255, 0.72);
+  --cyan-rule: rgba(91, 194, 231, 0.45);
+
+  --pad: 96px;     /* safe margin */
+  --rule: 6px;     /* accent / ring stroke */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.canvas {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: var(--pad);
+}
+
+/* ---- themes ---- */
+.theme-navy  { background: var(--navy);  color: var(--white); }
+.theme-light { background: var(--white); color: var(--navy); }
+.theme-cyan  { background: var(--cyan);  color: var(--navy); }
+
+/* ---- decorative ring motif (echoes the G-man ring; bleeds off-canvas) ---- */
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: var(--rule) solid var(--cyan);
+  pointer-events: none;
+  z-index: 0;
+}
+.ring--tr { width: 560px;  height: 560px;  top: -190px;  right: -150px; opacity: 0.95; }
+.ring--bl { width: 940px;  height: 940px;  bottom: -460px; left: -320px; opacity: 0.45; }
+.theme-cyan .ring { border-color: var(--navy); }
+
+/* ---- G-man watermark (subtle, optional) ---- */
+.watermark { position: absolute; pointer-events: none; z-index: 0; }
+.watermark img { display: block; }
+
+/* ---- structure ---- */
+.stage {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ---- type system ---- */
+.eyebrow {
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.theme-light .eyebrow { color: var(--navy); }
+.theme-cyan  .eyebrow { color: var(--navy); opacity: 0.72; }
+
+.accent {
+  width: 104px;
+  height: var(--rule);
+  background: var(--cyan);
+  border-radius: 99px;
+  margin: 30px 0;
+}
+.theme-cyan .accent { background: var(--navy); }
+
+.headline {
+  font-weight: 800;
+  font-size: 90px;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+.headline--sm { font-size: 60px; }
+
+.subhead {
+  margin-top: 30px;
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 1.34;
+  max-width: 86%;
+  color: var(--on-navy-72);
+}
+.theme-light .subhead, .theme-cyan .subhead { color: var(--navy-65); }
+
+/* ---- big number (stats / anniversary) ---- */
+.figure-wrap { display: flex; align-items: baseline; gap: 30px; flex-wrap: wrap; }
+.figure {
+  font-weight: 900;
+  font-size: 300px;
+  line-height: 0.84;
+  letter-spacing: -0.03em;
+  color: var(--cyan);
+}
+.theme-light .figure { color: var(--navy); }
+.figure--sm { font-size: 220px; }
+.figure-unit {
+  font-weight: 800;
+  font-size: 68px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* ---- secondary stat row ---- */
+.stat-row { display: flex; gap: 72px; margin-top: 60px; }
+.stat-row .v { font-weight: 900; font-size: 84px; line-height: 1; color: var(--cyan); }
+.theme-light .stat-row .v { color: var(--navy); }
+.stat-row .l {
+  font-weight: 600;
+  font-size: 25px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 12px;
+  color: var(--on-navy-72);
+}
+.theme-light .stat-row .l { color: var(--navy-65); }
+
+/* ---- footer brand signature (logo appears on EVERY post) ---- */
+.brand-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 32px;
+  border-top: 2px solid var(--cyan-rule);
+}
+.theme-light .brand-footer { border-top-color: var(--navy-soft); }
+.brand-footer .brand-logo { height: 64px; display: block; }
+.brand-footer .sig {
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.theme-light .brand-footer .sig, .theme-cyan .brand-footer .sig { color: var(--navy); }
+
+/* ---- photo media (custom, trade_show_during) ---- */
+.media { position: absolute; inset: 0; z-index: 0; }
+.media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 45, 114, 0.20) 0%, rgba(0, 45, 114, 0.90) 80%);
+}
+
+/* ---- shared components used by the wider template set ---- */
+
+/* meta line (show dates · location) */
+.meta {
+  margin-top: 30px;
+  font-weight: 600;
+  font-size: 34px;
+  letter-spacing: 0.01em;
+  color: var(--cyan);
+}
+.theme-light .meta { color: var(--navy); }
+
+/* pill (booth number, CTA) */
+.pill {
+  display: inline-block;
+  align-self: flex-start; /* hug content, don't stretch as a flex child */
+  margin-top: 36px;
+  padding: 18px 38px;
+  border-radius: 99px;
+  background: var(--cyan);
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* tag (month-long marker / category chip) */
+.tag {
+  display: inline-block;
+  align-self: flex-start; /* hug content, don't stretch as a flex child */
+  margin-bottom: 30px;
+  padding: 12px 24px;
+  border: 3px solid var(--cyan);
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.theme-light .tag { border-color: var(--navy); color: var(--navy); }
+
+/* person block (milestone anniversaries) */
+.person { margin-top: 38px; }
+.person .name { font-weight: 800; font-size: 68px; line-height: 1.04; }
+.person .role {
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 30px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.theme-light .person .role { color: var(--navy-65); }
+
+/* split layout (product_spotlight, branded_packaging) */
+.split { display: flex; align-items: center; gap: 64px; flex: 1; align-self: stretch; }
+.split .col-text { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.split .col-art { flex: 0 0 42%; display: flex; align-items: center; justify-content: center; }
+.split .col-art img { max-width: 100%; max-height: 580px; object-fit: contain; display: block; }
+.art-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; }
+.art-placeholder img { width: 64%; opacity: 0.9; }
+
+/* bottom-anchored content stack for full-bleed photo templates */
+.stack-bottom { margin-top: auto; }

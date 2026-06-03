@@ -1,0 +1,8 @@
+{% extends "_canvas.html" %}
+{# announcement — new hires, partnerships, general company news. #}
+{% block content %}
+  <p class="eyebrow">{{ eyebrow|default("Announcement") }}</p>
+  <div class="accent"></div>
+  <h1 class="headline">{{ headline }}</h1>
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+{% endblock %}

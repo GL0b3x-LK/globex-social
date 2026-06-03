@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>{{ font_face_css|safe }}</style>
+  <style>{{ base_css|safe }}</style>
+  {% block style %}{% endblock %}
+</head>
+<body>
+  <div class="canvas theme-{{ theme|default('navy') }}">
+    {% block decor %}
+      <span class="ring ring--tr"></span>
+      <span class="ring ring--bl"></span>
+    {% endblock %}
+
+    <main class="stage">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="brand-footer">
+      {% block footer %}
+        <img class="brand-logo"
+             src="{{ logos['lockup_side_white' if (theme|default('navy')) == 'navy' else 'lockup_side'] }}"
+             alt="Globex International">
+        {% if sig %}<span class="sig">{{ sig }}</span>{% endif %}
+      {% endblock %}
+    </footer>
+  </div>
+</body>
+</html>

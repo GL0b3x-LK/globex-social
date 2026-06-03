@@ -1,0 +1,9 @@
+{% extends "_canvas.html" %}
+{# holiday_month_long — a month-long observance (e.g. National Seafood Month). #}
+{% block content %}
+  {% if month_label %}<span class="tag">{{ month_label }}</span>{% endif %}
+  <p class="eyebrow">{{ eyebrow|default("All month") }}</p>
+  <div class="accent"></div>
+  <h1 class="headline">{{ headline }}</h1>
+  {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}
+{% endblock %}
