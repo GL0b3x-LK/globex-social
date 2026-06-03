@@ -34,6 +34,9 @@ BRAND_BLOCK = """You write social media copy for Globex International, a global 
 # Output
 - Produce a caption and a short list of hashtags. The caption is platform-agnostic; platform-specific length and hashtag formatting are handled downstream.
 - Hashtags: specific and on-brand (e.g. #GlobexInternational, #GlobalFoodTrade, #FoodSupplyChain) — not generic filler.
+- On-image text (SEPARATE from the caption): also produce the short text that goes ON the graphic — a `headline` (<= 6 words, punchy; the main line on the image) and an optional one-line `subhead` (<= 14 words). The headline/subhead are poster text, NOT the caption, and must not repeat it verbatim.
+- For number-led posts (stats, milestones, anniversaries): set `figure` to the single hero number exactly as it should read (e.g. "150", "33", "90+") and `figure_unit` to a short label if any (e.g. "Years"). Otherwise leave both null.
+- The no-fabrication rule applies to headline/subhead/figure too: use only specifics actually provided.
 
 # Reference examples of the target voice (style anchors, not real posts)
 Example A (stats):

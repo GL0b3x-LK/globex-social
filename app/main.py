@@ -1,6 +1,5 @@
-"""FastAPI application: app factory, lifespan, correlation-id middleware, /health.
-
-No business logic yet (Phase 1). Webhook + workflow routes arrive in Phase 4.
+"""FastAPI application: app factory, lifespan, correlation-id middleware, /health,
+and the Twilio WhatsApp webhook routes.
 """
 from __future__ import annotations
 
@@ -14,6 +13,8 @@ from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.db.client import ping as supabase_ping
 from app.logging_config import configure_logging, correlation_id_var, get_logger
+from app.messaging import webhook
+from app.templates.renderer import renderer
 
 log = get_logger("app.main")
 
@@ -33,11 +34,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Don't crash the process — keep /health reachable so the failure is
         # observable. Supabase is a hard dependency; /health will report 503.
         log.error("supabase connection failed at startup", extra={"error": str(exc)})
+    try:
+        await renderer.start()
+        log.info("playwright renderer started")
+    except Exception as exc:
+        log.error("renderer failed to start", extra={"error": str(exc)})
     yield
+    await renderer.stop()
     log.info("shutdown")
 
 
 app = FastAPI(title="Globex SM Automation", version="0.1.0", lifespan=lifespan)
+app.include_router(webhook.router)
 
 
 @app.middleware("http")

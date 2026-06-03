@@ -13,6 +13,7 @@ from app.ai.prompts import (
     branded_packaging,
     custom,
     founding_anniversary,
+    freeform,
     holiday,
     milestone,
     product_spotlight,
@@ -51,10 +52,20 @@ _PROMPTS: dict[ContentCategory, str] = {
 
 
 class GeneratedPost(BaseModel):
-    caption: str = Field(description="The finished, ready-to-post caption text.")
+    caption: str = Field(description="The finished, ready-to-post caption text (the post body).")
     hashtags: list[str] = Field(description="3-6 specific, on-brand hashtags, each starting with '#'.")
     template_variant: str = Field(description="Which HTML template variant to render (e.g. trade_show_pre, holiday, stats).")
+    headline: str = Field(description="Short on-image headline, <= 6 words — the graphic's main line. NOT the caption.")
+    subhead: str | None = Field(default=None, description="Optional one-line on-image supporting text, <= 14 words. Null if not needed.")
+    figure: str | None = Field(default=None, description="Number-led posts only: the hero figure exactly as shown (e.g. '150', '33', '90+'). Null otherwise.")
+    figure_unit: str | None = Field(default=None, description="Short label beside the figure (e.g. 'Years'). Null otherwise.")
     rationale: str = Field(description="One sentence: why this post fits the brief and brand.")
+
+
+_EMIT_DESC = (
+    "Emit the finished post: caption, hashtags, template_variant, the on-image headline/subhead "
+    "(plus figure/figure_unit for number-led posts), and a one-line rationale."
+)
 
 
 def system_for(category: ContentCategory) -> str:
@@ -99,6 +110,27 @@ async def generate_post(
         user_content=_user_content(context, user_message, image_bytes, image_media_type),
         output_model=GeneratedPost,
         tool_name="emit_post",
-        tool_description="Emit the finished social-media post: caption, hashtags, template variant, and a one-line rationale.",
+        tool_description=_EMIT_DESC,
+        max_tokens=1500,
+    )
+
+
+def freeform_system() -> str:
+    """System prompt for the on-demand path: brand truth + free-form selection guidance."""
+    return f"{BRAND_BLOCK}\n\n---\n\n{freeform.FREEFORM_PROMPT}"
+
+
+async def generate_freeform(
+    request: str,
+    image_bytes: bytes | None = None,
+    image_media_type: str = "image/jpeg",
+) -> GeneratedPost:
+    """On-demand path: the model selects the template_variant itself, then writes the post."""
+    return await generate_structured(
+        system=freeform_system(),
+        user_content=_user_content(None, request, image_bytes, image_media_type),
+        output_model=GeneratedPost,
+        tool_name="emit_post",
+        tool_description=_EMIT_DESC,
         max_tokens=1500,
     )

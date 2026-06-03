@@ -369,32 +369,32 @@ globex-social/
 **Goal:** Karen messages Twilio → we receive, validate, parse, kick off the workflow, and send a preview back. Conversation state survives restarts.
 
 ### What gets built
-- [ ] `app/messaging/validator.py` — FastAPI dependency running Twilio's `RequestValidator` against `X-Twilio-Signature`. Rejects unsigned/forged requests with 403. Skipped in `ENVIRONMENT=development` only if explicitly configured.
-- [ ] `app/messaging/webhook.py`:
-  - [ ] `POST /webhooks/twilio/message` — receives `Body`, `From`, `NumMedia`, `MediaUrl0..N`, `MessageSid`. Acknowledges with empty TwiML `<Response/>` within Twilio's 15s window, then processes async via FastAPI background task.
-  - [ ] `POST /webhooks/twilio/status` — logs delivery/read/failed for outbound messages.
-- [ ] `app/messaging/media.py` — `async def download_twilio_media(url: str) -> tuple[bytes, str]` — fetches with Twilio auth, returns (bytes, content_type). 10s timeout.
-- [ ] `app/messaging/twilio_client.py`:
-  - [ ] `async def send_text(to: str, body: str)`
-  - [ ] `async def send_media(to: str, body: str, media_url: str)` — preview image + caption.
-- [ ] `app/messaging/conversation.py`:
-  - [ ] `class ConversationState(StrEnum)`: `IDLE`, `AWAITING_APPROVAL`, `EDITING`, `AWAITING_CLARIFICATION`.
-  - [ ] `async def get_or_create(phone: str) -> Conversation` (reads from `conversations` table).
-  - [ ] `async def transition(phone: str, new_state: ConversationState, current_post_id: UUID | None, context_patch: dict)` — atomic update.
-- [ ] `app/workflows/on_demand.py`:
-  - [ ] `async def handle_incoming_message(from_phone: str, body: str, media_urls: list[str]) -> None`
-  - [ ] Routes by intent (Phase 2 classifier) using current conversation state.
-  - [ ] For `new_post_request`: download media, call `generate_post`, call `renderer.render`, upload PNG, send preview via WhatsApp, transition to `AWAITING_APPROVAL`.
-- [ ] `app/workflows/approval.py`:
-  - [ ] `async def handle_approval(phone: str, conversation: Conversation) -> None` — marks post `approved`, kicks off Phase 5 publishing.
-  - [ ] `async def handle_edit_request(phone: str, conversation: Conversation, feedback: str) -> None` — calls `editor.apply_edit`, re-renders, sends new preview, stays in `AWAITING_APPROVAL`.
-  - [ ] `async def handle_cancellation(phone: str, conversation: Conversation) -> None` — marks post `cancelled`, transitions to `IDLE`.
+- [x] `app/messaging/validator.py` — FastAPI dependency running Twilio's `RequestValidator` against `X-Twilio-Signature`. Rejects unsigned/forged requests with 403. Skipped in `ENVIRONMENT=development` only if explicitly configured.
+- [x] `app/messaging/webhook.py`:
+  - [x] `POST /webhooks/twilio/message` — receives `Body`, `From`, `NumMedia`, `MediaUrl0..N`, `MessageSid`. Acknowledges with empty TwiML `<Response/>` within Twilio's 15s window, then processes async via FastAPI background task.
+  - [x] `POST /webhooks/twilio/status` — logs delivery/read/failed for outbound messages.
+- [x] `app/messaging/media.py` — `async def download_twilio_media(url: str) -> tuple[bytes, str]` — fetches with Twilio auth, returns (bytes, content_type). 10s timeout.
+- [x] `app/messaging/twilio_client.py`:
+  - [x] `async def send_text(to: str, body: str)`
+  - [x] `async def send_media(to: str, body: str, media_url: str)` — preview image + caption.
+- [x] `app/messaging/conversation.py`:
+  - [x] `class ConversationState(StrEnum)`: `IDLE`, `AWAITING_APPROVAL`, `EDITING`, `AWAITING_CLARIFICATION`.
+  - [x] `async def get_or_create(phone: str) -> Conversation` (reads from `conversations` table).
+  - [x] `async def transition(phone: str, new_state: ConversationState, current_post_id: UUID | None, context_patch: dict)` — atomic update.
+- [x] `app/workflows/on_demand.py`:
+  - [x] `async def handle_incoming_message(from_phone: str, body: str, media_urls: list[str]) -> None`
+  - [x] Routes by intent (Phase 2 classifier) using current conversation state.
+  - [x] For `new_post_request`: download media, call `generate_post`, call `renderer.render`, upload PNG, send preview via WhatsApp, transition to `AWAITING_APPROVAL`.
+- [x] `app/workflows/approval.py`:
+  - [x] `async def handle_approval(phone: str, conversation: Conversation) -> None` — marks post `approved`, kicks off Phase 5 publishing.
+  - [x] `async def handle_edit_request(phone: str, conversation: Conversation, feedback: str) -> None` — calls `editor.apply_edit`, re-renders, sends new preview, stays in `AWAITING_APPROVAL`.
+  - [x] `async def handle_cancellation(phone: str, conversation: Conversation) -> None` — marks post `cancelled`, transitions to `IDLE`.
 
 ### Acceptance criteria
-- [ ] `pytest tests/test_webhook.py` — Twilio signature validation rejects forged requests, accepts valid ones (uses Twilio's test vectors).
-- [ ] `pytest tests/test_conversation.py` — state machine transitions are exhaustive: every (state, intent) pair has a defined behavior.
-- [ ] E2E test with `httpx.AsyncClient` against local app + mocked Twilio: simulate Karen sending "post about us at SIAL" → assert preview was sent → simulate "approve" → assert publish was triggered (Phase 5 mocked).
-- [ ] Restart test: start a conversation, kill the process, restart, send "approve" — system correctly recovers Karen's pending draft from Supabase.
+- [x] `pytest tests/test_webhook.py` — Twilio signature validation rejects forged requests, accepts valid ones (uses Twilio's test vectors).
+- [x] `pytest tests/test_conversation.py` — state machine transitions are exhaustive: every (state, intent) pair has a defined behavior.
+- [x] E2E test with `httpx.AsyncClient` against local app + mocked Twilio: simulate Karen sending "post about us at SIAL" → assert preview was sent → simulate "approve" → assert publish was triggered (Phase 5 mocked).
+- [x] Restart test: start a conversation, kill the process, restart, send "approve" — system correctly recovers Karen's pending draft from Supabase.
 
 **Dependencies:** Phase 1, 2, 3.
 **Complexity:** Medium-High. State machine is the trap — write exhaustive transition tests before implementation.
@@ -611,6 +611,14 @@ Phase 0 generates `docs/missing_assets.md`. Send Karen ONE consolidated email �
 ## Progress Log
 
 Dated notes as work gets done. Newest at top. Include: what landed, what surprised you, what's queued next.
+
+### 2026-06-03 — Phase 4 complete (WhatsApp Integration)
+- **Landed:** the full on-demand loop. Twilio webhook (`/webhooks/twilio/message` + `/status`) acks with empty TwiML inside the 15s window then processes in a FastAPI background task; signature validation as a dependency (`validator.py`). `twilio_client` (async `send_text`/`send_media` over the sync SDK via `to_thread`), `media.download_twilio_media` (auth + follow-redirects). `messaging/conversation.py` (`ConversationState` + Supabase-backed async state) and `state_machine.py` (pure, exhaustive `(state × intent) → Action` routing). `workflows/on_demand.py` (authorize → classify intent → route → dispatch) and `workflows/approval.py` (approve→publish / edit→re-render / cancel). `render_pipeline` (`build_slots` + `render_and_store`). Publishing seam stub (`publishing/publisher.py`) for Phase 5. Renderer started/stopped in the FastAPI lifespan; webhook router wired in.
+- **Phase 2 amendment (the planned 'small addition'):** `GeneratedPost` gained on-image display fields — `headline`, `subhead`, `figure`, `figure_unit` — so the graphic carries short poster text distinct from the social caption. Added `generate_freeform` (the model self-selects the `template_variant` for free-form WhatsApp requests; the category-specific prompts remain for the scheduler path). `editor.apply_edit` is now category-optional (freeform edits use the freeform system prompt).
+- **Acceptance PASS:** webhook signature accept/reject via Twilio's own RequestValidator; **exhaustive state machine** — all 24 `(state × intent)` cells defined (`test_state_machine.py`); offline **E2E** — new→preview→approve→publish-triggered, plus edit / cancel / nothing-pending / unauthorized (`test_workflow_e2e.py`, all externals + DB mocked); **restart/persistence** — pending draft survives a fresh read from Supabase (`test_conversation_persistence.py`, ran live). ruff + mypy clean (52 src files); full suite **73 passed / 46 skipped**.
+- **Live validation:** `generate_freeform` on 3 real requests selected the right variants (stats / trade_show_pre / announcement), produced tight ≤6-word headlines and extracted figures ("150 Ships", "12 New Markets"), and rendered cleanly through the real pipeline. **Supabase Storage smoke** (`ensure_bucket` + `upload_png` → public URL → GET 200 `image/png`) — so Phase 3 storage is now verified live too.
+- **Deviations / decisions:** the exhaustive-transition test is `test_state_machine.py` (plan said `test_conversation.py`) — same requirement, different file. The E2E drives `handle_incoming_message` directly (the HTTP webhook itself is covered by the signature test). Signature validation is toggled by `twilio_validate_signature` (default on) rather than env-gated. **Edits re-render without re-applying Karen's original photo** (not persisted) — copy/layout edits are the common case; persisting the source photo is a follow-up. On-demand category selection is done by `generate_freeform` (model picks the variant); DB enrichment of show/holiday context (booth/dates) is deferred — the model folds any specifics Karen gives into the headline/subhead.
+- **Queued next:** Phase 5 (Publishing) — `publisher.publish_post` becomes a real Blotato call to Instagram / Facebook / LinkedIn with per-platform results.
 
 ### 2026-06-03 — Phase 3 complete (Template Rendering)
 - **Landed:** the full visual system — 13 HTML/CSS brand templates + `_base.css` design system (self-hosted **Montserrat**, navy/cyan/white only, a cyan **ring motif** echoing the G-man mark, navy-hero + light-editorial themes), `_canvas.html` base layout, `assets.py` (hermetic base64 data-URI embedding of fonts + logos), `catalog.py` (`TEMPLATES` registry + `PLATFORM_DIMENSIONS`), `renderer.py` (lifespan-managed **reused** Chromium, deterministic output), `db/storage.py` (`upload_png` + `ensure_bucket`), and `scripts/render_all_templates.py` (preview gallery → `docs/template-previews/`).

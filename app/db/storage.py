@@ -25,7 +25,7 @@ def _upload_sync(path: str, png_bytes: bytes) -> str:
     return sb.storage.from_(BUCKET).get_public_url(path)
 
 
-async def upload_png(post_id: UUID, png_bytes: bytes) -> str:
+async def upload_png(post_id: str | UUID, png_bytes: bytes) -> str:
     """Upload a rendered PNG to ``post-images/{post_id}.png``; return its public URL.
 
     ``upsert`` is on so re-rendering after an edit overwrites the same object.

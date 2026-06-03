@@ -1,4 +1,5 @@
 """Always-on, deterministic AI tests (no API calls): prompt composition + brand lint."""
+
 from __future__ import annotations
 
 from app.ai.brand_check import brand_violations, emoji_count
@@ -43,10 +44,14 @@ def test_generated_post_model_shape():
         caption="150 ships on the water.",
         hashtags=["#GlobexInternational"],
         template_variant="stats",
+        headline="150 on the water",
+        figure="150",
         rationale="Lead with the number.",
     )
     assert post.template_variant == "stats"
     assert post.hashtags == ["#GlobexInternational"]
+    assert post.figure == "150"
+    assert post.subhead is None  # optional display field defaults to None
 
 
 def test_format_context():

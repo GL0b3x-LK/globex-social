@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     twilio_auth_token: str
     twilio_whatsapp_number: str
     authorized_numbers: str  # comma-separated; parsed via authorized_numbers_list
+    twilio_validate_signature: bool = True  # verify X-Twilio-Signature; disable only in dev
 
     # --- Blotato ---
     blotato_api_key: str
