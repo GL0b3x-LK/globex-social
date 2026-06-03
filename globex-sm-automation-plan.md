@@ -289,34 +289,34 @@ globex-social/
 **Goal:** Given Karen's text (and optionally a photo), produce on-brand caption + hashtags + template choice. Separately, classify her incoming WhatsApp messages into intents.
 
 ### What gets built
-- [ ] `app/ai/client.py` — `Anthropic` client singleton with `claude-opus-4-7`, temperature 0.3, max_tokens tuned per call type. Retry wrapper via Tenacity (exponential backoff, max 3 attempts on 429/5xx).
-- [ ] `app/ai/prompts/brand.py` — `BRAND_BLOCK` constant: company facts (30+ years, 90+ countries, 300+ suppliers, 950+ trade partners), tone rules ("professional but human, direct, confident, no corporate jargon"), color palette, explicit DON'Ts (no birthdays, no kitschy posts, no oversaturation, no off-brand colors, no news-based content, no recipes). Imported into every system prompt. Includes curated Karen-voice excerpts as few-shot tone examples.
-- [ ] `app/ai/prompts/trade_show.py` — system prompt for pre/during/post trade show variants.
-- [ ] `app/ai/prompts/holiday.py` — covers date-specific + month-long variants.
-- [ ] `app/ai/prompts/milestone.py` — 20+ year anniversaries, draws from `employees` context.
-- [ ] `app/ai/prompts/founding_anniversary.py` — Nov 5 Globex Founding Day special case.
-- [ ] `app/ai/prompts/stats.py` — number-driven posts.
-- [ ] `app/ai/prompts/announcement.py` — new hires, partnerships, news.
-- [ ] `app/ai/prompts/product_spotlight.py` — uses animal/grain asset context.
-- [ ] `app/ai/prompts/promotional.py` — awareness, packaging launches.
-- [ ] `app/ai/prompts/branded_packaging.py` — pulls fixed copy from `branded_packaging_rotation` and lightly varies; lower creativity, higher consistency.
-- [ ] `app/ai/prompts/custom.py` — catch-all.
-- [ ] `app/ai/prompts/intent.py` — intent classifier prompt. Categories: `new_post_request`, `approval`, `edit_request`, `cancellation`, `greeting`, `unclear`. Output forced JSON via Claude tool use.
-- [ ] `app/ai/generator.py`:
-  - [ ] `async def generate_post(category: ContentCategory, context: dict, user_message: str, image_bytes: bytes | None) -> GeneratedPost` — returns `GeneratedPost(caption: str, hashtags: list[str], template_variant: str, rationale: str)`.
-  - [ ] Tool use forces structured JSON output (no regex parsing of free text).
-  - [ ] When `image_bytes` provided, attached as vision input.
-- [ ] `app/ai/intent.py`:
-  - [ ] `async def classify_intent(message: str, conversation_state: ConversationState) -> Intent` — returns `Intent(type: IntentType, extracted_request: str | None, edit_feedback: str | None, confidence: float)`.
-  - [ ] Takes conversation state because "yes" means "approval" only if there's a pending draft.
-- [ ] `app/ai/editor.py`:
-  - [ ] `async def apply_edit(current_post: GeneratedPost, feedback: str, category: ContentCategory, context: dict) -> GeneratedPost` — regenerates with Karen's feedback woven in.
+- [x] `app/ai/client.py` — `Anthropic` client singleton with `claude-opus-4-7`, temperature 0.3, max_tokens tuned per call type. Retry wrapper via Tenacity (exponential backoff, max 3 attempts on 429/5xx).
+- [x] `app/ai/prompts/brand.py` — `BRAND_BLOCK` constant: company facts (30+ years, 90+ countries, 300+ suppliers, 950+ trade partners), tone rules ("professional but human, direct, confident, no corporate jargon"), color palette, explicit DON'Ts (no birthdays, no kitschy posts, no oversaturation, no off-brand colors, no news-based content, no recipes). Imported into every system prompt. Includes curated Karen-voice excerpts as few-shot tone examples.
+- [x] `app/ai/prompts/trade_show.py` — system prompt for pre/during/post trade show variants.
+- [x] `app/ai/prompts/holiday.py` — covers date-specific + month-long variants.
+- [x] `app/ai/prompts/milestone.py` — 20+ year anniversaries, draws from `employees` context.
+- [x] `app/ai/prompts/founding_anniversary.py` — Nov 5 Globex Founding Day special case.
+- [x] `app/ai/prompts/stats.py` — number-driven posts.
+- [x] `app/ai/prompts/announcement.py` — new hires, partnerships, news.
+- [x] `app/ai/prompts/product_spotlight.py` — uses animal/grain asset context.
+- [x] `app/ai/prompts/promotional.py` — awareness, packaging launches.
+- [x] `app/ai/prompts/branded_packaging.py` — pulls fixed copy from `branded_packaging_rotation` and lightly varies; lower creativity, higher consistency.
+- [x] `app/ai/prompts/custom.py` — catch-all.
+- [x] `app/ai/prompts/intent.py` — intent classifier prompt. Categories: `new_post_request`, `approval`, `edit_request`, `cancellation`, `greeting`, `unclear`. Output forced JSON via Claude tool use.
+- [x] `app/ai/generator.py`:
+  - [x] `async def generate_post(category: ContentCategory, context: dict, user_message: str, image_bytes: bytes | None) -> GeneratedPost` — returns `GeneratedPost(caption: str, hashtags: list[str], template_variant: str, rationale: str)`.
+  - [x] Tool use forces structured JSON output (no regex parsing of free text).
+  - [x] When `image_bytes` provided, attached as vision input.
+- [x] `app/ai/intent.py`:
+  - [x] `async def classify_intent(message: str, conversation_state: ConversationState) -> Intent` — returns `Intent(type: IntentType, extracted_request: str | None, edit_feedback: str | None, confidence: float)`.
+  - [x] Takes conversation state because "yes" means "approval" only if there's a pending draft.
+- [x] `app/ai/editor.py`:
+  - [x] `async def apply_edit(current_post: GeneratedPost, feedback: str, category: ContentCategory, context: dict) -> GeneratedPost` — regenerates with Karen's feedback woven in.
 
 ### Acceptance criteria
-- [ ] `pytest tests/test_generator.py` — for each of 10 categories, given fixed input, output passes schema validation and contains caption + hashtags + template_variant.
-- [ ] `pytest tests/test_intent.py` — golden set of 30+ message examples (real Karen-style phrasings drawn from the WhatsApp chat) classify correctly. Cases: "approve", "yes", "looks good", "nope", "make it shorter", "change the headline to X", "post about us at SIAL", "wait nvm", "hi", plus Karen's awkward phrasings ("Like 1?", "Got it", etc.).
-- [ ] Vision test: feed sample photo from `tests/fixtures/photos/` + "post about us at SIAL Paris" → caption mentions SIAL and visible booth context (no hallucinated specifics).
-- [ ] Brand voice test: generated posts never contain birthday wishes, kitschy emojis, news-based references, recipe content, or off-brand colors (assert by lint rule on outputs).
+- [x] `pytest tests/test_generator.py` — for each of 10 categories, given fixed input, output passes schema validation and contains caption + hashtags + template_variant.
+- [x] `pytest tests/test_intent.py` — golden set of 30+ message examples (real Karen-style phrasings drawn from the WhatsApp chat) classify correctly. Cases: "approve", "yes", "looks good", "nope", "make it shorter", "change the headline to X", "post about us at SIAL", "wait nvm", "hi", plus Karen's awkward phrasings ("Like 1?", "Got it", etc.).
+- [x] Vision test: feed sample photo from `tests/fixtures/photos/` + "post about us at SIAL Paris" → caption mentions SIAL and visible booth context (no hallucinated specifics).
+- [x] Brand voice test: generated posts never contain birthday wishes, kitschy emojis, news-based references, recipe content, or off-brand colors (assert by lint rule on outputs).
 
 **Dependencies:** Phase 1.
 **Complexity:** High. Prompt engineering is iterative — expect 2-3 tuning passes per category. Brand voice is subjective; build a small "Karen would approve / Karen would reject" eval set early.
@@ -611,6 +611,15 @@ Phase 0 generates `docs/missing_assets.md`. Send Karen ONE consolidated email �
 ## Progress Log
 
 Dated notes as work gets done. Newest at top. Include: what landed, what surprised you, what's queued next.
+
+### 2026-06-03 — Phase 2 complete (Claude AI Engine)
+- **Landed:** async Anthropic client + forced-tool-use structured-output helper; `BRAND_BLOCK` (single source of brand voice) + 10 category prompts + intent prompt; `generator.generate_post` (with vision), `intent.classify_intent` (state-aware), `editor.apply_edit`; reusable `brand_check` lint.
+- **All acceptance criteria PASS:** ruff + mypy clean (35 files); 13 always-on deterministic tests; **35 live tests** — a 33-case state-aware intent golden set + 10/10 category generations + vision, every generation brand-lint-clean. Sample copy reviewed by eye: on-voice, fact-grounded, zero violations.
+- **Deviations (Opus 4.7 reality vs the plan):** the plan said "temperature 0.3", but Opus 4.7 **removed** `temperature`/`top_p`/`top_k` (400 if sent) — brand consistency now comes from the prompt + forced schema, not a sampling knob. Structured output uses **forced `tool_choice` + Pydantic validation** (not `output_config.format`, which isn't guaranteed on 4.7). API retries use the SDK's built-in `max_retries`, not a separate Tenacity wrapper.
+- **Brand-voice source (important):** the WhatsApp export turned out to be the ElevateAIo **internal team** chat — Karen isn't a participant — so there were NO authentic Karen phrasings to mine. `BRAND_BLOCK` is built from CLAUDE.md rules + two in-house **style-anchor** captions (clearly NOT attributed to Karen). **ACTION:** collect real Karen-approved captions post-launch → they become the few-shot set + the eval reference. Content direction extracted from the chat: Len wants every angle advertised (incl. duck, pet food, packaging); news content confirmed OUT.
+- **Cost control:** live AI tests are gated behind `RUN_AI_LIVE` (real Opus calls cost ~$1/run). Default `pytest` runs 13 fast deterministic tests and skips 46 live ones. Run live with `RUN_AI_LIVE=1`.
+- **Model:** `claude-opus-4-7` via `settings.claude_model`; bumping to `claude-opus-4-8` (latest, same API surface) is a one-line `.env` change.
+- **Queued next:** Phase 3 (Template Rendering, Playwright HTML→PNG). Logo-based templates can proceed; full set still blocked on the re-extracted asset ZIP (animals/packaging/grains/30-year).
 
 ### 2026-06-03 — Phase 1 complete (Foundation)
 - **Landed:** FastAPI app (config, JSON logging w/ correlation IDs, lifespan + correlation-id middleware), Supabase client + 8-table `schema.sql`, 7 typed query helpers, `apply_schema.py` (psycopg DDL) + idempotent `seed_db.py`, integration CRUD tests, README, pinned deps.
