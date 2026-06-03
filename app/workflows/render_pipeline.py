@@ -36,6 +36,8 @@ _CONTEXT_SLOTS = (
     "sig",
 )
 _FALLBACK_VARIANT = "promotional"
+# Templates that render an attached photo as the full-bleed background.
+_PHOTO_CAPABLE = {"custom", "trade_show_during"}
 
 
 def build_slots(post: GeneratedPost, context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -70,7 +72,15 @@ async def render_and_store(
     photo_media_type: str = "image/jpeg",
 ) -> str:
     slots = build_slots(post, context)
+    variant = resolve_variant(post.template_variant)
     if photo_bytes is not None:
         slots["photo"] = image_data_uri(photo_bytes, photo_media_type)
-    png = await render_mod.renderer.render(resolve_variant(post.template_variant), slots)
+        # A supplied photo must be used: if the model chose a text-only template
+        # (e.g. "stats" for "150 ships"), switch to a photo template so the image shows.
+        if variant not in _PHOTO_CAPABLE:
+            log.info(
+                "photo attached; using photo template", extra={"from": variant, "to": "custom"}
+            )
+            variant = "custom"
+    png = await render_mod.renderer.render(variant, slots)
     return await storage.upload_png(post_id, png)
