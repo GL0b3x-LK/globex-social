@@ -116,9 +116,14 @@ def harness(monkeypatch):
         "app.messaging.twilio_client.send_media",
         lambda to, body, url, **k: _async(sent_media.append((to, body, url))),
     )
-    monkeypatch.setattr(
-        "app.publishing.publisher.publish_post", lambda pid: _async(published.append(pid))
-    )
+    async def _fake_publish(pid):
+        published.append(pid)
+        from app.publishing.blotato import PublishResult
+        from app.publishing.platforms import Platform
+
+        return {Platform.instagram: PublishResult(Platform.instagram, True, url="https://ig/p")}
+
+    monkeypatch.setattr("app.publishing.publisher.publish_post", _fake_publish)
     monkeypatch.setattr(
         "app.workflows.on_demand.get_settings",
         lambda: SimpleNamespace(authorized_numbers_list=[PHONE]),
@@ -526,3 +531,27 @@ async def test_video_processing_failure_is_friendly(harness, monkeypatch) -> Non
     await on_demand.handle_incoming_message(PHONE, "post this clip", _VIDEO)
     assert any("couldn't process that video" in body for _, body in harness.sent_text)
     assert not harness.sent_media  # nothing sent on failure
+
+
+# --- Per-post platform targeting ("post this only to LinkedIn"). ---
+
+
+async def test_targeting_only_linkedin_is_captured_and_shown(harness) -> None:
+    await on_demand.handle_incoming_message(PHONE, "post about Q3 results only to linkedin", [])
+    pid = harness.convos[PHONE]["current_post_id"]
+    assert harness.posts[pid]["target_platforms"] == ["linkedin"]  # stored on the post
+    assert harness.convos[PHONE]["context"]["target_platforms"] == ["linkedin"]
+    assert "LinkedIn" in harness.sent_media[-1][1]  # preview shows "Posting to: LinkedIn only"
+
+
+async def test_no_platform_named_leaves_default(harness) -> None:
+    await on_demand.handle_incoming_message(PHONE, "post about us at SIAL Paris", [])
+    pid = harness.convos[PHONE]["current_post_id"]
+    assert "target_platforms" not in harness.posts[pid]  # untouched → default (all)
+    assert "Posting to" not in harness.sent_media[-1][1]  # no narrowing note
+
+
+async def test_approval_reports_per_platform_status(harness) -> None:
+    await on_demand.handle_incoming_message(PHONE, "post about us at SIAL Paris", [])
+    await on_demand.handle_incoming_message(PHONE, "approve", [])
+    assert any("Published" in body and "Instagram" in body for _, body in harness.sent_text)

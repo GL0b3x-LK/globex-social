@@ -45,8 +45,9 @@ class Settings(BaseSettings):
     authorized_numbers: str  # comma-separated; parsed via authorized_numbers_list
     twilio_validate_signature: bool = True  # verify X-Twilio-Signature; disable only in dev
 
-    # --- Blotato ---
+    # --- Blotato (publishing to IG/FB/LinkedIn) ---
     blotato_api_key: str
+    blotato_base_url: str = "https://backend.blotato.com/v2"
 
     # --- Supabase ---
     supabase_url: str

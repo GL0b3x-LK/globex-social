@@ -142,6 +142,10 @@ create index if not exists idx_messages_twilio_sid on messages (twilio_sid);
 -- edited exactly as when it was first drafted.
 alter table posts add column if not exists render_meta jsonb;
 
+-- Which platforms this post should publish to (null = all connected). Lets Karen
+-- say "post this only to LinkedIn" and have it skip the others.
+alter table posts add column if not exists target_platforms text[];
+
 -- ---------------------------------------------------------------------------
 -- branded_packaging_rotation — finite pool of 20 pre-designed posts.
 -- ---------------------------------------------------------------------------

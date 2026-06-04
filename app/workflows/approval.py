@@ -15,6 +15,7 @@ from app.db import approvals, posts, storage
 from app.logging_config import get_logger
 from app.messaging import conversation, twilio_client
 from app.messaging.conversation import ConversationState
+from app.publishing import platforms as plat
 from app.publishing import publisher
 from app.workflows import messages, render_pipeline
 
@@ -38,29 +39,45 @@ def _render_meta(
     return meta
 
 
-async def handle_approval(phone: str, convo: Row) -> None:
+async def handle_approval(
+    phone: str, convo: Row, target_platforms: list[plat.Platform] | None = None
+) -> None:
     post_id = convo.get("current_post_id")
     if not post_id:
         await twilio_client.send_text(phone, messages.NOTHING_PENDING)
         return
+    # Last-chance platform override at approval ("approve — just LinkedIn").
+    if target_platforms:
+        await asyncio.to_thread(
+            posts.set_target_platforms, post_id, [p.value for p in target_platforms]
+        )
     await asyncio.to_thread(posts.set_status, post_id, "approved")
     await asyncio.to_thread(approvals.record, post_id, "approved")
-    await publisher.publish_post(post_id)  # Phase 5 performs the real multi-platform publish
+    results = await publisher.publish_post(post_id)  # real multi-platform publish via Blotato
     await conversation.transition(phone, state=ConversationState.IDLE)
     await conversation.clear_post(phone)
-    await twilio_client.send_text(
-        phone, "✅ Approved. Publishing to Instagram, Facebook, and LinkedIn."
-    )
+    await twilio_client.send_text(phone, messages.publish_status(results))
     log.info("post approved", extra={"post_id": post_id})
 
 
-async def handle_edit_request(phone: str, convo: Row, feedback: str) -> None:
+async def handle_edit_request(
+    phone: str,
+    convo: Row,
+    feedback: str,
+    target_platforms: list[plat.Platform] | None = None,
+) -> None:
     post_id = convo.get("current_post_id")
     context = convo.get("context") or {}
     stored = context.get("generated")
     if not post_id or not stored:
         await twilio_client.send_text(phone, messages.NOTHING_PENDING)
         return
+
+    # Platform change mid-draft ("actually just LinkedIn") — update the target now.
+    if target_platforms:
+        await asyncio.to_thread(
+            posts.set_target_platforms, post_id, [p.value for p in target_platforms]
+        )
 
     current = GeneratedPost(**stored)
     if context.get("treatment") == "generated_image":

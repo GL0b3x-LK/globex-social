@@ -80,6 +80,11 @@ def set_render_meta(post_id: str, render_meta: dict[str, Any]) -> Row:
     return update(post_id, render_meta=render_meta)
 
 
+def set_target_platforms(post_id: str, platforms: list[str]) -> Row:
+    """Set which platforms a post publishes to (e.g. ['linkedin'])."""
+    return update(post_id, target_platforms=platforms)
+
+
 def find_for_event(event_id: str, event_type: str) -> Row | None:
     """Scheduler idempotency: has a post already been made for this event?"""
     return maybe_row(

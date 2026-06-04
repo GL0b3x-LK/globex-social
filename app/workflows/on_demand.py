@@ -21,6 +21,7 @@ from app.messaging import conversation, history, media, transcription, twilio_cl
 from app.messaging.conversation import ConversationState
 from app.messaging.state_machine import Action, route
 from app.messaging.transcription import Outcome
+from app.publishing import platforms as plat
 from app.templates import renderer as render_mod
 from app.workflows import approval, messages, render_pipeline
 
@@ -118,6 +119,9 @@ async def handle_incoming_message(
         convo = await conversation.get_or_create(from_phone)
         state = conversation.state_of(convo)
 
+    # "post this only to LinkedIn" — platforms named in the message (None = unchanged).
+    requested_platforms = plat.parse_platforms(body)
+
     action = route(state, intent.type)
     log.info(
         "routing message",
@@ -126,12 +130,19 @@ async def handle_incoming_message(
 
     if action is Action.GENERATE:
         await _generate_and_preview(
-            from_phone, intent.extracted_request or body, photo, clip, memory=memory
+            from_phone,
+            intent.extracted_request or body,
+            photo,
+            clip,
+            memory=memory,
+            target_platforms=requested_platforms,
         )
     elif action is Action.APPROVE:
-        await approval.handle_approval(from_phone, convo)
+        await approval.handle_approval(from_phone, convo, target_platforms=requested_platforms)
     elif action is Action.EDIT:
-        await approval.handle_edit_request(from_phone, convo, intent.edit_feedback or body)
+        await approval.handle_edit_request(
+            from_phone, convo, intent.edit_feedback or body, target_platforms=requested_platforms
+        )
     elif action is Action.CANCEL:
         await approval.handle_cancellation(from_phone, convo)
     elif action is Action.ANSWER:
@@ -250,6 +261,7 @@ async def _generate_and_preview(
     *,
     allow_clarify: bool = True,
     memory: str | None = None,
+    target_platforms: list[plat.Platform] | None = None,
 ) -> None:
     """Route a new-post request to the right visual treatment, then preview it.
 
@@ -258,10 +270,14 @@ async def _generate_and_preview(
     image (with the brand overlay), or a clarifying question when ambiguous.
     """
     if clip:
-        await _preview_vhs_video(from_phone, request_text, clip, memory=memory)
+        await _preview_vhs_video(
+            from_phone, request_text, clip, memory=memory, target_platforms=target_platforms
+        )
         return
     if photo:
-        await _preview_with_user_photo(from_phone, request_text, photo, memory=memory)
+        await _preview_with_user_photo(
+            from_phone, request_text, photo, memory=memory, target_platforms=target_platforms
+        )
         return
 
     plan = await visual_planner.plan_visual(request_text, memory)
@@ -279,12 +295,24 @@ async def _generate_and_preview(
         return
 
     if plan.treatment == "generated_image" and plan.image_prompt:
-        await _preview_generated(from_phone, request_text, plan.image_prompt, memory=memory)
+        await _preview_generated(
+            from_phone,
+            request_text,
+            plan.image_prompt,
+            memory=memory,
+            target_platforms=target_platforms,
+        )
         return
 
     # typographic — the default, and the fallback when a re-ask stays unsure
     generated = await generator.generate_freeform(request_text, memory=memory)
-    await _finalize_preview(from_phone, request_text, generated, treatment="typographic")
+    await _finalize_preview(
+        from_phone,
+        request_text,
+        generated,
+        treatment="typographic",
+        target_platforms=target_platforms,
+    )
 
 
 async def _resolve_visual_clarification(from_phone: str, pending_request: str, answer: str) -> None:
@@ -308,7 +336,12 @@ async def _resolve_visual_clarification(from_phone: str, pending_request: str, a
 
 
 async def _preview_with_user_photo(
-    from_phone: str, request_text: str, photo: Media, *, memory: str | None = None
+    from_phone: str,
+    request_text: str,
+    photo: Media,
+    *,
+    memory: str | None = None,
+    target_platforms: list[plat.Platform] | None = None,
 ) -> None:
     """Karen attached a photo: render it on the template (today's behaviour)."""
     photo_bytes: bytes | None = None
@@ -328,11 +361,17 @@ async def _preview_with_user_photo(
         image_bytes=photo_bytes,
         image_media_type=photo_type,
         treatment="user_photo",
+        target_platforms=target_platforms,
     )
 
 
 async def _preview_generated(
-    from_phone: str, request_text: str, image_prompt: str, *, memory: str | None = None
+    from_phone: str,
+    request_text: str,
+    image_prompt: str,
+    *,
+    memory: str | None = None,
+    target_platforms: list[plat.Platform] | None = None,
 ) -> None:
     """Generate an image via kie.ai, then overlay the brand template on it."""
     await twilio_client.send_text(from_phone, messages.GENERATING_IMAGE)
@@ -341,7 +380,13 @@ async def _preview_generated(
     if not result.ok or not result.image_bytes:
         # Don't leave Karen hanging — fall back to a designed version.
         await twilio_client.send_text(from_phone, messages.IMAGE_GEN_FAILED)
-        await _finalize_preview(from_phone, request_text, generated, treatment="typographic")
+        await _finalize_preview(
+            from_phone,
+            request_text,
+            generated,
+            treatment="typographic",
+            target_platforms=target_platforms,
+        )
         return
     await _finalize_preview(
         from_phone,
@@ -352,11 +397,17 @@ async def _preview_generated(
         raw_image_bytes=result.image_bytes,
         treatment="generated_image",
         image_prompt=image_prompt,
+        target_platforms=target_platforms,
     )
 
 
 async def _preview_vhs_video(
-    from_phone: str, request_text: str, clip: Media, *, memory: str | None = None
+    from_phone: str,
+    request_text: str,
+    clip: Media,
+    *,
+    memory: str | None = None,
+    target_platforms: list[plat.Platform] | None = None,
 ) -> None:
     """Composite the VHS HUD overlay onto Karen's submitted video, then preview it."""
     await twilio_client.send_text(from_phone, messages.PROCESSING_VIDEO)
@@ -393,22 +444,33 @@ async def _preview_vhs_video(
         post_id,
         {"generated": generated.model_dump(), "treatment": "vhs_video", "media_url": media_url},
     )
+    context_patch: dict[str, Any] = {
+        "generated": generated.model_dump(),
+        "request": request_text,
+        "treatment": "vhs_video",
+        "media_url": media_url,
+        "pending_request": None,
+    }
+    await _apply_target(post_id, target_platforms, context_patch)
     await conversation.transition(
         from_phone,
         state=ConversationState.AWAITING_APPROVAL,
         current_post_id=post_id,
-        context_patch={
-            "generated": generated.model_dump(),
-            "request": request_text,
-            "treatment": "vhs_video",
-            "media_url": media_url,
-            "pending_request": None,
-        },
+        context_patch=context_patch,
     )
-    await twilio_client.send_media(
-        from_phone, messages.preview_caption(generated), media_url, post_id=post_id
-    )
+    caption = messages.preview_caption(generated) + messages.target_note(target_platforms)
+    await twilio_client.send_media(from_phone, caption, media_url, post_id=post_id)
     log.info("vhs video preview sent", extra={"post_id": post_id})
+
+
+async def _apply_target(
+    post_id: str, target_platforms: list[plat.Platform] | None, context_patch: dict[str, Any]
+) -> None:
+    """Persist an explicit platform target on the post + conversation context."""
+    if target_platforms:
+        values = [p.value for p in target_platforms]
+        await asyncio.to_thread(posts.set_target_platforms, post_id, values)
+        context_patch["target_platforms"] = values
 
 
 async def _finalize_preview(
@@ -421,6 +483,7 @@ async def _finalize_preview(
     raw_image_bytes: bytes | None = None,
     treatment: str = "typographic",
     image_prompt: str | None = None,
+    target_platforms: list[plat.Platform] | None = None,
 ) -> None:
     """Create the post, render (with overlay if an image is present), store, and preview."""
     post = await asyncio.to_thread(
@@ -462,6 +525,7 @@ async def _finalize_preview(
         context_patch["image_prompt"] = image_prompt
     if raw_image_url is not None:
         context_patch["raw_image_url"] = raw_image_url
+    await _apply_target(post_id, target_platforms, context_patch)
 
     await conversation.transition(
         from_phone,
@@ -469,7 +533,8 @@ async def _finalize_preview(
         current_post_id=post_id,
         context_patch=context_patch,
     )
-    await twilio_client.send_media(from_phone, messages.preview_caption(generated), image_url)
+    caption = messages.preview_caption(generated) + messages.target_note(target_platforms)
+    await twilio_client.send_media(from_phone, caption, image_url)
     log.info(
         "preview sent",
         extra={"post_id": post_id, "variant": generated.template_variant, "treatment": treatment},

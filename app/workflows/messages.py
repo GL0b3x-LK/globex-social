@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.ai.generator import GeneratedPost
+from app.publishing import platforms as plat
 
 GREETING = (
     'Hi! Tell me what you\'d like to post — e.g. "post about us at Gulfood" or a '
@@ -62,3 +65,33 @@ def preview_caption(post: GeneratedPost) -> str:
     """The WhatsApp text sent alongside the preview image."""
     body = f"{post.caption}\n\n{' '.join(post.hashtags)}".strip()
     return f"{body}\n\n— Reply *approve* to publish, send an edit, or *cancel*."
+
+
+def target_note(platforms: list[plat.Platform] | None) -> str:
+    """A line shown on the preview when posting is narrowed to specific platforms."""
+    if not platforms or set(platforms) == set(plat.ALL):
+        return ""
+    return f"\n\n📲 Posting to: {plat.label(platforms)} only."
+
+
+_PLATFORM_NAMES = {
+    plat.Platform.instagram: "Instagram",
+    plat.Platform.facebook: "Facebook",
+    plat.Platform.linkedin: "LinkedIn",
+}
+
+
+def publish_status(results: dict[Any, Any]) -> str:
+    """Build Karen's confirmation, e.g. 'Published: Instagram ✓ · LinkedIn ✗'."""
+    if not results:
+        return "Nothing to publish."
+    parts = []
+    for platform, res in results.items():
+        name = _PLATFORM_NAMES.get(platform, str(platform))
+        if res.success:
+            parts.append(f"{name} ✓")
+        elif res.error and "not connected" in res.error:
+            parts.append(f"{name} — not connected")
+        else:
+            parts.append(f"{name} ✗ (will retry)")
+    return "✅ Approved.\nPublished: " + "  ".join(parts)
