@@ -1,0 +1,9 @@
+# Railway (nixpacks) build configuration.
+#
+# ffmpeg is REQUIRED at runtime for the VHS video pipeline (compositing the HUD
+# overlay onto Karen's submitted video — see app/messaging/video.py).
+# Playwright Chromium (image rendering) is installed via the start/build steps in
+# Phase 8's full deploy setup; this file currently just pins the system packages
+# the app needs beyond the Python deps.
+[phases.setup]
+aptPkgs = ["ffmpeg"]

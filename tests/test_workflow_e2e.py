@@ -102,7 +102,7 @@ def harness(monkeypatch):
     monkeypatch.setattr("app.ai.editor.apply_edit", lambda *a, **k: _async(_REVISED))
     monkeypatch.setattr(
         "app.messaging.media.download_twilio_media",
-        lambda url: _async((b"fake-image-bytes", "image/jpeg")),
+        lambda url, **k: _async((b"fake-image-bytes", "image/jpeg")),
     )
     monkeypatch.setattr(
         "app.workflows.render_pipeline.render_and_store",
@@ -151,6 +151,14 @@ def harness(monkeypatch):
     monkeypatch.setattr(
         "app.db.posts.set_render_meta",
         lambda pid, meta: posts_store[pid].update({"render_meta": meta}),
+    )
+    # VHS video seams — overlay render, ffmpeg composite, and video upload.
+    monkeypatch.setattr(
+        "app.templates.renderer.renderer.render_file", lambda *a, **k: _async(b"overlaypng")
+    )
+    monkeypatch.setattr("app.messaging.video.composite_vhs", lambda *a, **k: _async(b"mp4bytes"))
+    monkeypatch.setattr(
+        "app.db.storage.upload_video", lambda pid, b: _async(f"https://vid.test/{pid}.mp4")
     )
     return SimpleNamespace(
         convos=convos,
@@ -475,3 +483,46 @@ async def test_swipe_reply_with_unknown_sid_degrades(harness, monkeypatch) -> No
     )
     assert len(harness.sent_media) == 1  # treated as a normal new request
     assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+# --- VHS video pipeline: Karen's video → HUD overlay composited → video post. ---
+
+_VIDEO = [("https://media.twiliocdn.test/clip.mp4", "video/mp4")]
+
+
+async def test_video_message_renders_vhs_and_previews(harness) -> None:
+    await on_demand.handle_incoming_message(PHONE, "post this from the floor", _VIDEO)
+    assert any("Processing your video" in body for _, body in harness.sent_text)  # interim
+    assert harness.sent_media and harness.sent_media[-1][2].endswith(".mp4")  # video preview
+    convo = harness.convos[PHONE]
+    assert convo["state"] == "awaiting_approval"
+    assert convo["context"]["treatment"] == "vhs_video"
+    assert convo["context"]["media_url"].endswith(".mp4")
+
+
+async def test_video_only_message_still_generates(harness) -> None:
+    await on_demand.handle_incoming_message(PHONE, "", _VIDEO)  # no caption
+    assert harness.sent_media and harness.sent_media[-1][2].endswith(".mp4")
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+async def test_vhs_caption_edit_keeps_the_video(harness, monkeypatch) -> None:
+    await on_demand.handle_incoming_message(PHONE, "post this from the floor", _VIDEO)
+    composite_calls: list = []
+
+    async def _fake_comp(*a, **k):
+        composite_calls.append(1)
+        return b"mp4bytes"
+
+    monkeypatch.setattr("app.messaging.video.composite_vhs", _fake_comp)
+    await on_demand.handle_incoming_message(PHONE, "make it shorter", [])
+    assert not composite_calls  # a caption edit does NOT re-composite the video
+    assert harness.convos[PHONE]["context"]["generated"]["caption"] == "Shorter."
+    assert harness.sent_media[-1][2].endswith(".mp4")  # same clip re-sent
+
+
+async def test_video_processing_failure_is_friendly(harness, monkeypatch) -> None:
+    monkeypatch.setattr("app.messaging.video.composite_vhs", lambda *a, **k: _async(None))
+    await on_demand.handle_incoming_message(PHONE, "post this clip", _VIDEO)
+    assert any("couldn't process that video" in body for _, body in harness.sent_text)
+    assert not harness.sent_media  # nothing sent on failure

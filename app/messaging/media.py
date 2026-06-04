@@ -15,10 +15,13 @@ from app.logging_config import get_logger
 log = get_logger("app.messaging.media")
 
 
-async def download_twilio_media(url: str) -> tuple[bytes, str]:
-    """Fetch a Twilio media URL; return (bytes, content_type). Raises on HTTP error."""
+async def download_twilio_media(url: str, *, timeout: float = 10.0) -> tuple[bytes, str]:
+    """Fetch a Twilio media URL; return (bytes, content_type). Raises on HTTP error.
+
+    `timeout` is bumped for video (larger payloads) vs photos/voice notes.
+    """
     settings = get_settings()
-    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
         resp = await client.get(url, auth=(settings.twilio_account_sid, settings.twilio_auth_token))
         resp.raise_for_status()
     content_type = resp.headers.get("content-type", "application/octet-stream")

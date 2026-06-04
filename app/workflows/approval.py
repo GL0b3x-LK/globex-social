@@ -66,6 +66,9 @@ async def handle_edit_request(phone: str, convo: Row, feedback: str) -> None:
     if context.get("treatment") == "generated_image":
         await _edit_generated_image(phone, post_id, current, feedback, context)
         return
+    if context.get("treatment") == "vhs_video":
+        await _edit_vhs_caption(phone, post_id, current, feedback, context)
+        return
 
     await conversation.transition(phone, state=ConversationState.EDITING)
     revised = await editor.apply_edit(
@@ -180,6 +183,42 @@ async def _edit_generated_image(
     )
     await twilio_client.send_media(phone, messages.preview_caption(revised), image_url)
     log.info("text edit applied to generated-image post", extra={"post_id": post_id})
+
+
+async def _edit_vhs_caption(
+    phone: str, post_id: str, current: GeneratedPost, feedback: str, context: Row
+) -> None:
+    """A VHS video post supports caption edits only — the rendered clip is preserved."""
+    media_url = str(context.get("media_url") or "")
+    await conversation.transition(phone, state=ConversationState.EDITING)
+    revised = await editor.apply_edit(
+        current, feedback, context={"request": context.get("request")}
+    )
+    await asyncio.to_thread(
+        posts.update,
+        post_id,
+        caption=revised.caption,
+        hashtags=revised.hashtags,
+        template_type="vhs",
+    )
+    await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
+    await asyncio.to_thread(
+        posts.set_render_meta,
+        post_id,
+        {**_render_meta(revised, treatment="vhs_video"), "media_url": media_url},
+    )
+    await conversation.transition(
+        phone,
+        state=ConversationState.AWAITING_APPROVAL,
+        context_patch={"generated": revised.model_dump()},
+    )
+    if media_url:
+        await twilio_client.send_media(
+            phone, messages.preview_caption(revised), media_url, post_id=post_id
+        )
+    else:  # shouldn't happen — fall back to text so Karen still sees the revised copy
+        await twilio_client.send_text(phone, messages.preview_caption(revised))
+    log.info("vhs caption edit applied", extra={"post_id": post_id})
 
 
 async def handle_cancellation(phone: str, convo: Row) -> None:

@@ -65,6 +65,37 @@ class Renderer:
         context = {"theme": spec.theme, **slots}
         return self._env.get_template(spec.file).render(**context)
 
+    async def render_file(
+        self,
+        template_file: str,
+        context: dict[str, Any],
+        *,
+        dimensions: tuple[int, int],
+        transparent: bool = False,
+        scale: float = 1.0,
+    ) -> bytes:
+        """Render an HTML file directly (not catalog-bound) to a PNG.
+
+        Used for the VHS video overlay: a transparent 9:16 HUD composited onto
+        Karen's video by ffmpeg. `transparent=True` keeps the page background clear
+        (omit_background) so only the HUD elements paint.
+        """
+        if self._browser is None:
+            raise RuntimeError("Renderer not started — call await renderer.start() first.")
+        html = self._env.get_template(template_file).render(**context)
+        width, height = dimensions
+        page = await self._browser.new_page(
+            viewport={"width": width, "height": height}, device_scale_factor=scale
+        )
+        try:
+            await page.set_content(html, wait_until="networkidle")
+            await page.evaluate("() => document.fonts.ready")
+            return await page.screenshot(
+                type="png", omit_background=transparent, animations="disabled"
+            )
+        finally:
+            await page.close()
+
     async def render(
         self,
         template_variant: str,

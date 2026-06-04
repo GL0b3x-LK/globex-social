@@ -53,6 +53,10 @@ VISUAL_CLARIFY_DEFAULT = (
     "Want this as a designed graphic, or should I generate a photo-style image for it?"
 )
 
+# --- VHS video ---
+PROCESSING_VIDEO = "🎬 Processing your video… this can take a minute."
+VIDEO_FAILED = "🎬 I couldn't process that video — mind resending it, or sending a shorter clip?"
+
 
 def preview_caption(post: GeneratedPost) -> str:
     """The WhatsApp text sent alongside the preview image."""

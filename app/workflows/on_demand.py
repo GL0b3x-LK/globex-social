@@ -17,11 +17,16 @@ from app.ai.intent import Intent, IntentType
 from app.config import get_settings
 from app.db import approvals, posts, storage
 from app.logging_config import get_logger
-from app.messaging import conversation, history, media, transcription, twilio_client
+from app.messaging import conversation, history, media, transcription, twilio_client, video
 from app.messaging.conversation import ConversationState
 from app.messaging.state_machine import Action, route
 from app.messaging.transcription import Outcome
+from app.templates import renderer as render_mod
 from app.workflows import approval, messages, render_pipeline
+
+# VHS HUD overlay (transparent 9:16), composited onto Karen's video by ffmpeg.
+_VHS_OVERLAY_FILE = "_vhs_overlay.html"
+_VHS_DIMENSIONS = (1080, 1920)
 
 log = get_logger("app.workflows.on_demand")
 
@@ -54,9 +59,10 @@ async def handle_incoming_message(
         return
 
     # Split attachments by kind: a voice note becomes the instruction text; a photo
-    # is something to render the post on. Both can arrive in one message.
+    # renders on a template; a video gets the VHS treatment. Can co-arrive.
     audio = [m for m in media if m[1].startswith("audio/")]
     photo = next((m for m in media if m[1].startswith("image/")), None)
+    clip = next((m for m in media if m[1].startswith("video/")), None)
 
     if audio:
         transcript = await _transcribe_voice(from_phone, audio[0])
@@ -70,7 +76,7 @@ async def handle_incoming_message(
         body=body or None,
         twilio_sid=message_sid,
         media_url=(media[0][0] if media else None),
-        kind="voice" if audio else ("image" if photo else "text"),
+        kind="voice" if audio else ("image" if photo else ("video" if clip else "text")),
     )
 
     convo = await conversation.get_or_create(from_phone)
@@ -87,9 +93,9 @@ async def handle_incoming_message(
     memory = await ai_memory.build_context(from_phone, (convo.get("context") or {}).get("summary"))
 
     intent = await ai_intent.classify_intent(body, state.value, memory)
-    # A photo with no clear text is still a request to build a post from it — don't
-    # let an image-only message fall through to "clarify".
-    if photo and intent.type in (IntentType.greeting, IntentType.unclear):
+    # An attached photo/video with no clear text is still a request to build a post
+    # from it — don't let a media-only message fall through to "clarify".
+    if (photo or clip) and intent.type in (IntentType.greeting, IntentType.unclear):
         intent = Intent(
             type=IntentType.new_post_request,
             extracted_request=body or None,
@@ -120,7 +126,7 @@ async def handle_incoming_message(
 
     if action is Action.GENERATE:
         await _generate_and_preview(
-            from_phone, intent.extracted_request or body, photo, memory=memory
+            from_phone, intent.extracted_request or body, photo, clip, memory=memory
         )
     elif action is Action.APPROVE:
         await approval.handle_approval(from_phone, convo)
@@ -240,16 +246,20 @@ async def _generate_and_preview(
     from_phone: str,
     request_text: str,
     photo: Media | None,
+    clip: Media | None = None,
     *,
     allow_clarify: bool = True,
     memory: str | None = None,
 ) -> None:
     """Route a new-post request to the right visual treatment, then preview it.
 
-    A photo keeps today's path. Text-only requests are planned: a designed
-    typographic template (default), a generated image (with the brand overlay), or
-    a clarifying question when it's genuinely ambiguous.
+    A video gets the VHS treatment; a photo renders on a template. Text-only
+    requests are planned: a designed typographic template (default), a generated
+    image (with the brand overlay), or a clarifying question when ambiguous.
     """
+    if clip:
+        await _preview_vhs_video(from_phone, request_text, clip, memory=memory)
+        return
     if photo:
         await _preview_with_user_photo(from_phone, request_text, photo, memory=memory)
         return
@@ -343,6 +353,62 @@ async def _preview_generated(
         treatment="generated_image",
         image_prompt=image_prompt,
     )
+
+
+async def _preview_vhs_video(
+    from_phone: str, request_text: str, clip: Media, *, memory: str | None = None
+) -> None:
+    """Composite the VHS HUD overlay onto Karen's submitted video, then preview it."""
+    await twilio_client.send_text(from_phone, messages.PROCESSING_VIDEO)
+    try:
+        video_bytes, _ = await media.download_twilio_media(clip[0], timeout=60.0)
+    except Exception as exc:  # noqa: BLE001 — a fetch failure shouldn't crash the task
+        log.error("video download failed", extra={"error": str(exc)})
+        await twilio_client.send_text(from_phone, messages.VIDEO_FAILED)
+        return
+
+    overlay = await render_mod.renderer.render_file(
+        _VHS_OVERLAY_FILE, {}, dimensions=_VHS_DIMENSIONS, transparent=True, scale=1.0
+    )
+    mp4 = await video.composite_vhs(video_bytes, overlay)
+    if not mp4:
+        await twilio_client.send_text(from_phone, messages.VIDEO_FAILED)
+        return
+
+    generated = await generator.generate_freeform(request_text, memory=memory)
+    post = await asyncio.to_thread(
+        posts.create,
+        content=request_text,
+        caption=generated.caption,
+        hashtags=generated.hashtags,
+        template_type="vhs",
+        status="pending_approval",
+    )
+    post_id = post["id"]
+    await asyncio.to_thread(approvals.record, post_id, "generated")
+    media_url = await storage.upload_video(post_id, mp4)
+    await asyncio.to_thread(posts.set_image_url, post_id, media_url)
+    await asyncio.to_thread(
+        posts.set_render_meta,
+        post_id,
+        {"generated": generated.model_dump(), "treatment": "vhs_video", "media_url": media_url},
+    )
+    await conversation.transition(
+        from_phone,
+        state=ConversationState.AWAITING_APPROVAL,
+        current_post_id=post_id,
+        context_patch={
+            "generated": generated.model_dump(),
+            "request": request_text,
+            "treatment": "vhs_video",
+            "media_url": media_url,
+            "pending_request": None,
+        },
+    )
+    await twilio_client.send_media(
+        from_phone, messages.preview_caption(generated), media_url, post_id=post_id
+    )
+    log.info("vhs video preview sent", extra={"post_id": post_id})
 
 
 async def _finalize_preview(

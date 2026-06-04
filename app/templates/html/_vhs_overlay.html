@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>{{ font_face_css|safe }}</style>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: transparent;
+                 font-family: 'Montserrat', system-ui, sans-serif; }
+    .hud { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+    /* VHS scanlines + vignette (semi-transparent so the video shows through) */
+    .hud::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom, rgba(0,0,0,0.16) 0 2px, rgba(0,0,0,0) 2px 5px);
+    }
+    .hud::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at center,
+        rgba(0,0,0,0) 52%, rgba(0,0,0,0.42) 100%);
+    }
+
+    .rec {
+      position: absolute; top: 64px; left: 60px;
+      display: flex; align-items: center; gap: 24px;
+      font-weight: 800; font-size: 56px; letter-spacing: 0.08em; color: #fff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.65);
+    }
+    .rec .dot {
+      width: 42px; height: 42px; border-radius: 50%; background: #ff2b2b;
+      box-shadow: 0 0 20px rgba(255,43,43,0.9);
+    }
+    .tc {
+      position: absolute; top: 70px; right: 60px;
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 52px;
+      letter-spacing: 0.04em; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.65);
+    }
+    .date {
+      position: absolute; bottom: 76px; right: 60px; text-align: right;
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 66px;
+      line-height: 1.04; color: #ffd23f;
+      text-shadow: 0 0 16px rgba(255,210,63,0.55), 0 2px 8px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="rec"><span class="dot"></span>REC</div>
+    <div class="tc">{{ timecode | default('00:00:23:15') }}</div>
+    <div class="date">{{ date_top | default('OCT. 26, 1994') }}<br>{{ date_bottom | default('02:45 PM') }}</div>
+  </div>
+</body>
+</html>

@@ -15,12 +15,12 @@ from app.db.client import get_supabase
 BUCKET = "post-images"
 
 
-def _upload_sync(path: str, png_bytes: bytes) -> str:
+def _upload_sync(path: str, data: bytes, content_type: str = "image/png") -> str:
     sb = get_supabase()
     sb.storage.from_(BUCKET).upload(
         path,
-        png_bytes,
-        {"content-type": "image/png", "cache-control": "3600", "upsert": "true"},
+        data,
+        {"content-type": content_type, "cache-control": "3600", "upsert": "true"},
     )
     return sb.storage.from_(BUCKET).get_public_url(path)
 
@@ -33,6 +33,11 @@ async def upload_png(post_id: str | UUID, png_bytes: bytes, *, suffix: str = "")
     AI-generated image (kept so img2img edits can transform it) alongside the composite.
     """
     return await asyncio.to_thread(_upload_sync, f"{post_id}{suffix}.png", png_bytes)
+
+
+async def upload_video(post_id: str | UUID, mp4_bytes: bytes) -> str:
+    """Upload a rendered MP4 to ``post-images/{post_id}.mp4``; return its public URL."""
+    return await asyncio.to_thread(_upload_sync, f"{post_id}.mp4", mp4_bytes, "video/mp4")
 
 
 def ensure_bucket() -> None:
