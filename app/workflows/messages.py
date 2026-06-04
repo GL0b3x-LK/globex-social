@@ -38,6 +38,22 @@ def voice_heard(text: str) -> str:
     return f'🎤 Heard: "{text}"'
 
 
+# --- AI image generation ---
+GENERATING_IMAGE = "🎨 Generating your image… give me a moment (this takes ~20–30s)."
+REGENERATING_IMAGE = "🎨 Updating the image… one sec."
+IMAGE_GEN_FAILED = (
+    "🎨 I couldn't generate the image just now, so here's a designed version instead. "
+    "Reply *try again* if you'd like me to retry the image."
+)
+IMAGE_EDIT_FAILED = (
+    "🎨 I couldn't update the image just now — your current draft still stands. "
+    "Want to reword the change, or reply *approve* / *cancel*?"
+)
+VISUAL_CLARIFY_DEFAULT = (
+    "Want this as a designed graphic, or should I generate a photo-style image for it?"
+)
+
+
 def preview_caption(post: GeneratedPost) -> str:
     """The WhatsApp text sent alongside the preview image."""
     body = f"{post.caption}\n\n{' '.join(post.hashtags)}".strip()

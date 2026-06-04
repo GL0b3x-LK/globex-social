@@ -13,10 +13,14 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.ai import image_gen
 from app.ai.generator import GeneratedPost
 from app.ai.intent import Intent, IntentType
+from app.ai.visual_planner import VisualPlan
 from app.messaging.transcription import Outcome, Transcript
 from app.workflows import on_demand
+
+_TYPO_PLAN = VisualPlan(treatment="typographic", rationale="a normal text post")
 
 PHONE = "whatsapp:+19170001111"
 
@@ -117,6 +121,23 @@ def harness(monkeypatch):
         "app.workflows.on_demand.get_settings",
         lambda: SimpleNamespace(authorized_numbers_list=[PHONE]),
     )
+    # Image-generation seams — default to a plain typographic plan so the existing
+    # text/voice tests are unaffected; image tests override these.
+    monkeypatch.setattr("app.ai.visual_planner.plan_visual", lambda *a, **k: _async(_TYPO_PLAN))
+    monkeypatch.setattr(
+        "app.db.storage.upload_png",
+        lambda pid, b, **k: _async(f"https://img.test/{pid}{k.get('suffix', '')}.png"),
+    )
+    monkeypatch.setattr(
+        "app.ai.image_gen.generate",
+        lambda *a, **k: _async(image_gen.ImageResult(ok=True, image_bytes=b"genpng")),
+    )
+    monkeypatch.setattr(
+        "app.ai.image_gen.edit",
+        lambda *a, **k: _async(image_gen.ImageResult(ok=True, image_bytes=b"editpng")),
+    )
+    monkeypatch.setattr("app.ai.image_gen.download", lambda url: _async(b"rawpng"))
+    monkeypatch.setattr("app.ai.editor.classify_edit_kind", lambda fb: _async("textual"))
     return SimpleNamespace(
         convos=convos,
         posts=posts_store,
@@ -239,3 +260,109 @@ async def test_voice_note_no_speech_is_friendly_and_routes_nothing(harness, monk
     assert harness.sent_text and "couldn't make out" in harness.sent_text[-1][1]
     assert not harness.sent_media  # nothing generated
     assert PHONE not in harness.convos  # bailed before touching conversation state
+
+
+# --- AI image generation: a generated image is overlaid on the brand template. ---
+
+
+def _plan(treatment, *, image_prompt=None, clarification=None):
+    return VisualPlan(
+        treatment=treatment,
+        image_prompt=image_prompt,
+        clarification=clarification,
+        rationale="test",
+    )
+
+
+async def test_generated_image_request_overlays_and_previews(harness, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.ai.visual_planner.plan_visual",
+        lambda *a, **k: _async(_plan("generated_image", image_prompt="a port at dawn")),
+    )
+    await on_demand.handle_incoming_message(PHONE, "generate an image post about our port", [])
+    assert any("Generating" in body for _, body in harness.sent_text)  # interim heads-up
+    assert len(harness.sent_media) == 1  # branded preview
+    convo = harness.convos[PHONE]
+    assert convo["state"] == "awaiting_approval"
+    assert convo["context"]["treatment"] == "generated_image"
+    assert convo["context"]["raw_image_url"]  # raw image persisted for img2img edits
+    assert convo["context"]["image_prompt"] == "a port at dawn"
+
+
+async def test_image_generation_failure_falls_back_to_typographic(harness, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.ai.visual_planner.plan_visual",
+        lambda *a, **k: _async(_plan("generated_image", image_prompt="a port")),
+    )
+    monkeypatch.setattr(
+        "app.ai.image_gen.generate",
+        lambda *a, **k: _async(image_gen.ImageResult(ok=False, error="boom")),
+    )
+    await on_demand.handle_incoming_message(PHONE, "generate an image post about our port", [])
+    assert any("couldn't generate" in body for _, body in harness.sent_text)
+    assert len(harness.sent_media) == 1  # still got a designed version
+    assert harness.convos[PHONE]["context"]["treatment"] == "typographic"
+
+
+async def test_ambiguous_request_asks_then_resolves_to_image(harness, monkeypatch) -> None:
+    plans = [
+        _plan("clarify", clarification="Designed graphic or a generated photo?"),
+        _plan("generated_image", image_prompt="a duck farm at golden hour"),
+    ]
+
+    async def _stateful_plan(*a, **k):
+        return plans.pop(0)
+
+    monkeypatch.setattr("app.ai.visual_planner.plan_visual", _stateful_plan)
+    # 1) ambiguous request → the agent asks
+    await on_demand.handle_incoming_message(PHONE, "post about our duck line", [])
+    assert harness.convos[PHONE]["state"] == "awaiting_clarification"
+    assert any("generated photo" in body for _, body in harness.sent_text)
+    assert not harness.sent_media
+    # 2) Karen answers → it resolves and builds the image post
+    await on_demand.handle_incoming_message(PHONE, "yeah generate a photo for it", [])
+    assert len(harness.sent_media) == 1
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"
+    assert harness.convos[PHONE]["context"]["treatment"] == "generated_image"
+
+
+async def _make_generated_draft(harness, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.ai.visual_planner.plan_visual",
+        lambda *a, **k: _async(_plan("generated_image", image_prompt="a port")),
+    )
+    await on_demand.handle_incoming_message(PHONE, "generate an image post about our port", [])
+
+
+async def test_visual_edit_regenerates_the_image(harness, monkeypatch) -> None:
+    await _make_generated_draft(harness, monkeypatch)
+    before = len(harness.sent_media)
+    edited: list = []
+
+    async def _fake_edit(url, fb, **k):
+        edited.append((url, fb))
+        return image_gen.ImageResult(ok=True, image_bytes=b"editpng")
+
+    monkeypatch.setattr("app.ai.editor.classify_edit_kind", lambda fb: _async("visual"))
+    monkeypatch.setattr("app.ai.image_gen.edit", _fake_edit)
+    await on_demand.handle_incoming_message(PHONE, "make it a sunset", [])
+    assert edited  # img2img was invoked on the stored raw image
+    assert any("Updating the image" in body for _, body in harness.sent_text)
+    assert len(harness.sent_media) == before + 1
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+async def test_textual_edit_keeps_the_same_image(harness, monkeypatch) -> None:
+    await _make_generated_draft(harness, monkeypatch)
+    edit_called: list = []
+
+    async def _fake_edit(*a, **k):
+        edit_called.append(1)
+        return image_gen.ImageResult(ok=False)
+
+    monkeypatch.setattr("app.ai.editor.classify_edit_kind", lambda fb: _async("textual"))
+    monkeypatch.setattr("app.ai.image_gen.edit", _fake_edit)
+    await on_demand.handle_incoming_message(PHONE, "make it shorter", [])
+    assert not edit_called  # no regeneration — same picture, new copy
+    assert harness.convos[PHONE]["context"]["generated"]["caption"] == "Shorter."
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"

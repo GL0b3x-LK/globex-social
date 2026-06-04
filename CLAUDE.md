@@ -104,7 +104,7 @@ ngrok http 8000
 ```
 
 ## Key Technical Decisions
-- **Puppeteer for images, not AI image generation** — because brand consistency matters more than creativity. HTML/CSS templates guarantee pixel-perfect output every time. Karen's standard is high; inconsistent AI images would lose trust.
+- **Templates are the default; AI image generation is the photographic layer ONLY (updated 2026-06-04).** HTML/CSS templates remain the default and guarantee pixel-perfect brand output. AI image generation (kie.ai / nano-banana) is now allowed, but ONLY as the photographic background *underneath* the brand template overlay — the logo, Pantone navy/cyan, ring motif, and headline are still rendered by the template on top, so brand identity is never left to the generative model. A generated image flows through the exact same path as a user-supplied photo (`render_and_store(photo_bytes=…)` → `custom` template). Never post a raw generated image without the brand overlay. Generation is opt-in (Karen explicitly asks, or the agent asks when unsure) — text/number posts stay typographic.
 - **Supabase not raw Postgres** — gives us managed PostgreSQL with a Python client, built-in auth if needed for Tier 3 upgrade, and a dashboard Karen's team can peek at. Use supabase-py for all DB operations, not raw SQL.
 - **APScheduler inside FastAPI, not cron** — keeps everything in one process on Railway. No separate worker needed.
 - **Blotato for publishing, not direct API calls** — handles OAuth token refresh, rate limits, and format differences across platforms. One integration instead of three.
@@ -114,6 +114,7 @@ ngrok http 8000
 ```
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=          # Whisper transcription of WhatsApp voice notes only (optional)
+KIE_API_KEY=             # kie.ai AI image generation (nano-banana); optional
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_WHATSAPP_NUMBER=

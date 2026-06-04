@@ -25,12 +25,14 @@ def _upload_sync(path: str, png_bytes: bytes) -> str:
     return sb.storage.from_(BUCKET).get_public_url(path)
 
 
-async def upload_png(post_id: str | UUID, png_bytes: bytes) -> str:
-    """Upload a rendered PNG to ``post-images/{post_id}.png``; return its public URL.
+async def upload_png(post_id: str | UUID, png_bytes: bytes, *, suffix: str = "") -> str:
+    """Upload a rendered PNG to ``post-images/{post_id}{suffix}.png``; return its public URL.
 
-    ``upsert`` is on so re-rendering after an edit overwrites the same object.
+    ``upsert`` is on so re-rendering after an edit overwrites the same object. ``suffix``
+    distinguishes sibling objects for one post — e.g. ``suffix="-raw"`` hosts the raw
+    AI-generated image (kept so img2img edits can transform it) alongside the composite.
     """
-    return await asyncio.to_thread(_upload_sync, f"{post_id}.png", png_bytes)
+    return await asyncio.to_thread(_upload_sync, f"{post_id}{suffix}.png", png_bytes)
 
 
 def ensure_bucket() -> None:

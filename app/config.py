@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     whisper_model: str = "whisper-1"
 
+    # --- kie.ai (AI image generation: nano-banana) ---
+    # Optional: if unset, image-generation requests fall back to a designed
+    # typographic post. The generated image is only ever the photographic layer
+    # UNDER the brand template overlay — brand identity stays in the template.
+    kie_api_key: str | None = None
+    kie_base_url: str = "https://api.kie.ai"
+    kie_image_model: str = "nano-banana-2"  # text->image; verified live 2026-06-04
+    kie_edit_model: str = "nano-banana-2"  # image->image (img2img) via image_input
+
     # --- Twilio ---
     twilio_account_sid: str
     twilio_auth_token: str
