@@ -1,0 +1,48 @@
+{% extends "_canvas.html" %}
+{# quote_card — a short quote/statement as a clean navy typographic card. No photo.
+   The full quote goes in `headline`. Brand attribution is the footer lockup. #}
+{% block style %}
+<style>
+  .qc {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 3px solid var(--cyan-rule);
+    border-radius: 20px;
+    padding: 90px 84px;
+  }
+  .qc .mark {
+    font-weight: 900;
+    font-size: 240px;
+    line-height: 0.6;
+    height: 132px;
+    color: var(--cyan);
+  }
+  .qc .quote {
+    font-weight: 800;
+    font-size: 76px;
+    line-height: 1.14;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .qc .by {
+    margin-top: 52px;
+    font-weight: 700;
+    font-size: 27px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+</style>
+{% endblock %}
+{% block decor %}{% endblock %}
+{% block content %}
+  <div class="qc">
+    <div class="mark">&ldquo;</div>
+    <p class="quote">{{ headline }}</p>
+    <p class="by">Globex International</p>
+  </div>
+{% endblock %}

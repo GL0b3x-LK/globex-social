@@ -1,0 +1,57 @@
+{% extends "_canvas.html" %}
+{# polaroid — a casual snapshot (Karen's photo or a generated image) in a Polaroid
+   frame on a Globex-navy field. Falls back to the G-man mark when no photo. #}
+{% block style %}
+<style>
+  .pol-wrap {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .polaroid {
+    width: 60%;
+    background: var(--white);
+    padding: 4.5% 4.5% 0;
+    transform: rotate(-3deg);
+    border-radius: 8px;
+    box-shadow: 0 36px 80px rgba(0, 45, 114, 0.55);
+  }
+  .polaroid .snap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: var(--navy);
+  }
+  .polaroid .snap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .polaroid .snap--ph { display: flex; align-items: center; justify-content: center; }
+  .polaroid .snap--ph img { width: 48%; height: auto; opacity: 0.92; }
+  .polaroid .cap {
+    padding: 7% 4% 8%;
+    text-align: center;
+    font-weight: 800;
+    font-size: 54px;
+    line-height: 1.1;
+    letter-spacing: 0.04em;
+    color: var(--navy);
+  }
+</style>
+{% endblock %}
+{% block decor %}{% endblock %}
+{% block content %}
+  <div class="pol-wrap">
+    <div class="polaroid">
+      <div class="snap{% if not photo %} snap--ph{% endif %}">
+        {% if photo %}
+          <img src="{{ photo }}" alt="">
+        {% else %}
+          <img src="{{ logos['gman_full_white'] }}" alt="">
+        {% endif %}
+      </div>
+      <div class="cap">{{ headline | default('GLOBEX', true) }}</div>
+    </div>
+  </div>
+{% endblock %}

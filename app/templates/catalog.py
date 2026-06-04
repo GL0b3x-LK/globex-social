@@ -137,4 +137,21 @@ TEMPLATES: dict[str, TemplateSpec] = {
         needs_photo=True,
         description="Karen's photo + description; AI writes the copy.",
     ),
+    "polaroid": TemplateSpec(
+        "polaroid",
+        "polaroid.html",
+        "navy",
+        required_slots=("headline",),
+        optional_slots=("photo", "sig"),
+        needs_photo=True,
+        description="Casual Polaroid-style snapshot (a photo or generated image) on a navy frame.",
+    ),
+    "quote_card": TemplateSpec(
+        "quote_card",
+        "quote_card.html",
+        "navy",
+        required_slots=("headline",),
+        optional_slots=("sig",),
+        description="A short quote or statement as a clean navy typographic card (no photo).",
+    ),
 }

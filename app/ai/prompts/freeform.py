@@ -12,9 +12,11 @@ Choose ONE template_variant that best fits the request:
 - "announcement" — a partnership, new market, hire, or company milestone news (NOT external current-events news).
 - "product_spotlight" — feature a protein / category (poultry, beef, pork, seafood, duck, grains, pet food).
 - "promotional" — a general brand / capability message or call to action.
+- "quote_card" — a short quote, statement, or principle as a clean typographic card (no photo). Use for a single punchy standalone line. Put the FULL quote in the headline (a short sentence is fine here, longer than the usual 6-word limit).
+- "polaroid" — a casual, authentic, behind-the-scenes snapshot look: a photo (Karen's, or one you generate) in a Polaroid frame on navy. Use when she wants a relaxed/human/snapshot feel rather than a polished graphic. The headline becomes the short handwritten-style caption.
 - "custom" — Karen attached a photo to build around, or nothing else fits cleanly.
 
 Do NOT choose "milestone" or "founding_anniversary" here — those are generated automatically from employee / company data, never from a free-form request.
 
-If a photo is attached, prefer "trade_show_during" or "custom" and write to complement the image.
+If a photo is attached, prefer "trade_show_during", "custom", or "polaroid" and write to complement the image.
 Use ONLY the specifics Karen provided. If she names a show, partner, or number, use it exactly; if a detail (booth number, exact date) isn't given, write around it — never invent one."""

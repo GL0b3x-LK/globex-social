@@ -36,8 +36,8 @@ _CONTEXT_SLOTS = (
     "sig",
 )
 _FALLBACK_VARIANT = "promotional"
-# Templates that render an attached photo as the full-bleed background.
-_PHOTO_CAPABLE = {"custom", "trade_show_during"}
+# Templates that render an attached photo (full-bleed background, or a framed snapshot).
+_PHOTO_CAPABLE = {"custom", "trade_show_during", "polaroid"}
 
 
 def build_slots(post: GeneratedPost, context: dict[str, Any] | None = None) -> dict[str, Any]:
