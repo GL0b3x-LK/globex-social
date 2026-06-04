@@ -1,10 +1,11 @@
 # Globex SM Automation — Railway production image.
 #
-# Based on the official Playwright Python image (Chromium + all system deps
-# preinstalled), pinned to match playwright==1.60.0 in requirements.txt. Adds
-# ffmpeg for the VHS video pipeline. Secrets are injected by Railway as env vars —
-# never baked into the image (.env is excluded via .dockerignore).
-FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
+# Python 3.12 is REQUIRED (the code uses StrEnum [3.11+] and PEP 695 generics
+# [3.12+]). The Playwright base images track the distro's system Python (jammy =
+# 3.10), which breaks those — so we start from python:3.12 and install the
+# Chromium browser + its OS deps + ffmpeg (VHS video) ourselves.
+# Secrets are injected by Railway as env vars; .env is excluded via .dockerignore.
+FROM python:3.12-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -18,6 +19,7 @@ WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install -r requirements.txt \
+    && python -m playwright install-deps chromium \
     && python -m playwright install chromium chromium-headless-shell
 
 COPY . .
