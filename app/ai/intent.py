@@ -1,4 +1,5 @@
 """Intent classification: Karen's incoming message + conversation state -> Intent."""
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -15,6 +16,7 @@ class IntentType(StrEnum):
     approval = "approval"
     edit_request = "edit_request"
     cancellation = "cancellation"
+    question = "question"
     greeting = "greeting"
     unclear = "unclear"
 
@@ -30,10 +32,14 @@ class Intent(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, description="Classification confidence in [0,1].")
 
 
-async def classify_intent(message: str, conversation_state: Any) -> Intent:
+async def classify_intent(
+    message: str, conversation_state: Any, memory: str | None = None
+) -> Intent:
     """Classify a message. conversation_state may be a str or StrEnum (e.g. 'awaiting_approval')."""
     state = getattr(conversation_state, "value", conversation_state) or "idle"
+    memory_block = f"{memory}\n\n" if memory else ""
     user_content = (
+        f"{memory_block}"
         f"Current conversation state: {str(state).upper()}\n\n"
         f"Message from Karen:\n{message}"
     )

@@ -118,6 +118,31 @@ create table if not exists conversations (
 );
 
 -- ---------------------------------------------------------------------------
+-- messages — full WhatsApp transcript (both directions). Powers persistent
+-- conversation memory AND swipe-to-reply (map a Twilio reply SID back to a post).
+-- Append-only log; kept in Supabase, never in the repo.
+-- ---------------------------------------------------------------------------
+create table if not exists messages (
+    id          uuid primary key default gen_random_uuid(),
+    phone_number text       not null,
+    twilio_sid  text,
+    role        text        not null check (role in ('karen','agent')),
+    body        text,
+    media_url   text,
+    kind        text        not null default 'text'
+                check (kind in ('text','voice','image','preview')),
+    post_id     uuid        references posts (id) on delete set null,
+    created_at  timestamptz not null default now()
+);
+create index if not exists idx_messages_phone_time on messages (phone_number, created_at);
+create index if not exists idx_messages_twilio_sid on messages (twilio_sid);
+
+-- Full render inputs for a post (display fields, treatment, image prompt, raw
+-- image URL) so a post can be re-opened later (swipe-reply redesign/repost) and
+-- edited exactly as when it was first drafted.
+alter table posts add column if not exists render_meta jsonb;
+
+-- ---------------------------------------------------------------------------
 -- branded_packaging_rotation — finite pool of 20 pre-designed posts.
 -- ---------------------------------------------------------------------------
 create table if not exists branded_packaging_rotation (

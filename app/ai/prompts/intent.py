@@ -12,8 +12,11 @@ Intent types:
 - "approval"        — she approves the current draft ("approve", "yes", "looks good", "perfect", "send it", "ship it", "👍", "Like 1?" meaning she likes draft 1). ONLY valid when a draft is pending.
 - "edit_request"    — she wants changes to the current draft ("make it shorter", "change the headline to X", "drop the emoji", "more formal"). Put the requested change in edit_feedback. ONLY meaningful when a draft is pending.
 - "cancellation"    — she wants to abandon the current draft/request ("cancel", "nvm", "wait nvm", "forget it", "stop").
+- "question"        — she's asking for information rather than requesting a post/edit ("how many posts did we do this month?", "what did we run for Ramadan?", "show me the Gulfood one", "what template was that?", "when did that publish?", "did we already post about X?"). Answer-style requests about past posts or activity, NOT a request to create/change something.
 - "greeting"        — small talk or openers with no actionable request ("hi", "hey", "good morning", "thanks", "got it").
 - "unclear"         — ambiguous or you can't confidently tell. Use this rather than guessing wrong.
+
+Use the conversation context above (if provided) to resolve references like "it", "that one", or "the Gulfood post". An edit_request changes the CURRENT draft; a question asks ABOUT past posts/activity — don't confuse them.
 
 State rules (the current conversation state is given in the message):
 - If state is IDLE: a bare "yes"/"ok"/"sure" is NOT an approval (there's nothing to approve) — classify as greeting or unclear. Approval and edit_request require a pending draft.

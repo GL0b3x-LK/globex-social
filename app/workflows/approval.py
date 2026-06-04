@@ -22,6 +22,22 @@ log = get_logger("app.workflows.approval")
 Row = dict[str, Any]
 
 
+def _render_meta(
+    generated: GeneratedPost,
+    *,
+    treatment: str,
+    image_prompt: str | None = None,
+    raw_image_url: str | None = None,
+) -> dict[str, Any]:
+    """Keep posts.render_meta in sync after an edit, so a re-opened post stays editable."""
+    meta: dict[str, Any] = {"generated": generated.model_dump(), "treatment": treatment}
+    if image_prompt:
+        meta["image_prompt"] = image_prompt
+    if raw_image_url:
+        meta["raw_image_url"] = raw_image_url
+    return meta
+
+
 async def handle_approval(phone: str, convo: Row) -> None:
     post_id = convo.get("current_post_id")
     if not post_id:
@@ -69,6 +85,11 @@ async def handle_edit_request(phone: str, convo: Row, feedback: str) -> None:
     # (handled in _edit_generated_image).
     image_url = await render_pipeline.render_and_store(post_id, revised)
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
+    await asyncio.to_thread(
+        posts.set_render_meta,
+        post_id,
+        _render_meta(revised, treatment=context.get("treatment") or "typographic"),
+    )
     await conversation.transition(
         phone,
         state=ConversationState.AWAITING_APPROVAL,
@@ -100,6 +121,16 @@ async def _edit_generated_image(
             post_id, current, photo_bytes=result.image_bytes, photo_media_type="image/png"
         )
         await asyncio.to_thread(posts.set_image_url, post_id, image_url)
+        await asyncio.to_thread(
+            posts.set_render_meta,
+            post_id,
+            _render_meta(
+                current,
+                treatment="generated_image",
+                image_prompt=context.get("image_prompt"),
+                raw_image_url=new_raw_url,
+            ),
+        )
         await conversation.transition(
             phone,
             state=ConversationState.AWAITING_APPROVAL,
@@ -132,6 +163,16 @@ async def _edit_generated_image(
         post_id, revised, photo_bytes=photo_bytes, photo_media_type="image/png"
     )
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
+    await asyncio.to_thread(
+        posts.set_render_meta,
+        post_id,
+        _render_meta(
+            revised,
+            treatment="generated_image",
+            image_prompt=context.get("image_prompt"),
+            raw_image_url=raw_url,
+        ),
+    )
     await conversation.transition(
         phone,
         state=ConversationState.AWAITING_APPROVAL,

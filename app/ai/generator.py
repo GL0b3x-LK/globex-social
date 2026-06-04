@@ -1,4 +1,5 @@
 """Content generation: Karen's request (+ optional photo) -> on-brand GeneratedPost."""
+
 from __future__ import annotations
 
 import base64
@@ -53,12 +54,26 @@ _PROMPTS: dict[ContentCategory, str] = {
 
 class GeneratedPost(BaseModel):
     caption: str = Field(description="The finished, ready-to-post caption text (the post body).")
-    hashtags: list[str] = Field(description="3-6 specific, on-brand hashtags, each starting with '#'.")
-    template_variant: str = Field(description="Which HTML template variant to render (e.g. trade_show_pre, holiday, stats).")
-    headline: str = Field(description="Short on-image headline, <= 6 words — the graphic's main line. NOT the caption.")
-    subhead: str | None = Field(default=None, description="Optional one-line on-image supporting text, <= 14 words. Null if not needed.")
-    figure: str | None = Field(default=None, description="Number-led posts only: the hero figure exactly as shown (e.g. '150', '33', '90+'). Null otherwise.")
-    figure_unit: str | None = Field(default=None, description="Short label beside the figure (e.g. 'Years'). Null otherwise.")
+    hashtags: list[str] = Field(
+        description="3-6 specific, on-brand hashtags, each starting with '#'."
+    )
+    template_variant: str = Field(
+        description="Which HTML template variant to render (e.g. trade_show_pre, holiday, stats)."
+    )
+    headline: str = Field(
+        description="Short on-image headline, <= 6 words — the graphic's main line. NOT the caption."
+    )
+    subhead: str | None = Field(
+        default=None,
+        description="Optional one-line on-image supporting text, <= 14 words. Null if not needed.",
+    )
+    figure: str | None = Field(
+        default=None,
+        description="Number-led posts only: the hero figure exactly as shown (e.g. '150', '33', '90+'). Null otherwise.",
+    )
+    figure_unit: str | None = Field(
+        default=None, description="Short label beside the figure (e.g. 'Years'). Null otherwise."
+    )
     rationale: str = Field(description="One sentence: why this post fits the brief and brand.")
 
 
@@ -93,7 +108,10 @@ def _user_content(
         return text
     encoded = base64.standard_b64encode(image_bytes).decode("ascii")
     return [
-        {"type": "image", "source": {"type": "base64", "media_type": image_media_type, "data": encoded}},
+        {
+            "type": "image",
+            "source": {"type": "base64", "media_type": image_media_type, "data": encoded},
+        },
         {"type": "text", "text": text},
     ]
 
@@ -120,15 +138,28 @@ def freeform_system() -> str:
     return f"{BRAND_BLOCK}\n\n---\n\n{freeform.FREEFORM_PROMPT}"
 
 
+def _with_memory(
+    content: str | list[dict[str, Any]], memory: str | None
+) -> str | list[dict[str, Any]]:
+    """Prepend the conversation-memory block so generation can resolve references."""
+    if not memory:
+        return content
+    if isinstance(content, str):
+        return f"{memory}\n\n{content}"
+    return [{"type": "text", "text": memory}, *content]
+
+
 async def generate_freeform(
     request: str,
     image_bytes: bytes | None = None,
     image_media_type: str = "image/jpeg",
+    memory: str | None = None,
 ) -> GeneratedPost:
     """On-demand path: the model selects the template_variant itself, then writes the post."""
+    content = _with_memory(_user_content(None, request, image_bytes, image_media_type), memory)
     return await generate_structured(
         system=freeform_system(),
-        user_content=_user_content(None, request, image_bytes, image_media_type),
+        user_content=content,
         output_model=GeneratedPost,
         tool_name="emit_post",
         tool_description=_EMIT_DESC,

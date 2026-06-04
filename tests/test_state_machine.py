@@ -20,7 +20,7 @@ def test_routing_covers_every_state_intent_pair() -> None:
     for state in ALL_STATES:
         for intent in ALL_INTENTS:
             assert isinstance(route(state, intent), Action), f"undefined: {state} x {intent}"
-    assert len(ROUTING) == len(ALL_STATES) * len(ALL_INTENTS) == 24
+    assert len(ROUTING) == len(ALL_STATES) * len(ALL_INTENTS) == 28
 
 
 @pytest.mark.parametrize("state", ALL_STATES)
@@ -57,3 +57,8 @@ def test_greeting_depends_on_pending_draft() -> None:
 def test_unclear_clarifies_when_idle_but_nudges_when_pending() -> None:
     assert route(ConversationState.IDLE, IntentType.unclear) is Action.CLARIFY
     assert route(ConversationState.AWAITING_APPROVAL, IntentType.unclear) is Action.NUDGE_PENDING
+
+
+@pytest.mark.parametrize("state", ALL_STATES)
+def test_question_is_always_answered(state: ConversationState) -> None:
+    assert route(state, IntentType.question) is Action.ANSWER

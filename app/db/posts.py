@@ -1,4 +1,5 @@
 """Post lifecycle query helpers."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -37,9 +38,7 @@ def create(
 
 
 def get(post_id: str) -> Row | None:
-    return maybe_row(
-        get_supabase().table(_TABLE).select("*").eq("id", post_id).limit(1).execute()
-    )
+    return maybe_row(get_supabase().table(_TABLE).select("*").eq("id", post_id).limit(1).execute())
 
 
 def update(post_id: str, **fields: Any) -> Row:
@@ -62,6 +61,23 @@ def set_image_url(post_id: str, image_url: str) -> Row:
 
 def list_by_status(status: str) -> list[Row]:
     return rows(get_supabase().table(_TABLE).select("*").eq("status", status).execute())
+
+
+def recent(limit: int = 30) -> list[Row]:
+    """Newest posts first — feeds the conversational Q&A 'posts digest'."""
+    return rows(
+        get_supabase()
+        .table(_TABLE)
+        .select("*")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+
+
+def set_render_meta(post_id: str, render_meta: dict[str, Any]) -> Row:
+    """Persist the full render inputs so the post can be re-opened/edited later."""
+    return update(post_id, render_meta=render_meta)
 
 
 def find_for_event(event_id: str, event_type: str) -> Row | None:

@@ -23,6 +23,7 @@ class Action(StrEnum):
     NUDGE_PENDING = "nudge_pending"  # remind there's a draft waiting on approval
     NOTHING_PENDING = "nothing_pending"  # nothing in progress to act on
     CLARIFY = "clarify"  # ask what they'd like
+    ANSWER = "answer"  # answer an informational question (Q&A / analytics)
 
 
 _I = IntentType
@@ -33,6 +34,7 @@ _WITH_DRAFT: dict[IntentType, Action] = {
     _I.approval: Action.APPROVE,
     _I.edit_request: Action.EDIT,
     _I.cancellation: Action.CANCEL,
+    _I.question: Action.ANSWER,
     _I.greeting: Action.NUDGE_PENDING,
     _I.unclear: Action.NUDGE_PENDING,
 }
@@ -43,6 +45,7 @@ _NO_DRAFT: dict[IntentType, Action] = {
     _I.approval: Action.NOTHING_PENDING,
     _I.edit_request: Action.NOTHING_PENDING,
     _I.cancellation: Action.NOTHING_PENDING,
+    _I.question: Action.ANSWER,
     _I.greeting: Action.GREET,
     _I.unclear: Action.CLARIFY,
 }

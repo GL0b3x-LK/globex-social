@@ -42,11 +42,26 @@ async def incoming_message(
         for i in range(num_media)
         if form.get(f"MediaUrl{i}")
     ]
+    message_sid = str(form.get("MessageSid", "") or "") or None
+    # Present only when Karen swipe-replied to an earlier message (<7 days old).
+    reply_to_sid = str(form.get("OriginalRepliedMessageSid", "") or "") or None
     log.info(
         "inbound message",
-        extra={"from": from_phone, "num_media": num_media, "message_sid": form.get("MessageSid")},
+        extra={
+            "from": from_phone,
+            "num_media": num_media,
+            "message_sid": message_sid,
+            "reply_to_sid": reply_to_sid,
+        },
     )
-    background.add_task(on_demand.handle_incoming_message, from_phone, body, media)
+    background.add_task(
+        on_demand.handle_incoming_message,
+        from_phone,
+        body,
+        media,
+        message_sid=message_sid,
+        reply_to_sid=reply_to_sid,
+    )
     return Response(content=_EMPTY_TWIML, media_type=_XML)
 
 

@@ -35,8 +35,10 @@ _DRAFT = GeneratedPost(
 _REVISED = _DRAFT.model_copy(update={"headline": "See us at SIAL", "caption": "Shorter."})
 
 
-async def _fake_classify(message: str, state) -> Intent:
+async def _fake_classify(message: str, state, memory=None) -> Intent:
     m = message.lower()
+    if "?" in m or any(m.startswith(w) for w in ("how ", "what ", "when ", "show ", "which ")):
+        return Intent(type=IntentType.question, confidence=0.9)
     if any(w in m for w in ("approve", "looks good", "ship it", "yes")):
         return Intent(type=IntentType.approval, confidence=0.95)
     if any(w in m for w in ("cancel", "nevermind", "forget")):
@@ -108,11 +110,11 @@ def harness(monkeypatch):
     )
     monkeypatch.setattr(
         "app.messaging.twilio_client.send_text",
-        lambda to, body: _async(sent_text.append((to, body))),
+        lambda to, body, **k: _async(sent_text.append((to, body))),
     )
     monkeypatch.setattr(
         "app.messaging.twilio_client.send_media",
-        lambda to, body, url: _async(sent_media.append((to, body, url))),
+        lambda to, body, url, **k: _async(sent_media.append((to, body, url))),
     )
     monkeypatch.setattr(
         "app.publishing.publisher.publish_post", lambda pid: _async(published.append(pid))
@@ -138,6 +140,18 @@ def harness(monkeypatch):
     )
     monkeypatch.setattr("app.ai.image_gen.download", lambda url: _async(b"rawpng"))
     monkeypatch.setattr("app.ai.editor.classify_edit_kind", lambda fb: _async("textual"))
+    # Memory + transcript seams — default to empty memory so existing tests are
+    # unaffected; memory/reply/Q&A tests override these.
+    monkeypatch.setattr("app.messaging.history.record_inbound", lambda *a, **k: _async(None))
+    monkeypatch.setattr("app.ai.memory.build_context", lambda *a, **k: _async(""))
+    monkeypatch.setattr("app.ai.memory.maybe_update_summary", lambda *a, **k: _async(None))
+    monkeypatch.setattr("app.messaging.history.by_sid", lambda sid: _async(None))
+    monkeypatch.setattr("app.db.posts.get", lambda pid: _async_noop_get(posts_store, pid))
+    monkeypatch.setattr("app.db.posts.recent", lambda limit=30: list(posts_store.values()))
+    monkeypatch.setattr(
+        "app.db.posts.set_render_meta",
+        lambda pid, meta: posts_store[pid].update({"render_meta": meta}),
+    )
     return SimpleNamespace(
         convos=convos,
         posts=posts_store,
@@ -145,6 +159,11 @@ def harness(monkeypatch):
         sent_media=sent_media,
         published=published,
     )
+
+
+def _async_noop_get(store, pid):
+    # posts.get is sync (called via asyncio.to_thread), so return the row directly.
+    return store.get(pid)
 
 
 async def _async(value):
@@ -365,4 +384,94 @@ async def test_textual_edit_keeps_the_same_image(harness, monkeypatch) -> None:
     await on_demand.handle_incoming_message(PHONE, "make it shorter", [])
     assert not edit_called  # no regeneration — same picture, new copy
     assert harness.convos[PHONE]["context"]["generated"]["caption"] == "Shorter."
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+# --- Persistent memory + swipe-to-reply + conversational Q&A. ---
+
+
+def _seed_post(harness, pid, **fields) -> None:
+    base = {
+        "id": pid,
+        "caption": "Old caption",
+        "hashtags": ["#GlobexInternational"],
+        "template_type": "stats",
+        "content": "original request",
+        "status": "published",
+        "image_url": f"https://img.test/{pid}.png",
+        "render_meta": {
+            "generated": {
+                "caption": "Old caption",
+                "hashtags": ["#GlobexInternational"],
+                "template_variant": "stats",
+                "headline": "Old headline",
+                "rationale": "r",
+            },
+            "treatment": "typographic",
+        },
+    }
+    base.update(fields)
+    harness.posts[pid] = base
+
+
+async def test_inbound_message_is_logged_with_sid(harness, monkeypatch) -> None:
+    logged: list = []
+    monkeypatch.setattr(
+        "app.messaging.history.record_inbound",
+        lambda phone, **k: _async(logged.append((phone, k.get("body"), k.get("twilio_sid")))),
+    )
+    await on_demand.handle_incoming_message(PHONE, "post about SIAL", [], message_sid="SM123")
+    assert logged and logged[0][2] == "SM123"  # SID captured for swipe-reply correlation
+
+
+async def test_question_is_answered_conversationally(harness, monkeypatch) -> None:
+    from app.ai.qa import Answer
+
+    monkeypatch.setattr(
+        "app.ai.qa.answer_question",
+        lambda *a, **k: _async(Answer(answer="We've published 4 posts this month.")),
+    )
+    await on_demand.handle_incoming_message(PHONE, "how many posts this month?", [])
+    assert harness.sent_text and "4 posts" in harness.sent_text[-1][1]
+    assert not harness.sent_media  # a text answer, no draft created
+    assert harness.convos[PHONE]["current_post_id"] is None
+
+
+async def test_question_referencing_a_post_resends_its_image(harness, monkeypatch) -> None:
+    from app.ai.qa import Answer
+
+    _seed_post(harness, "gulfood-1", caption="See us at Gulfood")
+    monkeypatch.setattr(
+        "app.ai.qa.answer_question",
+        lambda *a, **k: _async(
+            Answer(answer="Here's the Gulfood one.", referenced_post_id="gulfood-1")
+        ),
+    )
+    await on_demand.handle_incoming_message(PHONE, "show me the gulfood one", [])
+    assert harness.sent_media and harness.sent_media[-1][2] == "https://img.test/gulfood-1.png"
+
+
+async def test_swipe_reply_reopens_old_post_for_edit(harness, monkeypatch) -> None:
+    _seed_post(harness, "old-1")
+    monkeypatch.setattr("app.messaging.history.by_sid", lambda sid: _async({"post_id": "old-1"}))
+    await on_demand.handle_incoming_message(PHONE, "make it shorter", [], reply_to_sid="SMold")
+    assert harness.convos[PHONE]["current_post_id"] == "old-1"  # re-targeted the old post
+    assert harness.sent_media  # edited preview sent
+    assert harness.convos[PHONE]["context"]["generated"]["caption"] == "Shorter."
+
+
+async def test_swipe_reply_reposts_old_post_through_approval(harness, monkeypatch) -> None:
+    _seed_post(harness, "old-2")
+    monkeypatch.setattr("app.messaging.history.by_sid", lambda sid: _async({"post_id": "old-2"}))
+    await on_demand.handle_incoming_message(PHONE, "approve", [], reply_to_sid="SMold2")
+    assert harness.published == ["old-2"]  # re-opened then published (repost via approval)
+
+
+async def test_swipe_reply_with_unknown_sid_degrades(harness, monkeypatch) -> None:
+    # SID not in the log (>7 days / sandbox) → no re-open; falls back to normal handling.
+    monkeypatch.setattr("app.messaging.history.by_sid", lambda sid: _async(None))
+    await on_demand.handle_incoming_message(
+        PHONE, "post about us at SIAL Paris", [], reply_to_sid="SMx"
+    )
+    assert len(harness.sent_media) == 1  # treated as a normal new request
     assert harness.convos[PHONE]["state"] == "awaiting_approval"

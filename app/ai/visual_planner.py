@@ -41,11 +41,12 @@ def _system() -> str:
     return f"{BRAND_BLOCK}\n\n---\n\n{VISUAL_PLAN_PROMPT}"
 
 
-async def plan_visual(request: str) -> VisualPlan:
+async def plan_visual(request: str, memory: str | None = None) -> VisualPlan:
     """Decide how a free-form post should look (and how to ask if unsure)."""
+    memory_block = f"{memory}\n\n" if memory else ""
     return await generate_structured(
         system=_system(),
-        user_content=f"Karen's request:\n{request}",
+        user_content=f"{memory_block}Karen's request:\n{request}",
         output_model=VisualPlan,
         tool_name="plan_visual",
         tool_description="Decide the post's visual treatment and, if generating, its image prompt.",
