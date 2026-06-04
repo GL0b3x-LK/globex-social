@@ -3,6 +3,7 @@
 Required fields have no default, so a missing credential fails fast at startup
 with a clear pydantic ValidationError rather than a confusing runtime crash.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -21,6 +22,12 @@ class Settings(BaseSettings):
     # --- Anthropic ---
     anthropic_api_key: str
     claude_model: str = "claude-opus-4-7"
+
+    # --- OpenAI (Whisper speech-to-text only; Anthropic has no STT) ---
+    # Optional: if unset, voice notes degrade gracefully ("voice isn't set up")
+    # rather than blocking the whole app from booting.
+    openai_api_key: str | None = None
+    whisper_model: str = "whisper-1"
 
     # --- Twilio ---
     twilio_account_sid: str

@@ -15,6 +15,7 @@ import pytest
 
 from app.ai.generator import GeneratedPost
 from app.ai.intent import Intent, IntentType
+from app.messaging.transcription import Outcome, Transcript
 from app.workflows import on_demand
 
 PHONE = "whatsapp:+19170001111"
@@ -180,6 +181,61 @@ async def test_unauthorized_sender_is_ignored(harness) -> None:
 
 async def test_image_only_message_still_generates(harness) -> None:
     # An attached photo with no caption must build a post, not fall through to "clarify".
-    await on_demand.handle_incoming_message(PHONE, "", ["https://media.twiliocdn.test/x.jpg"])
+    await on_demand.handle_incoming_message(
+        PHONE, "", [("https://media.twiliocdn.test/x.jpg", "image/jpeg")]
+    )
     assert len(harness.sent_media) == 1
     assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+# --- Voice notes: a transcript flows through the same pipeline as typed text. ---
+
+_VOICE = [("https://media.twiliocdn.test/v.ogg", "audio/ogg")]
+
+
+def _transcript(outcome, text=""):
+    async def _fake(audio_bytes, content_type):
+        return Transcript(outcome, text)
+
+    return _fake
+
+
+async def test_voice_note_transcribes_echoes_and_drafts(harness, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.messaging.transcription.transcribe",
+        _transcript(Outcome.ok, "post about us at SIAL Paris"),
+    )
+    await on_demand.handle_incoming_message(PHONE, "", _VOICE)
+    assert any("Heard" in body for _, body in harness.sent_text)  # echoed what it heard
+    assert len(harness.sent_media) == 1  # then drafted + previewed
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+async def test_voice_note_can_approve(harness, monkeypatch) -> None:
+    await on_demand.handle_incoming_message(PHONE, "post about us at SIAL Paris", [])
+    post_id = harness.convos[PHONE]["current_post_id"]
+    monkeypatch.setattr(
+        "app.messaging.transcription.transcribe", _transcript(Outcome.ok, "approve")
+    )
+    await on_demand.handle_incoming_message(PHONE, "", _VOICE)
+    assert harness.published == [post_id]  # voice 'approve' publishes (echo-all, never-block)
+
+
+async def test_voice_with_photo_uses_transcript_as_instruction(harness, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.messaging.transcription.transcribe",
+        _transcript(Outcome.ok, "post about this at SIAL Paris"),
+    )
+    await on_demand.handle_incoming_message(
+        PHONE, "", [*_VOICE, ("https://media.twiliocdn.test/p.jpg", "image/jpeg")]
+    )
+    assert len(harness.sent_media) == 1
+    assert harness.convos[PHONE]["state"] == "awaiting_approval"
+
+
+async def test_voice_note_no_speech_is_friendly_and_routes_nothing(harness, monkeypatch) -> None:
+    monkeypatch.setattr("app.messaging.transcription.transcribe", _transcript(Outcome.no_speech))
+    await on_demand.handle_incoming_message(PHONE, "", _VOICE)
+    assert harness.sent_text and "couldn't make out" in harness.sent_text[-1][1]
+    assert not harness.sent_media  # nothing generated
+    assert PHONE not in harness.convos  # bailed before touching conversation state

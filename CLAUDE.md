@@ -113,6 +113,7 @@ ngrok http 8000
 ## Environment Variables
 ```
 ANTHROPIC_API_KEY=
+OPENAI_API_KEY=          # Whisper transcription of WhatsApp voice notes only (optional)
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_WHATSAPP_NUMBER=

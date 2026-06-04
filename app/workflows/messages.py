@@ -20,6 +20,23 @@ CLARIFY = (
     "an announcement — and I'll draft it."
 )
 
+# --- Voice notes ---
+VOICE_NO_SPEECH = (
+    "🎤 I couldn't make out any speech in that voice note. Mind resending it, or just "
+    "type what you'd like?"
+)
+VOICE_TOO_LONG = (
+    "🎤 That voice note's a bit too long for me to process. Send a shorter one or type it out?"
+)
+VOICE_FAILED = (
+    "🎤 I had trouble processing that voice note. Could you try again, or type your message?"
+)
+
+
+def voice_heard(text: str) -> str:
+    """Echo back what the voice note was transcribed to, before acting on it."""
+    return f'🎤 Heard: "{text}"'
+
 
 def preview_caption(post: GeneratedPost) -> str:
     """The WhatsApp text sent alongside the preview image."""

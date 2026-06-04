@@ -14,12 +14,23 @@ from app.ai.intent import Intent, IntentType
 from app.config import get_settings
 from app.db import approvals, posts
 from app.logging_config import get_logger
-from app.messaging import conversation, media, twilio_client
+from app.messaging import conversation, media, transcription, twilio_client
 from app.messaging.conversation import ConversationState
 from app.messaging.state_machine import Action, route
+from app.messaging.transcription import Outcome
 from app.workflows import approval, messages, render_pipeline
 
 log = get_logger("app.workflows.on_demand")
+
+# (url, content_type) pairs, as the webhook now hands them over.
+Media = tuple[str, str]
+
+_VOICE_FAILURE_MESSAGE = {
+    Outcome.no_speech: messages.VOICE_NO_SPEECH,
+    Outcome.too_large: messages.VOICE_TOO_LONG,
+    Outcome.failed: messages.VOICE_FAILED,
+    Outcome.unavailable: messages.VOICE_FAILED,
+}
 
 
 def _is_authorized(phone: str) -> bool:
@@ -27,17 +38,28 @@ def _is_authorized(phone: str) -> bool:
     return norm in set(get_settings().authorized_numbers_list)
 
 
-async def handle_incoming_message(from_phone: str, body: str, media_urls: list[str]) -> None:
+async def handle_incoming_message(from_phone: str, body: str, media: list[Media]) -> None:
     if not _is_authorized(from_phone):
         log.warning("ignoring message from unauthorized sender", extra={"from": from_phone})
         return
+
+    # Split attachments by kind: a voice note becomes the instruction text; a photo
+    # is something to render the post on. Both can arrive in one message.
+    audio = [m for m in media if m[1].startswith("audio/")]
+    photo = next((m for m in media if m[1].startswith("image/")), None)
+
+    if audio:
+        transcript = await _transcribe_voice(from_phone, audio[0])
+        if transcript is None:
+            return  # a failure reply was already sent; nothing to route
+        body = transcript  # feed the transcript through the normal text pipeline
 
     convo = await conversation.get_or_create(from_phone)
     state = conversation.state_of(convo)
     intent = await ai_intent.classify_intent(body, state.value)
     # A photo with no clear text is still a request to build a post from it — don't
     # let an image-only message fall through to "clarify".
-    if media_urls and intent.type in (IntentType.greeting, IntentType.unclear):
+    if photo and intent.type in (IntentType.greeting, IntentType.unclear):
         intent = Intent(
             type=IntentType.new_post_request,
             extracted_request=body or None,
@@ -50,7 +72,7 @@ async def handle_incoming_message(from_phone: str, body: str, media_urls: list[s
     )
 
     if action is Action.GENERATE:
-        await _generate_and_preview(from_phone, intent.extracted_request or body, media_urls)
+        await _generate_and_preview(from_phone, intent.extracted_request or body, photo)
     elif action is Action.APPROVE:
         await approval.handle_approval(from_phone, convo)
     elif action is Action.EDIT:
@@ -68,12 +90,35 @@ async def handle_incoming_message(from_phone: str, body: str, media_urls: list[s
         await twilio_client.send_text(from_phone, messages.CLARIFY)
 
 
-async def _generate_and_preview(from_phone: str, request_text: str, media_urls: list[str]) -> None:
+async def _transcribe_voice(from_phone: str, audio: Media) -> str | None:
+    """Download + transcribe a voice note, echoing the text back. Returns the
+    transcript on success, or None after sending a friendly failure reply."""
+    url, content_type = audio
+    try:
+        audio_bytes, content_type = await media.download_twilio_media(url)
+    except Exception as exc:  # noqa: BLE001 — a fetch failure shouldn't crash the task
+        log.error("voice note download failed", extra={"error": str(exc)})
+        await twilio_client.send_text(from_phone, messages.VOICE_FAILED)
+        return None
+
+    result = await transcription.transcribe(audio_bytes, content_type)
+    if not result.ok:
+        await twilio_client.send_text(
+            from_phone, _VOICE_FAILURE_MESSAGE.get(result.outcome, messages.VOICE_FAILED)
+        )
+        return None
+
+    # Echo all (the chosen behaviour): show Karen what was understood, then act.
+    await twilio_client.send_text(from_phone, messages.voice_heard(result.text))
+    return result.text
+
+
+async def _generate_and_preview(from_phone: str, request_text: str, photo: Media | None) -> None:
     photo_bytes: bytes | None = None
     photo_type = "image/jpeg"
-    if media_urls:
+    if photo:
         try:
-            photo_bytes, photo_type = await media.download_twilio_media(media_urls[0])
+            photo_bytes, photo_type = await media.download_twilio_media(photo[0])
         except Exception as exc:  # noqa: BLE001 — a bad photo shouldn't kill the draft
             log.error("media download failed; continuing without photo", extra={"error": str(exc)})
             photo_bytes = None

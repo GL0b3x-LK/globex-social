@@ -59,3 +59,25 @@ async def test_forged_signature_is_rejected(patched) -> None:
     resp = await _post("clearly-not-a-valid-signature")
     assert resp.status_code == 403
     patched.assert_not_awaited()
+
+
+async def test_media_is_forwarded_with_content_type(patched) -> None:
+    # A voice note must reach the handler as (url, content_type) so it can be told
+    # apart from a photo without downloading.
+    params = {
+        "From": "whatsapp:+19170001111",
+        "Body": "",
+        "NumMedia": "1",
+        "MediaUrl0": "https://media.twiliocdn.test/v.ogg",
+        "MediaContentType0": "audio/ogg",
+        "MessageSid": "SM2",
+    }
+    signature = RequestValidator(_AUTH).compute_signature(_URL, params)
+    transport = ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="https://example.com") as client:
+        resp = await client.post(
+            "/webhooks/twilio/message", data=params, headers={"X-Twilio-Signature": signature}
+        )
+    assert resp.status_code == 200
+    media_arg = patched.await_args.args[2]
+    assert media_arg == [("https://media.twiliocdn.test/v.ogg", "audio/ogg")]

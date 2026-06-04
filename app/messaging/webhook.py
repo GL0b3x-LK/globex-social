@@ -35,12 +35,18 @@ async def incoming_message(
         num_media = int(str(form.get("NumMedia", "0") or "0"))
     except ValueError:
         num_media = 0
-    media_urls = [str(form[f"MediaUrl{i}"]) for i in range(num_media) if form.get(f"MediaUrl{i}")]
+    # Carry the content-type so the handler can tell a voice note (audio/*) from a
+    # photo (image/*) without downloading first — Twilio sends it in the form.
+    media = [
+        (str(form[f"MediaUrl{i}"]), str(form.get(f"MediaContentType{i}", "") or ""))
+        for i in range(num_media)
+        if form.get(f"MediaUrl{i}")
+    ]
     log.info(
         "inbound message",
         extra={"from": from_phone, "num_media": num_media, "message_sid": form.get("MessageSid")},
     )
-    background.add_task(on_demand.handle_incoming_message, from_phone, body, media_urls)
+    background.add_task(on_demand.handle_incoming_message, from_phone, body, media)
     return Response(content=_EMPTY_TWIML, media_type=_XML)
 
 
