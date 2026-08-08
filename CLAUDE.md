@@ -74,7 +74,7 @@ globex-social/
 ```
 
 ## Brand Rules — IMPORTANT
-- **Colors:** Pantone 288C (#002D72, deep navy) and Pantone 2985C (#5BC2E7, cyan). These are the ONLY brand colors. No other colors in templates.
+- **Colors:** navy **#002D70** and light blue **#5BC0DE** — the globexusa.com website values, confirmed by the client during the June/July 2026 design rounds. These are the ONLY brand colors. No other colors in templates. (The old Pantone conversions #002D72/#5BC2E7 from the original proposal are WRONG per client feedback — do not reintroduce them.)
 - **Tone:** Professional but human. Not corporate-stuffy. Karen's voice is direct, confident, no-nonsense.
 - **Logo:** Must appear on every generated post. Use transparent PNG version.
 - **Content Karen does NOT want:** employee birthdays, weekly employee features, kitschy posts, oversaturated posting. She removed these explicitly.

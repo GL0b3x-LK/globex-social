@@ -15,8 +15,16 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 FONTS_DIR = ASSETS_DIR / "fonts"
 LOGOS_DIR = ASSETS_DIR / "logos"
 
-# Montserrat weights self-hosted in assets/fonts (no external font CDN at runtime).
-_FONT_WEIGHTS = (400, 500, 600, 700, 800, 900)
+# Self-hosted weights in assets/fonts (no external font CDN at runtime).
+# Montserrat: legacy demo-era templates. The client-approved finals mix three
+# faces (identified from the reference PNGs): Inter (TS-p2 + MS-3 grotesque),
+# Poppins (TS-p3 geometric bold), Comfortaa (TS-p1 rounded, curled-l).
+_FAMILY_WEIGHTS: dict[str, tuple[int, ...]] = {
+    "Montserrat": (400, 500, 600, 700, 800, 900),
+    "Poppins": (400, 500, 600, 700, 800),
+    "Inter": (400, 500, 600, 700, 800),
+    "Comfortaa": (400, 500, 600, 700),
+}
 
 # Logo PNGs converted in Phase 0 (transparent). Keys are template-friendly.
 _LOGO_FILES = {
@@ -38,13 +46,14 @@ def _data_uri(path: Path, mime: str) -> str:
 def font_face_css() -> str:
     """A `<style>`-ready block of @font-face rules with woff2 data URIs."""
     faces = []
-    for weight in _FONT_WEIGHTS:
-        uri = _data_uri(FONTS_DIR / f"montserrat-{weight}.woff2", "font/woff2")
-        faces.append(
-            "@font-face{font-family:'Montserrat';font-style:normal;"
-            f"font-weight:{weight};font-display:block;"
-            f"src:url({uri}) format('woff2');}}"
-        )
+    for family, weights in _FAMILY_WEIGHTS.items():
+        for weight in weights:
+            uri = _data_uri(FONTS_DIR / f"{family.lower()}-{weight}.woff2", "font/woff2")
+            faces.append(
+                f"@font-face{{font-family:'{family}';font-style:normal;"
+                f"font-weight:{weight};font-display:block;"
+                f"src:url({uri}) format('woff2');}}"
+            )
     return "".join(faces)
 
 

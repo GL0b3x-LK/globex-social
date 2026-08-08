@@ -6,6 +6,7 @@ ones (a small set of acceptable types). The key state-awareness assertion: a bar
 
 Run:  RUN_AI_LIVE=1 .venv\\Scripts\\python.exe -m pytest tests/test_intent.py -v
 """
+
 from __future__ import annotations
 
 import pytest
@@ -59,7 +60,11 @@ GOLDEN: list[tuple[str, str, set[IntentType]]] = [
     ("no the date is wrong, it's the 19th not the 18th", AWAIT, {T.edit_request}),
     ("can you add our booth number, it's 4521", AWAIT, {T.edit_request}),
     ("yes do it", AWAIT, {T.approval}),
-    ("hey can you whip up something about our new pet food line going to 12 new markets", IDLE, {T.new_post_request}),
+    (
+        "hey can you whip up something about our new pet food line going to 12 new markets",
+        IDLE,
+        {T.new_post_request},
+    ),
     ("actually hold off on that one", AWAIT, {T.cancellation}),
 ]
 

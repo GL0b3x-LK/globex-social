@@ -1,17 +1,19 @@
 /* Globex brand design system — injected into every render.
-   STRICTLY two brand colors (Pantone 288C navy #002D72, Pantone 2985C cyan #5BC2E7)
-   plus white. Opacity variants of navy/cyan are allowed for depth; no other hues. */
+   STRICTLY two brand colors plus white: navy #002D70, light blue #5BC0DE.
+   These are the WEBSITE values the client confirmed in the June/July 2026
+   feedback rounds — NOT the old Pantone conversions ending in 72/E7.
+   Opacity variants of navy/cyan are allowed for depth; no other hues. */
 
 :root {
-  --navy: #002d72;
-  --cyan: #5bc2e7;
+  --navy: #002d70;
+  --cyan: #5bc0de;
   --white: #ffffff;
 
   /* palette-derived layers (still strictly navy/cyan) */
-  --navy-soft: rgba(0, 45, 114, 0.10);
-  --navy-65: rgba(0, 45, 114, 0.65);
+  --navy-soft: rgba(0, 45, 112, 0.10);
+  --navy-65: rgba(0, 45, 112, 0.65);
   --on-navy-72: rgba(255, 255, 255, 0.72);
-  --cyan-rule: rgba(91, 194, 231, 0.45);
+  --cyan-rule: rgba(91, 192, 222, 0.45);
 
   --pad: 96px;     /* safe margin */
   --rule: 6px;     /* accent / ring stroke */
@@ -168,7 +170,7 @@ html, body {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 45, 114, 0.20) 0%, rgba(0, 45, 114, 0.90) 80%);
+  background: linear-gradient(180deg, rgba(0, 45, 112, 0.20) 0%, rgba(0, 45, 112, 0.90) 80%);
 }
 
 /* ---- shared components used by the wider template set ---- */

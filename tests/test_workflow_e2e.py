@@ -116,6 +116,7 @@ def harness(monkeypatch):
         "app.messaging.twilio_client.send_media",
         lambda to, body, url, **k: _async(sent_media.append((to, body, url))),
     )
+
     async def _fake_publish(pid):
         published.append(pid)
         from app.publishing.blotato import PublishResult

@@ -1,0 +1,54 @@
+{% extends "_final.html" %}
+{# TS-p2 "cut navy border" — square-cut photo in a thin navy frame, cyan divider
+   spanning the photo width, Inter bold title-case headline, two-tone dateline
+   (date white, "· City, Country" at 85%), centered logo.
+   Slots: photo (data URI), headline, subline_strong, subline_soft.
+   Geometry calibrated against the approved reference PNG (probe 2026-08-08). #}
+{% block style %}
+<style>
+  .photo {
+    top: var(--frame); left: var(--frame); right: var(--frame);
+    height: 1093px;
+  }
+  .divider {
+    position: absolute;
+    left: var(--frame); right: var(--frame);
+    top: 1107px;
+    height: 7px;
+    background: var(--cyan);
+  }
+  .txt { position: absolute; line-height: 1; font-family: 'Inter', sans-serif; }
+  h1.txt {
+    left: 60px; top: 1147px;
+    font-weight: 700;
+    font-size: 49px;
+    color: var(--white);
+  }
+  .subline {
+    left: 59px; top: 1218px;
+    font-weight: 500;
+    font-size: 27px;
+  }
+  .subline .strong { color: var(--white); }
+  .subline .soft { color: var(--w85); }
+  .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 1273px;
+    height: 54px;
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="photo" style="background-image:url('{{ photo }}')"></div>
+  <div class="divider"></div>
+  <h1 class="txt">{{ headline }}</h1>
+  {% if subline_strong or subline_soft %}
+  <p class="txt subline">
+    {%- if subline_strong %}<span class="strong">{{ subline_strong }}</span>{% endif -%}
+    {%- if subline_soft %}<span class="soft"> {{ subline_soft }}</span>{% endif -%}
+  </p>
+  {% endif %}
+  <img class="logo" src="{{ logos['lockup_side_white'] }}" alt="Globex International">
+{% endblock %}

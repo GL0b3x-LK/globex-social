@@ -4,6 +4,7 @@ Catches the hard DON'Ts from the brand rules (birthdays, recipes, news, emoji
 spam, hashtag stuffing). Used to assert on generated output in tests and as a
 guardrail in later phases.
 """
+
 from __future__ import annotations
 
 import re

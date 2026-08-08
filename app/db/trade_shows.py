@@ -1,4 +1,5 @@
 """Trade show query helpers."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -35,6 +36,4 @@ def needs_confirmation() -> list[Row]:
 
 
 def get_by_name(name: str) -> Row | None:
-    return maybe_row(
-        get_supabase().table(_TABLE).select("*").eq("name", name).limit(1).execute()
-    )
+    return maybe_row(get_supabase().table(_TABLE).select("*").eq("name", name).limit(1).execute())

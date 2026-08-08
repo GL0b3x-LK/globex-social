@@ -1,4 +1,5 @@
 """Approval-history query helpers (append-only audit)."""
+
 from __future__ import annotations
 
 from typing import Any

@@ -1,0 +1,91 @@
+{% extends "_final.html" %}
+{# MS-3 "anniversary photo" — full-bleed portrait over the top 60%, navy panel on
+   the bottom 40%, thin cyan hairline inset frame around the whole canvas, cyan
+   years badge top-right. Inter throughout.
+   Slots: photo (data URI), years, eyebrow, name, message, role.
+   Geometry calibrated against the approved reference PNG (probe 2026-08-08). #}
+{% block style %}
+<style>
+  .photo {
+    top: 0; left: 0; right: 0;
+    height: 810px;
+  }
+  .hairline {
+    position: absolute;
+    inset: 30px;
+    border: 2px solid rgba(91, 192, 222, 0.55);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .badge {
+    position: absolute;
+    top: 75px; right: 30px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: var(--cyan);
+    color: var(--navy);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    z-index: 2;
+  }
+  .badge .num { font-weight: 800; font-size: 56px; line-height: 1; }
+  .badge .yrs {
+    font-weight: 600; font-size: 17.5px; letter-spacing: 3px;
+    margin-top: 11px; text-transform: uppercase;
+  }
+  .txt { position: absolute; line-height: 1; font-family: 'Inter', sans-serif; }
+  .eyebrow {
+    left: 60px; top: 934px;
+    color: var(--cyan);
+    font-weight: 600;
+    font-size: 25px;
+    letter-spacing: 7px;
+    text-transform: uppercase;
+  }
+  .name {
+    left: 59px; top: 981px;
+    font-weight: 700;
+    font-size: 67px;
+    color: var(--white);
+  }
+  .message {
+    left: 60px; top: 1069px;
+    font-weight: 400;
+    font-size: 33px;
+    line-height: 1.30;
+    color: var(--white);
+    max-width: 790px;
+  }
+  .role {
+    left: 61px; top: 1196px;
+    color: var(--cyan);
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: 3.1px;
+    text-transform: uppercase;
+  }
+  .logo {
+    position: absolute;
+    right: 44px; top: 1181px;
+    height: 54px;
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="photo" style="background-image:url('{{ photo }}')"></div>
+  <div class="hairline"></div>
+  {% if years %}
+  <div class="badge">
+    <span class="num">{{ years }}</span>
+    <span class="yrs">Years</span>
+  </div>
+  {% endif %}
+  <p class="txt eyebrow">{{ eyebrow|default("Work Anniversary") }}</p>
+  <h1 class="txt name">{{ name }}</h1>
+  {% if message %}<p class="txt message">{{ message }}</p>{% endif %}
+  {% if role %}<p class="txt role">{{ role }}</p>{% endif %}
+  <img class="logo" src="{{ logos['lockup_side_white'] }}" alt="Globex International">
+{% endblock %}

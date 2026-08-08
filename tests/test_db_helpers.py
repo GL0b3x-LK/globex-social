@@ -3,6 +3,7 @@
 Each test creates clearly-namespaced rows and cleans them up in a finally block,
 so the suite is safe to run repeatedly and doesn't pollute reference data.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -52,11 +53,17 @@ def test_employees_crud():
 
 def test_holidays_crud():
     holidays.upsert_many(
-        [{
-            "name": TEST_HOL, "month": "January", "date_2026": "2026-01-10",
-            "date_2027": "2027-01-10", "is_month_long": False,
-            "category": "food_industry", "recurring": True,
-        }]
+        [
+            {
+                "name": TEST_HOL,
+                "month": "January",
+                "date_2026": "2026-01-10",
+                "date_2027": "2027-01-10",
+                "is_month_long": False,
+                "category": "food_industry",
+                "recurring": True,
+            }
+        ]
     )
     try:
         row = holidays.get_by_name(TEST_HOL)
@@ -69,10 +76,15 @@ def test_holidays_crud():
 
 def test_trade_shows_crud():
     trade_shows.upsert_many(
-        [{
-            "name": TEST_SHOW, "month": "April", "location": "Test City",
-            "hidden": False, "needs_date_confirmation": True,
-        }]
+        [
+            {
+                "name": TEST_SHOW,
+                "month": "April",
+                "location": "Test City",
+                "hidden": False,
+                "needs_date_confirmation": True,
+            }
+        ]
     )
     try:
         row = trade_shows.get_by_name(TEST_SHOW)
@@ -86,8 +98,11 @@ def test_trade_shows_crud():
 
 def test_posts_and_approvals_crud():
     post = posts.create(
-        content="body", caption="cap", hashtags=["#globex"],
-        template_type="stats", status="draft",
+        content="body",
+        caption="cap",
+        hashtags=["#globex"],
+        template_type="stats",
+        status="draft",
     )
     pid = post["id"]
     try:
@@ -141,10 +156,15 @@ def test_conversations_crud():
 
 def test_packaging_rotation_crud():
     packaging_rotation.upsert_many(
-        [{
-            "slot_number": s, "caption_template": f"slot {s}",
-            "image_asset_path": f"x{s}.png", "active": True,
-        } for s in TEST_SLOTS]
+        [
+            {
+                "slot_number": s,
+                "caption_template": f"slot {s}",
+                "image_asset_path": f"x{s}.png",
+                "active": True,
+            }
+            for s in TEST_SLOTS
+        ]
     )
     try:
         active_slots = {r["slot_number"] for r in packaging_rotation.list_active()}

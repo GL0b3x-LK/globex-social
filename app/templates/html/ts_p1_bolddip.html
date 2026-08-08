@@ -1,0 +1,73 @@
+{% extends "_final.html" %}
+{# TS-p1 "bold dip" — photo behind a full-width navy panel whose rounded top
+   corners (the "dip") notch into the photo. Comfortaa; ALL-CAPS airy headline;
+   optional cyan booth pill; logo bottom-right.
+   Slots: photo (data URI), headline, subline_strong, subline_soft, pill.
+   Geometry calibrated against the approved reference PNG (probe 2026-08-08). #}
+{% block style %}
+<style>
+  .photo {
+    /* extends past the panel top (1148) so the rounded corner notches reveal it */
+    top: var(--frame); left: var(--frame); right: var(--frame); bottom: 132px;
+    border-radius: 10px 10px 0 0;
+    z-index: 0;
+  }
+  .panel {
+    position: absolute;
+    left: 0; right: 0; top: 1148px; bottom: 0;
+    background: var(--navy);
+    border-radius: 70px 70px 0 0;
+    z-index: 1;
+  }
+  .txt { position: absolute; z-index: 2; line-height: 1; }
+  h1.txt {
+    left: 64px; top: 1177px;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: 700;
+    font-size: 21.5px;
+    letter-spacing: 6.3px;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+  .subline {
+    left: 64px; top: 1215px;
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: 500;
+    font-size: 25px;
+    color: var(--white);
+  }
+  .pill {
+    left: 64px; top: 1262px;
+    height: 54px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 36px;
+    border-radius: 999px;
+    background: var(--cyan);
+    color: var(--navy);
+    font-family: 'Comfortaa', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+  }
+  .logo {
+    position: absolute; z-index: 2;
+    right: 56px; bottom: 34px;
+    height: 54px;
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="photo" style="background-image:url('{{ photo }}')"></div>
+  <div class="panel"></div>
+  <h1 class="txt">{{ headline }}</h1>
+  {% if subline_strong or subline_soft %}
+  <p class="txt subline">
+    {%- if subline_strong %}<span>{{ subline_strong }}</span>{% endif -%}
+    {%- if subline_soft %}<span> {{ subline_soft }}</span>{% endif -%}
+  </p>
+  {% endif %}
+  {% if pill %}<span class="txt pill">{{ pill }}</span>{% endif %}
+  <img class="logo" src="{{ logos['lockup_side_white'] }}" alt="Globex International">
+{% endblock %}

@@ -4,6 +4,7 @@ Server-side uses the service_role key (SUPABASE_KEY), which bypasses RLS. The
 unwrap helpers narrow postgrest's loosely-typed ``response.data`` (``list[JSON]``)
 to the row dicts our helpers actually return — one place to cast, not 28.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

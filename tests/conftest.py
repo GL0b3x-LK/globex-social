@@ -4,6 +4,7 @@ DB helper tests are integration tests against the dev Supabase project. If
 Supabase isn't configured or reachable (e.g. CI without secrets, or schema not
 yet applied), they skip rather than fail.
 """
+
 from __future__ import annotations
 
 import os

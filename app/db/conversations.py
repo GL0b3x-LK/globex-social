@@ -1,5 +1,6 @@
 """Per-phone WhatsApp conversation state. Persisted so Railway restarts don't
 lose Karen's in-progress draft."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

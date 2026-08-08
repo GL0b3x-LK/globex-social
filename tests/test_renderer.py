@@ -28,8 +28,10 @@ from PIL import Image
 from app.templates.catalog import TEMPLATES
 from app.templates.renderer import HTML_DIR, Renderer
 
-NAVY = (0, 45, 114)
-CYAN = (91, 194, 231)
+# Website brand values (client-confirmed June/July 2026) — NOT the old Pantone
+# conversions (0,45,114)/(91,194,231).
+NAVY = (0, 45, 112)
+CYAN = (91, 192, 222)
 
 # Renderer for HTML-only unit tests (constructing it launches no browser).
 _R = Renderer()
@@ -57,17 +59,23 @@ def test_catalog_template_file_exists(variant: str) -> None:
 def test_render_html_composes(variant: str) -> None:
     slots = _min_slots(variant)
     html = _R.render_html(variant, slots)
-    assert "font-family: 'Montserrat'" in html or "Montserrat" in html
     assert "data:font/woff2" in html  # fonts inlined
     assert "data:image/png" in html  # logo inlined (appears on every post)
-    assert 'class="brand-footer"' in html
+    if TEMPLATES[variant].file.startswith(("ts_", "ms_")):
+        # Final approved set: standalone layout (no legacy brand-footer), and the
+        # logo asset must still be present on every post.
+        assert "lockup" in html or "logo" in html
+        assert "#002D70" in html or "--navy: #002D70" in html
+    else:
+        assert "font-family: 'Montserrat'" in html or "Montserrat" in html
+        assert 'class="brand-footer"' in html
     for value in slots.values():
         assert value in html  # required slot text actually rendered
 
 
 def test_base_css_uses_only_brand_colors() -> None:
     css = (HTML_DIR / "_base.css").read_text(encoding="utf-8")
-    allowed_hex = {"002d72", "5bc2e7", "ffffff", "fff"}
+    allowed_hex = {"002d70", "5bc0de", "ffffff", "fff"}
     for hex_code in re.findall(r"#([0-9a-fA-F]{3,6})", css):
         assert hex_code.lower() in allowed_hex, f"off-brand hex #{hex_code} in _base.css"
     allowed_rgb = {NAVY, CYAN, (255, 255, 255)}

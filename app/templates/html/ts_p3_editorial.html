@@ -1,0 +1,48 @@
+{% extends "_final.html" %}
+{# TS-p3 "editorial" — navy masthead on top: Poppins bold headline with the
+   date/location/booth meta line beneath (cyan bullet separators, per the design
+   bible "dates + booth up top under the show name"). Photo below, centered logo
+   in the bottom band. Slots: photo (data URI), headline, meta (list of strings).
+   Geometry calibrated against the approved reference PNG (probe 2026-08-08). #}
+{% block style %}
+<style>
+  .txt { position: absolute; line-height: 1; font-family: 'Poppins', sans-serif; }
+  h1.txt {
+    left: 41px; top: 62px;
+    font-weight: 700;
+    font-size: 55px;
+    color: var(--white);
+  }
+  .meta {
+    left: 40px; top: 133px;
+    font-weight: 600;
+    font-size: 24px;
+    color: var(--white);
+  }
+  .meta .dot { color: var(--cyan); padding: 0 11px; }
+  .photo {
+    top: 173px;
+    left: var(--frame); right: var(--frame);
+    bottom: 136px;
+  }
+  .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 1253px;
+    height: 54px;
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <h1 class="txt">{{ headline }}</h1>
+  {% if meta %}
+  <p class="txt meta">
+    {%- for part in meta -%}
+      <span>{{ part }}</span>{% if not loop.last %}<span class="dot">&bull;</span>{% endif %}
+    {%- endfor -%}
+  </p>
+  {% endif %}
+  <div class="photo" style="background-image:url('{{ photo }}')"></div>
+  <img class="logo" src="{{ logos['lockup_side_white'] }}" alt="Globex International">
+{% endblock %}

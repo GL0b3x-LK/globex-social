@@ -14,6 +14,7 @@ Notes / deviations from the original plan:
 - Retries use the SDK's built-in exponential backoff (``max_retries``); a single
   application-level re-prompt handles schema-validation misses.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

@@ -47,14 +47,34 @@ async def test_composite_real_roundtrip_produces_mp4() -> None:
         clip = Path(td) / "c.mp4"
         overlay = Path(td) / "o.png"
         subprocess.run(
-            [ff, "-y", "-f", "lavfi", "-i", "testsrc=size=640x480:rate=12:duration=1",
-             "-pix_fmt", "yuv420p", str(clip)],
-            check=True, capture_output=True,
+            [
+                ff,
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=size=640x480:rate=12:duration=1",
+                "-pix_fmt",
+                "yuv420p",
+                str(clip),
+            ],
+            check=True,
+            capture_output=True,
         )
         subprocess.run(
-            [ff, "-y", "-f", "lavfi", "-i", "testsrc=size=1080x1920:duration=1",
-             "-frames:v", "1", str(overlay)],
-            check=True, capture_output=True,
+            [
+                ff,
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=size=1080x1920:duration=1",
+                "-frames:v",
+                "1",
+                str(overlay),
+            ],
+            check=True,
+            capture_output=True,
         )
         out = await video.composite_vhs(clip.read_bytes(), overlay.read_bytes(), max_seconds=2)
     assert out is not None

@@ -2,6 +2,7 @@
 
 Run:  RUN_AI_LIVE=1 .venv\\Scripts\\python.exe -m pytest tests/test_generator.py -v
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,7 +17,12 @@ pytestmark = pytest.mark.usefixtures("anthropic_live")
 # One representative (context, user_message) per category.
 CASES: dict[ContentCategory, tuple[dict, str | None]] = {
     ContentCategory.trade_show: (
-        {"show": "Gulfood", "dates": "2027-03-15 to 2027-03-19", "location": "Dubai", "variant": "pre"},
+        {
+            "show": "Gulfood",
+            "dates": "2027-03-15 to 2027-03-19",
+            "location": "Dubai",
+            "variant": "pre",
+        },
         "post about us heading to Gulfood",
     ),
     ContentCategory.holiday: (
@@ -48,7 +54,10 @@ CASES: dict[ContentCategory, tuple[dict, str | None]] = {
         None,
     ),
     ContentCategory.branded_packaging: (
-        {"slot_number": 1, "caption_template": "Consistent branding, every box. Globex packaging built for the world's food trade."},
+        {
+            "slot_number": 1,
+            "caption_template": "Consistent branding, every box. Globex packaging built for the world's food trade.",
+        },
         None,
     ),
     ContentCategory.custom: (

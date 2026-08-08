@@ -4,6 +4,7 @@ Use ``get_logger(__name__)`` everywhere instead of ``print()``. The correlation
 ID is set by the webhook layer (Phase 4) and threaded through every log line so a
 single Karen message can be traced end-to-end.
 """
+
 from __future__ import annotations
 
 import json
@@ -15,10 +16,29 @@ correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", defaul
 
 # Standard LogRecord attributes we don't want to duplicate into the JSON payload.
 _RESERVED = {
-    "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
-    "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
-    "created", "msecs", "relativeCreated", "thread", "threadName",
-    "processName", "process", "taskName", "message", "asctime",
+    "name",
+    "msg",
+    "args",
+    "levelname",
+    "levelno",
+    "pathname",
+    "filename",
+    "module",
+    "exc_info",
+    "exc_text",
+    "stack_info",
+    "lineno",
+    "funcName",
+    "created",
+    "msecs",
+    "relativeCreated",
+    "thread",
+    "threadName",
+    "processName",
+    "process",
+    "taskName",
+    "message",
+    "asctime",
 }
 
 
