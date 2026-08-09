@@ -20,6 +20,7 @@ class ConversationState(StrEnum):
     AWAITING_APPROVAL = "awaiting_approval"
     EDITING = "editing"
     AWAITING_CLARIFICATION = "awaiting_clarification"
+    INTAKE = "intake"  # guided 4-question flow (about / why / photo / template)
 
 
 def state_of(conversation: Row) -> ConversationState:

@@ -54,7 +54,13 @@ ROUTING: dict[tuple[ConversationState, IntentType], Action] = {}
 for _state in (ConversationState.AWAITING_APPROVAL, ConversationState.EDITING):
     for _intent, _action in _WITH_DRAFT.items():
         ROUTING[(_state, _intent)] = _action
-for _state in (ConversationState.IDLE, ConversationState.AWAITING_CLARIFICATION):
+# INTAKE is normally intercepted before routing (the intake handler consumes the
+# message); the rows below are a defensive fallback so route() can never KeyError.
+for _state in (
+    ConversationState.IDLE,
+    ConversationState.AWAITING_CLARIFICATION,
+    ConversationState.INTAKE,
+):
     for _intent, _action in _NO_DRAFT.items():
         ROUTING[(_state, _intent)] = _action
 

@@ -23,7 +23,7 @@ from app.messaging.state_machine import Action, route
 from app.messaging.transcription import Outcome
 from app.publishing import platforms as plat
 from app.templates import renderer as render_mod
-from app.workflows import approval, messages, render_pipeline
+from app.workflows import approval, intake, messages, render_pipeline
 
 # VHS HUD overlay (transparent 9:16), composited onto Karen's video by ffmpeg.
 _VHS_OVERLAY_FILE = "_vhs_overlay.html"
@@ -83,6 +83,12 @@ async def handle_incoming_message(
     convo = await conversation.get_or_create(from_phone)
     state = conversation.state_of(convo)
 
+    # Guided 4-question flow in progress — this message answers the current step.
+    if state is ConversationState.INTAKE:
+        await intake.handle_answer(from_phone, convo, body, photo)
+        await _update_summary(from_phone)
+        return
+
     # If we previously asked "designed graphic or generated image?", this message is
     # the answer — resolve it and build the post, rather than re-classifying intent.
     pending = (convo.get("context") or {}).get("pending_request")
@@ -129,6 +135,13 @@ async def handle_incoming_message(
     )
 
     if action is Action.GENERATE:
+        # A bare "new post" (no photo, no real brief) starts the guided 4-question
+        # flow; a substantial brief or attached media keeps the one-shot fast path.
+        if not clip and await intake.maybe_start(
+            from_phone, intent.extracted_request or body, photo
+        ):
+            await _update_summary(from_phone)
+            return
         await _generate_and_preview(
             from_phone,
             intent.extracted_request or body,

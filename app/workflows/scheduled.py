@@ -30,7 +30,6 @@ from app.messaging import twilio_client
 from app.publishing import publisher
 from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES
 from app.workflows import messages
-from app.workflows.on_demand import _finalize_preview
 
 log = get_logger("app.workflows.scheduled")
 
@@ -59,29 +58,36 @@ def _pool() -> list[dict[str, Any]]:
     return doc["assets"]
 
 
-def pick_photo(entry: CalendarEntry) -> Path:
-    """Best-tag-match asset for an entry; deterministic tie-break per entry.
+def pick_photo_for_text(text: str, category: str = "brand", *, seed_key: str = "") -> Path:
+    """Best-tag-match pool asset for arbitrary text; deterministic per seed_key.
 
     Branded packaging shots outrank raw-product photography — Len rejected
     graphic carcass imagery in the design rounds, so cartons/retail bags are the
     default face of product posts and raw shots only win on a strong subject
     match. The operator can always swap the image via WhatsApp before approving.
     """
-    text = f"{entry.category} {entry.title} {entry.gist}".lower()
+    text = f"{category} {text}".lower()
     scored: list[tuple[float, int, dict[str, Any]]] = []
-    seed = int(hashlib.sha256(entry.event_id.encode()).hexdigest()[:8], 16)
+    seed = int(hashlib.sha256((seed_key or text).encode()).hexdigest()[:8], 16)
     for i, asset in enumerate(_pool()):
-        if asset["file"].startswith("placeholder") and entry.category != "milestone":
+        if asset["file"].startswith("placeholder") and category != "milestone":
             continue
         score = float(sum(1 for t in asset["tags"] if t in text))
-        if asset["file"].startswith("pack-") and entry.category in ("product", "packaging"):
+        if asset["file"].startswith("pack-") and category in ("product", "packaging"):
             score += 1.5  # branded presentation beats raw meat at equal subject match
-        if asset["file"].startswith("prod-") and entry.category != "product":
+        if asset["file"].startswith("prod-") and category != "product":
             score -= 1.0  # raw shots never front brand/holiday/show posts
         jitter = (seed + i) % 7  # stable variety among equal scorers
         scored.append((score, jitter, asset))
     scored.sort(key=lambda s: (-s[0], -s[1]))
     return _POOL_DIR / scored[0][2]["file"]
+
+
+def pick_photo(entry: CalendarEntry) -> Path:
+    """Pool photo for a calendar entry (see pick_photo_for_text)."""
+    return pick_photo_for_text(
+        f"{entry.title} {entry.gist}", entry.category, seed_key=entry.event_id
+    )
 
 
 def _entry_brief(entry: CalendarEntry) -> str:
@@ -96,6 +102,8 @@ def _entry_brief(entry: CalendarEntry) -> str:
 
 
 async def draft_calendar_entry(entry: CalendarEntry) -> None:
+    from app.workflows.on_demand import _finalize_preview  # local import: avoid cycle
+
     category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
     generated = await generator.generate_post(
         category,
