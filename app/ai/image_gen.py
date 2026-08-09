@@ -64,6 +64,22 @@ def _generate_input(model: str, prompt: str, aspect_ratio: str, resolution: str)
     return {"prompt": prompt, "aspect_ratio": aspect_ratio, "output_format": "png"}
 
 
+def _edit_input(
+    model: str, prompt: str, image_urls: list[str], aspect_ratio: str, resolution: str
+) -> dict:
+    """Same split as `_generate_input`, for the reference-image models.
+
+    GPT Image sizes its output with `resolution` and has no `output_format`, so
+    sending nano-banana's shape to it fails at task creation.
+    """
+    body: dict = {"prompt": prompt, _edit_field(model): image_urls, "aspect_ratio": aspect_ratio}
+    if model.startswith(_GPT_IMAGE_MODELS):
+        body["resolution"] = resolution
+    else:
+        body["output_format"] = "png"
+    return body
+
+
 async def _create_task(client: httpx.AsyncClient, key: str, body: dict) -> tuple[str | None, str]:
     """Submit a generation task. Returns (taskId, "") or (None, error)."""
     for attempt in range(_CREATE_RETRIES):
@@ -169,6 +185,7 @@ async def edit_multi(
     *,
     aspect_ratio: str = "1:1",
     model: str | None = None,
+    resolution: str = "2K",
 ) -> ImageResult:
     """Compose from SEVERAL reference images at once.
 
@@ -179,12 +196,7 @@ async def edit_multi(
     chosen = model or get_settings().kie_edit_model
     body = {
         "model": chosen,
-        "input": {
-            "prompt": prompt,
-            _edit_field(chosen): image_urls,
-            "aspect_ratio": aspect_ratio,
-            "output_format": "png",
-        },
+        "input": _edit_input(chosen, prompt, image_urls, aspect_ratio, resolution),
     }
     return await _run(body, label=f"edit_multi[{len(image_urls)}]")
 
