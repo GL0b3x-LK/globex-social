@@ -72,11 +72,22 @@ _STYLE = """Globex blue is the through-line. Cool blue lighting and blue accents
 shot to the brand and reinforce the frozen, cold-chain story.
 Premium, clean and appetizing. Never clinical, never a wet market. Think high-end
 frozen food brand, not a butcher's back room.
-The Globex chick logo and ALL packaging label artwork must stay EXACTLY as in the
-reference photograph — same colours, same layout, same lettering. Do not redraw,
-restyle, re-letter, translate or invent any label, wordmark, logo or text.
-Trust cues to convey visually, never as text: all natural, deep-frozen at -18C,
-Quality Control, trading since 1993."""
+Trust cues to convey visually, never as text: all natural, deep-frozen, Quality
+Control, trading since 1993."""
+
+# Only ever sent with a shot that genuinely has packaging in it. Sending it with
+# a bare-product shot is what made GPT Image invent a whole Globex retail pack —
+# navy label, globe-and-chicken logo, "TRADING SINCE 1993" — around loose breasts
+# whose reference photograph had no packaging in it at all.
+_PACKAGING_FIDELITY = """The Globex logo and ALL packaging label artwork must stay EXACTLY as in the
+reference photograph — same colours, same layout, same lettering, same languages.
+Do not redraw, restyle, re-letter, translate, simplify or invent any label,
+wordmark, logo, badge, seal or text."""
+
+_NO_PACKAGING = """There is NO packaging anywhere in this image. The product is bare. Do not add a
+bag, tray, film, box, sticker, label, badge, seal, logo or ANY printed text — not
+on the product, not on the surface, not in the background. Inventing Globex
+branding is the single worst thing you can do here."""
 
 _TECH = f"""Ultra photorealistic, 8K, advertising quality. Colour palette built around
 Globex navy {NAVY} and Globex light blue {CYAN}.
@@ -145,10 +156,11 @@ SHOTS: list[Shot] = [
             "hands holding it up, gently presenting it to camera. Setting: a spotless "
             "modern food-processing facility, softly blurred stainless steel and cool "
             "blue tones behind (bokeh). The nitrile gloves are clean Globex blue "
-            f"({CYAN}). The product looks pristine and high quality. Soft, flattering "
-            "commercial lighting that conveys care, hygiene and Quality Control. "
-            "Shallow depth of field, 50mm lens, eye level, hands and product in sharp "
-            "focus."
+            f"({CYAN}). The product is held bare in the bare gloved hands — no bag, "
+            "no tray, no film, no label. It looks pristine and high quality. Soft, "
+            "flattering commercial lighting that conveys care, hygiene and Quality "
+            "Control. Shallow depth of field, 50mm lens, eye level, hands and product "
+            "in sharp focus."
         ),
     ),
     Shot(
@@ -237,13 +249,23 @@ def reference_for(product: library.Product, shot: Shot) -> str | None:
 
 
 def build_prompt(product: library.Product, shot: Shot) -> str:
+    """Assemble the prompt, saying the right thing about packaging for this shot.
+
+    Which packaging clause goes in is decided here rather than written into every
+    shot, because getting it wrong in either direction is a client rejection:
+    invented branding on one side, unpackaged carcass on the other.
+    """
     subject = f"The product is {product.name}: {product.description}"
     if shot.packaged:
         subject += (
             " It must appear sealed in its real packaging exactly as photographed — "
             "never loose, never in invented packaging."
         )
-    return "\n\n".join([_STYLE, subject, shot.body, _TECH])
+        rule = _PACKAGING_FIDELITY
+    else:
+        subject += " It is shown bare, exactly as in the reference photograph."
+        rule = _NO_PACKAGING
+    return "\n\n".join([_STYLE, subject, shot.body, rule, _TECH])
 
 
 def _extension(data: bytes) -> str:
