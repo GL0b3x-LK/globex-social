@@ -45,8 +45,16 @@
       overflow: hidden;
       background: rgba(255,255,255,0.06);
     }
+    .shot.square { flex: 0 0 auto; aspect-ratio: 1 / 1; }
+    .shot.tall { flex: 0 0 auto; aspect-ratio: 9 / 16; }
+    .shots.four .shot.square { flex: 1 1 0; }
+    .shots.four .shot.tall { flex: 0.5625 1 0; }
     .shot.front { flex: 0 0 58%; aspect-ratio: 1 / 1; }
     .shot.context { flex: 1 1 auto; aspect-ratio: 9 / 16; }
+    .shotlabel {
+      font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--w70); margin-top: 5px;
+    }
     .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .missing {
       width: 100%; height: 100%; display: flex; align-items: center;
@@ -79,6 +87,16 @@
     <div class="grid">
       {% for c in characters %}
       <div class="card">
+        {% if c.shots %}
+        <div class="shots four">
+          {% for s in c.shots %}
+          <div class="shot {{ s.shape }}">
+            {% if s.uri %}<img src="{{ s.uri }}" alt="">
+            {% else %}<div class="missing">{{ s.key }} pending</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
         <div class="shots">
           <div class="shot front">
             {% if c.front %}<img src="{{ c.front }}" alt="">
@@ -89,6 +107,7 @@
             {% else %}<div class="missing">context pending</div>{% endif %}
           </div>
         </div>
+        {% endif %}
         <div class="name">{{ c.name }}</div>
         <div class="meta">{{ c.meta }}</div>
         <div class="role">{{ c.role }}</div>

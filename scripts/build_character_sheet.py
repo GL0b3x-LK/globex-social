@@ -53,25 +53,39 @@ def _uri(slug: str, shot: str) -> str | None:
     return image_data_uri(path.read_bytes()) if path.exists() else None
 
 
-def build_context(columns: int) -> dict[str, object]:
+# Order and frame shape for the full four-shot view.
+_ALL_SHOTS = (
+    ("front", "square"),
+    ("three_quarter", "square"),
+    ("context", "tall"),
+    ("talking", "tall"),
+)
+
+
+def build_context(columns: int, *, all_shots: bool = False) -> dict[str, object]:
     cards = []
     for c in library.load_characters():
         ethnicity = _ETHNICITY_LABEL.get(c.ethnicity, c.ethnicity.replace("_", " ").title())
-        cards.append(
-            {
-                "name": c.name,
-                "meta": f"{ethnicity} · {c.gender.title()} · {c.age}",
-                "role": c.role,
-                "front": _uri(c.slug, "front"),
-                "context": _uri(c.slug, "context"),
-            }
-        )
-    ready = sum(1 for card in cards if card["front"])
+        card: dict[str, object] = {
+            "name": c.name,
+            "meta": f"{ethnicity} · {c.gender.title()} · {c.age}",
+            "role": c.role,
+            "front": _uri(c.slug, "front"),
+            "context": _uri(c.slug, "context"),
+        }
+        if all_shots:
+            card["shots"] = [
+                {"key": key.replace("_", " "), "shape": shape, "uri": _uri(c.slug, key)}
+                for key, shape in _ALL_SHOTS
+            ]
+        cards.append(card)
+    approved = sum(1 for c in library.load_characters() if c.status == "approved")
     return {
         "title": "Globex video characters",
         "subtitle": (
-            f"{len(cards)} personas for the video engine — {ready} with reference shots. "
-            "Approve once; every future video reuses the same faces and voices."
+            f"{len(cards)} personas — {approved} approved, each with 4 stored reference "
+            "shots and a locked American-English voice. Every video reuses these exact "
+            "images; nothing is re-generated from a description."
         ),
         "characters": cards,
         "columns": columns,
@@ -79,10 +93,10 @@ def build_context(columns: int) -> dict[str, object]:
     }
 
 
-async def build(columns: int, width: int) -> Path:
-    context = build_context(columns)
+async def build(columns: int, width: int, *, all_shots: bool = False, out: Path = OUT_PATH) -> Path:
+    context = build_context(columns, all_shots=all_shots)
     rows = -(-len(library.load_characters()) // columns)
-    height = 250 + rows * 430  # generous; the page is captured full_page anyway
+    height = 250 + rows * (520 if all_shots else 430)
     renderer = Renderer()
     await renderer.start()
     try:
@@ -91,18 +105,22 @@ async def build(columns: int, width: int) -> Path:
         )
     finally:
         await renderer.stop()
-    OUT_PATH.write_bytes(png)
-    return OUT_PATH
+    out.write_bytes(png)
+    return out
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--columns", type=int, default=5)
     parser.add_argument("--width", type=int, default=1800)
+    parser.add_argument(
+        "--all-shots", action="store_true", help="show all four angles per character"
+    )
     args = parser.parse_args()
 
     configure_logging()
-    path = asyncio.run(build(args.columns, args.width))
+    out = CHAR_DIR / ("_all_shots.png" if args.all_shots else "_contact_sheet.png")
+    path = asyncio.run(build(args.columns, args.width, all_shots=args.all_shots, out=out))
     log.info("contact sheet written", extra={"path": str(path), "kb": path.stat().st_size // 1024})
     return 0
 
