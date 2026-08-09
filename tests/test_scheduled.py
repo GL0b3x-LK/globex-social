@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from app.ai.generator import GeneratedPost
 from app.db import calendar_source
@@ -51,12 +51,71 @@ def test_event_ids_are_stable_and_unique() -> None:
     assert ids[0] == entries[0].event_id  # deterministic across calls
 
 
-def test_entries_due_window() -> None:
-    entries = calendar_source.load_calendar()
-    first = min(e.post_date for e in entries)
-    due = calendar_source.entries_due(first, 3)
-    assert due and all(first <= e.post_date <= first.replace(day=first.day + 3) for e in due)
+def test_calendar_is_dormant_until_a_launch_date_is_set(monkeypatch) -> None:
+    """No launch date -> nothing is ever due, so no post can be silently skipped."""
+    monkeypatch.setattr(calendar_source, "launch_date", lambda: None)
+    assert calendar_source.schedule() == []
+    assert calendar_source.entries_due(date(2026, 8, 10), 3) == []
+
+
+def test_entries_due_window(monkeypatch) -> None:
+    launch = date(2026, 9, 7)  # a Monday
+    monkeypatch.setattr(calendar_source, "launch_date", lambda: launch)
+    due = calendar_source.entries_due(launch, 3)
+    assert due
+    assert all(launch <= e.post_date <= launch + timedelta(days=3) for e in due)
     assert not calendar_source.entries_due(date(2030, 1, 1), 3)
+
+
+# --------------------------------------------------------------------------- #
+# launch-date re-anchoring
+# --------------------------------------------------------------------------- #
+
+
+def test_launch_reflows_floating_posts_and_loses_none() -> None:
+    """Evergreen posts survive any launch date; only past-dated anchors drop."""
+    entries = calendar_source.load_calendar()
+    floating = {e.title for e in entries if not e.anchored}
+    for launch in (date(2026, 8, 10), date(2026, 9, 7), date(2027, 1, 4)):
+        plan = calendar_source.schedule(launch)
+        assert floating <= {e.title for e in plan}, launch
+        assert all(e.post_date >= launch for e in plan), launch
+
+
+def test_anchored_posts_keep_their_real_dates() -> None:
+    """A holiday/show/anniversary can't be moved by a later launch."""
+    plan = calendar_source.schedule(date(2026, 9, 7))
+    for e in plan:
+        if e.anchored:
+            assert e.post_date == e.planned_date, e.title
+
+
+def test_launch_drops_only_anchors_whose_moment_has_passed() -> None:
+    launch = date(2026, 9, 7)
+    dropped = calendar_source.dropped_by_launch(launch)
+    assert all(e.anchored and e.planned_date < launch for e in dropped)
+    titles = {e.title for e in calendar_source.schedule(launch)}
+    assert not ({e.title for e in dropped} & titles)
+
+
+def test_every_scheduled_post_lands_on_a_posting_day() -> None:
+    """Mon/Wed/Fri only — Tue/Thu stay reserved for the video track."""
+    plan = calendar_source.schedule(date(2026, 9, 7))
+    assert {e.post_date.weekday() for e in plan} <= {0, 2, 4}
+
+
+def test_no_two_posts_share_a_slot() -> None:
+    plan = calendar_source.schedule(date(2026, 9, 7))
+    dates = [e.post_date for e in plan]
+    assert len(dates) == len(set(dates))
+
+
+def test_event_ids_are_launch_independent() -> None:
+    """Re-anchoring must not re-draft posts already sent for approval."""
+    a = {e.title: e.event_id for e in calendar_source.schedule(date(2026, 8, 10))}
+    b = {e.title: e.event_id for e in calendar_source.schedule(date(2027, 1, 4))}
+    shared = a.keys() & b.keys()
+    assert shared and all(a[t] == b[t] for t in shared)
 
 
 def test_undrafted_filters_existing_posts(monkeypatch) -> None:

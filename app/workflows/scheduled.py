@@ -92,8 +92,9 @@ def pick_photo(entry: CalendarEntry) -> Path:
 
 def _entry_brief(entry: CalendarEntry) -> str:
     """The generation brief — the calendar row is the creative instruction."""
+    when = entry.post_date or entry.planned_date
     return (
-        f"Scheduled calendar post for {entry.post_date.strftime('%A %d %B %Y')}.\n"
+        f"Scheduled calendar post for {when.strftime('%A %d %B %Y')}.\n"
         f"Theme: {entry.title}\n"
         f"What the post should say: {entry.gist}\n"
         f"Marketing purpose: {entry.purpose}\n"
@@ -104,11 +105,12 @@ def _entry_brief(entry: CalendarEntry) -> str:
 async def draft_calendar_entry(entry: CalendarEntry) -> None:
     from app.workflows.on_demand import _finalize_preview  # local import: avoid cycle
 
+    when = entry.post_date or entry.planned_date
     category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
     generated = await generator.generate_post(
         category,
         context={
-            "post_date": entry.post_date.isoformat(),
+            "post_date": when.isoformat(),
             "calendar_title": entry.title,
             "marketing_purpose": entry.purpose,
         },
@@ -119,7 +121,7 @@ async def draft_calendar_entry(entry: CalendarEntry) -> None:
 
     photo = pick_photo(entry)
     prefix = (
-        f"🗓 Scheduled post — goes out {entry.post_date.strftime('%a %d %b')} once you approve\n"
+        f"🗓 Scheduled post — goes out {when.strftime('%a %d %b')} once you approve\n"
         f"({entry.title})\n\n"
     )
     if photo.name.startswith("placeholder"):
@@ -133,7 +135,7 @@ async def draft_calendar_entry(entry: CalendarEntry) -> None:
         treatment="calendar",
         event=(EVENT_TYPE, entry.event_id),
         extra_render_meta={
-            "publish_on": entry.post_date.isoformat(),
+            "publish_on": when.isoformat(),
             "calendar": {
                 "week": entry.week,
                 "title": entry.title,
@@ -145,7 +147,7 @@ async def draft_calendar_entry(entry: CalendarEntry) -> None:
     )
     log.info(
         "calendar draft sent",
-        extra={"event_id": entry.event_id, "title": entry.title, "date": str(entry.post_date)},
+        extra={"event_id": entry.event_id, "title": entry.title, "date": str(when)},
     )
 
 
@@ -155,7 +157,7 @@ async def draft_due_posts(today: date | None = None) -> int:
     today = today or date.today()
     due = calendar_source.entries_due(today, settings.draft_lead_days)
     fresh = await asyncio.to_thread(calendar_source.undrafted, due)
-    for entry in sorted(fresh, key=lambda e: e.post_date):
+    for entry in sorted(fresh, key=lambda e: e.post_date or e.planned_date):
         try:
             await draft_calendar_entry(entry)
         except Exception:

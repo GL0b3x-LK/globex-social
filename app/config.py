@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     # publishes approved posts on their scheduled date. Off by default so dev
     # servers and tests never fire real drafts.
     scheduler_enabled: bool = False
+    # Day one of the 52-week calendar, "YYYY-MM-DD". UNSET = the calendar is
+    # dormant: no entry is ever due, so nothing drafts and nothing is silently
+    # skipped while the client decides when to go live. Setting it re-flows the
+    # whole year from that date (see app/db/calendar_source.py).
+    calendar_launch_date: str | None = None
     draft_lead_days: int = 3  # draft/preview posts this many days before post_date
     draft_hour: int = 7  # local hour (timezone above) the daily draft job runs
     publish_hour: int = 9  # local hour an approved post goes live on its date
