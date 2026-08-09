@@ -39,7 +39,14 @@ class Scene(BaseModel):
     camera: str = Field(
         description="Camera feel: handheld, slow push-in, static. No fancy transitions."
     )
-    action: str = Field(description="What physically happens in shot.")
+    action: str = Field(description="What physically happens in shot, in one line.")
+    beats: list[str] = Field(
+        description=(
+            "2-4 beats in order, each one short line, describing how the shot unfolds "
+            "across its seconds — what moves first, what changes, where it lands. "
+            "This is what the operator reads to picture the scene."
+        )
+    )
     dialogue: str = Field(description="The exact words spoken. Never empty.")
     delivery: str = Field(description="How it is said: pace, warmth, emphasis.")
     keyframe_prompt: str = Field(
@@ -47,6 +54,21 @@ class Scene(BaseModel):
             "How the opening frame looks. Describe the scene ONLY — the character's "
             "appearance and the product packaging come from reference photos, so never "
             "describe their face, clothing colour or packaging design here."
+        )
+    )
+    motion_prompt: str = Field(
+        description=(
+            "The full stage direction handed to the video model — 60 to 110 words, one "
+            "paragraph. This is the only description the generator gets, so it must be "
+            "complete on its own. Cover, in order: how the shot opens; what the camera "
+            "physically does across the seconds (handheld sway, push-in, drift, hold) "
+            "and how fast; what the subject does with their body, hands and head; the "
+            "micro-expressions; what moves in the background; and the exact state the "
+            "shot ends in. Write like a cinematographer briefing an operator — physical "
+            "and specific ('eases four inches closer over two seconds', 'thumb presses "
+            "along the seal'), never abstract or emotional ('conveys trust'). Do NOT "
+            "describe faces, clothing or packaging design: those are fixed by the "
+            "opening frame. No steam, smoke, particles, spotlights or lens flare."
         )
     )
 

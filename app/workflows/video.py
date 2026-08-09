@@ -105,22 +105,91 @@ async def resolve(message: str) -> Resolved:
 # --------------------------------------------------------------------------- #
 
 
-def script_preview(doc: VideoScript, character: library.Character | None, cost: float) -> str:
-    """The script as something readable on a phone — never JSON."""
-    lines = [f"🎬 *{doc.title}*", f"~{doc.total_seconds:.0f}s · {len(doc.scenes)} scenes", ""]
-    for scene in doc.scenes:
-        who = character.name if (character and scene.kind is SceneKind.speaking) else "VO"
-        lines.append(f"*{scene.idx}* ({scene.seconds:.0f}s) {scene.setting} — {scene.action}")
-        lines.append(f'🗣 {who}: "{scene.dialogue}"')
+# Twilio caps a WhatsApp body at 1600 characters. A fully directed script runs
+# past that, so the preview is sent as several messages rather than truncated.
+_WHATSAPP_LIMIT = 1500
+
+
+def scene_block(scene, character: library.Character | None) -> str:
+    """One scene, exactly as the operator should see it before approving.
+
+    Includes the direction verbatim — that paragraph is what the video model
+    acts on, so approving the script means approving that text.
+    """
+    who = character.name if (character and scene.kind is SceneKind.speaking) else "VO"
+    lines = [
+        f"*SCENE {scene.idx}* · {scene.seconds:.0f}s · {scene.kind.value}",
+        f"📍 {scene.setting}",
+        f"🎥 {scene.camera}",
+        "",
+        "*Beats*",
+    ]
+    lines += [f"  {i}. {b}" for i, b in enumerate(scene.beats, start=1)]
     lines += [
         "",
-        f"🎵 {doc.music_mood}",
-        f"📝 {doc.caption}",
-        " ".join(doc.hashtags),
+        f'🗣 *{who}:* "{scene.dialogue}"',
+        f"   _{scene.delivery}_",
         "",
-        f"Reply *approve* to build it (about ${cost:.0f}, ~10 min), or tell me what to change.",
+        "*Stage direction* (sent to Higgsfield)",
+        f"{scene.motion_prompt}",
+        "",
+        "*Opening frame*",
+        f"{scene.keyframe_prompt}",
     ]
     return "\n".join(lines)
+
+
+def script_messages(
+    doc: VideoScript, character: library.Character | None, cost: float
+) -> list[str]:
+    """The script as WhatsApp-sized messages: header, each scene, then the ask."""
+    head = "\n".join(
+        [
+            f"🎬 *{doc.title}*",
+            f"~{doc.total_seconds:.0f}s · {len(doc.scenes)} scenes · "
+            f"{'presenter' if character else 'voiceover'}"
+            + (f" · {character.name}" if character else ""),
+            f"🎵 {doc.music_mood}",
+        ]
+    )
+    tail = "\n".join(
+        [
+            f"📝 *Caption*\n{doc.caption}",
+            " ".join(doc.hashtags),
+            "",
+            f"Reply *approve* to build it (about ${cost:.0f}, ~10 min), "
+            "or tell me what to change — a scene, a line, the direction, anything.",
+        ]
+    )
+
+    messages = [head]
+    for scene in doc.scenes:
+        block = scene_block(scene, character)
+        # Keep a scene whole where possible; split only if one scene alone is huge.
+        for chunk in _split(block, _WHATSAPP_LIMIT):
+            messages.append(chunk)
+    messages.append(tail)
+    return messages
+
+
+def _split(text: str, limit: int) -> list[str]:
+    """Break on line boundaries so a paragraph is never cut mid-word."""
+    if len(text) <= limit:
+        return [text]
+    out, current = [], ""
+    for line in text.split("\n"):
+        if len(current) + len(line) + 1 > limit and current:
+            out.append(current.rstrip())
+            current = ""
+        current += line + "\n"
+    if current.strip():
+        out.append(current.rstrip())
+    return out
+
+
+def script_preview(doc: VideoScript, character: library.Character | None, cost: float) -> str:
+    """The whole script as one string — used by the terminal runner and tests."""
+    return "\n\n".join(script_messages(doc, character, cost))
 
 
 def estimate_cost(doc: VideoScript) -> float:
@@ -154,9 +223,8 @@ async def start(phone: str, message: str) -> str | None:
         target_seconds=resolved.brief.target_seconds,
         stage="script_review",
     )
-    await twilio_client.send_text(
-        phone, script_preview(doc, resolved.character, estimate_cost(doc))
-    )
+    for message in script_messages(doc, resolved.character, estimate_cost(doc)):
+        await twilio_client.send_text(phone, message)
     return None
 
 
@@ -293,7 +361,9 @@ async def produce(video_id: str, phone: str) -> None:
             log.info("scene reused", extra={"video": video_id, "scene": scene.idx})
             return scene.idx, known[key]
 
-        motion = f"{scene.camera}. {scene.action}"
+        # The director's shot direction, not a stage fragment — this is the
+        # prompt the video model actually acts on.
+        motion = scene.motion_prompt or f"{scene.camera}. {scene.action}"
         if scene.kind is SceneKind.speaking and audio_url:
             result = await provider.speaking_scene(frame.url, audio_url, motion)
             cost = COST_SPEAKING
@@ -618,7 +688,7 @@ async def _redo_scene(video_id, phone, decision, doc, character, product, spec) 
     audio_url = (meta.get("audio_urls") or {}).get(str(idx)) or (meta.get("audio_urls") or {}).get(
         idx
     )
-    motion = f"{scene.camera}. {scene.action}"
+    motion = scene.motion_prompt or f"{scene.camera}. {scene.action}"
     if scene.kind is SceneKind.speaking and audio_url:
         result = await provider.speaking_scene(frame.url, audio_url, motion)
         cost = COST_SPEAKING

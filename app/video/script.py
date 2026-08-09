@@ -82,9 +82,16 @@ def _script_system(
     character: library.Character | None, product: library.Product | None, target_seconds: int
 ) -> str:
     parts = [
-        "You write short vertical social videos for Globex International, a global "
-        "food trading company founded in 1993 that ships poultry and other proteins "
-        "worldwide.",
+        "You are the creative director for Globex International, a global food trading "
+        "company founded in 1993 that ships poultry and other proteins worldwide. You "
+        "direct short vertical social videos.\n\n"
+        "Work like a director, not a copywriter. Decide what the viewer sees first, what "
+        "holds their attention, and what they are left with. Every scene needs a reason "
+        "to exist and a reason to cut. Then write the direction precisely enough that a "
+        "camera operator and a video model could both execute it without asking a "
+        "question — concrete, physical, specific about movement and timing.\n\n"
+        "The reference this must match is real factory footage: handheld, documentary, "
+        "unglamorous, shot on a working floor. Nothing staged, nothing corporate.",
         _STYLE_RULES,
         f"TARGET LENGTH: about {target_seconds} seconds across 3-5 scenes. "
         f"Each scene {MIN_SCENE_SECONDS:.0f}-{MAX_SCENE_SECONDS:.0f} seconds.",
@@ -146,6 +153,10 @@ def lint(script: VideoScript, product: library.Product | None = None) -> list[st
         where = f"Scene {scene.idx}"
         if not scene.dialogue.strip():
             problems.append(f"{where} has no dialogue.")
+        if not scene.motion_prompt.strip():
+            problems.append(f"{where} has no shot direction for the video model.")
+        if not scene.beats:
+            problems.append(f"{where} has no beats.")
         if not MIN_SCENE_SECONDS <= scene.seconds <= MAX_SCENE_SECONDS:
             problems.append(
                 f"{where} is {scene.seconds:.0f}s; scenes must be "
@@ -153,7 +164,10 @@ def lint(script: VideoScript, product: library.Product | None = None) -> list[st
             )
         problems.extend(_timing_problem(scene) or [])
         for word in ("steam", "smoke", "spotlight", "particles", "carcass", "blood"):
-            if word in (scene.keyframe_prompt + " " + scene.action).lower():
+            haystack = " ".join(
+                [scene.keyframe_prompt, scene.action, scene.motion_prompt, *scene.beats]
+            ).lower()
+            if word in haystack:
                 problems.append(f"{where} describes '{word}', which the client rejected.")
 
     if script.total_seconds > MAX_TOTAL_SECONDS:
@@ -205,7 +219,7 @@ async def write_script(
             output_model=VideoScript,
             tool_name="emit_script",
             tool_description=SCRIPT_TOOL_DESC,
-            max_tokens=2500,
+            max_tokens=6000,
         )
     )
 
@@ -225,7 +239,7 @@ async def write_script(
                 output_model=VideoScript,
                 tool_name="emit_script",
                 tool_description=SCRIPT_TOOL_DESC,
-                max_tokens=2500,
+                max_tokens=6000,
             )
         )
     return script, lint(script, product)
@@ -254,7 +268,7 @@ async def revise(
             output_model=VideoScript,
             tool_name="emit_script",
             tool_description=SCRIPT_TOOL_DESC,
-            max_tokens=2500,
+            max_tokens=6000,
         )
     )
     problems = lint(revised, product)
@@ -271,7 +285,7 @@ async def revise(
                 output_model=VideoScript,
                 tool_name="emit_script",
                 tool_description=SCRIPT_TOOL_DESC,
-                max_tokens=2500,
+                max_tokens=6000,
             )
         )
         problems = lint(revised, product)

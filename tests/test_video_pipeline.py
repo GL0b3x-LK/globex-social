@@ -41,6 +41,12 @@ def _scene(
         dialogue=dialogue,
         delivery="calm, measured",
         keyframe_prompt="factory floor, packing line behind",
+        beats=["holds the carton up", "turns it to camera", "sets it down"],
+        motion_prompt=(
+            "Handheld, slight natural sway. Begin chest-up as he lifts the carton "
+            "into frame, ease a few inches closer over three seconds, settle as he "
+            "lowers it to the bench and looks to camera."
+        ),
     )
 
 
@@ -370,3 +376,30 @@ def test_speech_is_converted_to_wav_for_lipsync() -> None:
     wav = assembly.to_wav(src)
     assert wav is not None
     assert wav[:4] == b"RIFF" and wav[8:12] == b"WAVE"
+
+
+def test_the_generator_receives_the_directors_prompt_not_a_fragment() -> None:
+    """The video model acts on motion_prompt. Sending "{camera}. {action}" gave it
+    two stage fragments to work from, which is not direction."""
+    scene = _scene()
+    assert len(scene.motion_prompt) > 80
+    assert scene.motion_prompt != f"{scene.camera}. {scene.action}"
+
+
+def test_a_scene_without_direction_is_rejected() -> None:
+    scene = _scene()
+    scene.motion_prompt = ""
+    assert any("shot direction" in p for p in script_engine.lint(_script(scenes=[scene])))
+
+
+def test_a_scene_without_beats_is_rejected() -> None:
+    scene = _scene()
+    scene.beats = []
+    assert any("beats" in p for p in script_engine.lint(_script(scenes=[scene])))
+
+
+def test_rejected_visuals_are_caught_in_the_direction_too() -> None:
+    """The no-steam rule has to hold in the prompt the model actually reads."""
+    scene = _scene()
+    scene.motion_prompt = "Slow push in as steam rises across the frame"
+    assert any("steam" in p for p in script_engine.lint(_script(scenes=[scene])))

@@ -47,6 +47,14 @@ def _first_tool_input(response: Any) -> dict[str, Any] | None:
     return None
 
 
+def _first_tool_use_id(response: Any) -> str | None:
+    """The id of the tool_use block a tool_result must answer."""
+    for block in getattr(response, "content", []) or []:
+        if getattr(block, "type", None) == "tool_use":
+            return str(getattr(block, "id", "")) or None
+    return None
+
+
 async def generate_structured[T: BaseModel](
     *,
     system: str,
@@ -90,15 +98,30 @@ async def generate_structured[T: BaseModel](
                 return output_model.model_validate(tool_input)
             except ValidationError as exc:
                 last_error = str(exc)
+                # A tool_use block MUST be answered by a tool_result in the very
+                # next message. Sending plain text here makes the API reject the
+                # whole retry, so a validation failure became a hard error
+                # instead of the second chance it was meant to be.
                 messages = [
                     {"role": "user", "content": user_content},
                     {"role": "assistant", "content": response.content},
                     {
                         "role": "user",
-                        "content": (
-                            f"That failed schema validation:\n{exc}\n"
-                            f"Call {tool_name} again with corrected, valid input."
-                        ),
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": _first_tool_use_id(response) or "",
+                                "content": f"Schema validation failed:\n{exc}",
+                                "is_error": True,
+                            },
+                            {
+                                "type": "text",
+                                "text": (
+                                    f"Call {tool_name} again with corrected, valid input. "
+                                    "Include every required field."
+                                ),
+                            },
+                        ],
                     },
                 ]
         log.warning(
