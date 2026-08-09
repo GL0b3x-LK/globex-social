@@ -286,3 +286,54 @@ def test_audio_is_padded_so_the_end_slide_is_never_cut(tmp_path: Path) -> None:
     graph = args[args.index("-filter_complex") + 1]
     assert "apad" in graph
     assert "-shortest" in args  # picture length wins, audio is padded to match
+
+
+# --------------------------------------------------------------------------- #
+# provider selection
+# --------------------------------------------------------------------------- #
+
+
+def test_higgsfield_wins_when_configured(monkeypatch) -> None:
+    """Higgsfield is the client's own account and the tool the approved video
+    came from, so it takes precedence the moment credentials exist."""
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "higgsfield_api_key", "k", raising=False)
+    monkeypatch.setattr(s, "higgsfield_api_secret", "s", raising=False)
+    monkeypatch.setattr(s, "video_provider", None, raising=False)
+    assert isinstance(providers.get_provider(), providers.HiggsfieldProvider)
+
+
+def test_falls_back_to_kie_without_higgsfield_credentials(monkeypatch) -> None:
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "higgsfield_api_key", None, raising=False)
+    monkeypatch.setattr(s, "higgsfield_api_secret", None, raising=False)
+    monkeypatch.setattr(s, "video_provider", None, raising=False)
+    assert isinstance(providers.get_provider(), providers.KieProvider)
+
+
+def test_explicit_provider_choice_is_honoured(monkeypatch) -> None:
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "higgsfield_api_key", "k", raising=False)
+    monkeypatch.setattr(s, "higgsfield_api_secret", "s", raising=False)
+    monkeypatch.setattr(s, "video_provider", "kie", raising=False)
+    assert isinstance(providers.get_provider(), providers.KieProvider)
+
+
+async def test_higgsfield_refuses_lipsync_rather_than_shipping_a_mute_clip(monkeypatch) -> None:
+    """Speak is not on Higgsfield's documented REST surface. Guessing would
+    produce a clip that silently ignores the voice track — fail loudly instead."""
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "higgsfield_api_key", "k", raising=False)
+    monkeypatch.setattr(s, "higgsfield_api_secret", "s", raising=False)
+    monkeypatch.setattr(s, "higgsfield_audio_param", None, raising=False)
+    result = await providers.HiggsfieldProvider().speaking_scene("f.jpg", "a.mp3", "talk")
+    assert not result.ok
+    assert "lip-sync" in (result.error or "")

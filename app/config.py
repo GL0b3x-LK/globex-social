@@ -42,6 +42,20 @@ class Settings(BaseSettings):
     # Optional: unset only disables the video engine's speech, not the app.
     elevenlabs_api_key: str | None = None
 
+    # --- Video generation ---
+    # Higgsfield is the client's own account and the tool the approved reference
+    # video came from, so it wins when configured; kie.ai is the fallback.
+    # Auth is "Key {key}:{secret}", not a bearer token.
+    video_provider: str | None = None  # "higgsfield" | "kie" | None (auto)
+    higgsfield_api_key: str | None = None
+    higgsfield_api_secret: str | None = None
+    higgsfield_broll_model: str | None = None
+    # Lip-sync is not on Higgsfield's documented REST surface; set these once the
+    # account's model gallery confirms what it exposes, rather than guessing and
+    # silently shipping a mute clip that ignores the voice track.
+    higgsfield_speaking_model: str | None = None
+    higgsfield_audio_param: str | None = None
+
     # --- Twilio ---
     twilio_account_sid: str
     twilio_auth_token: str

@@ -179,5 +179,134 @@ async def download(url: str) -> bytes:
 
 
 def get_provider() -> VideoGenProvider:
-    """The configured backend. One place to swap vendors."""
+    """The configured backend. One place to swap vendors.
+
+    Defaults to Higgsfield when its credentials are present — it is the client's
+    own account and the tool the approved reference video came from — and falls
+    back to kie.ai otherwise so the pipeline is never dead in the water.
+    """
+    name = (get_settings().video_provider or "").lower()
+    if name == "kie":
+        return KieProvider()
+    if name == "higgsfield":
+        return HiggsfieldProvider()
+    settings = get_settings()
+    if settings.higgsfield_api_key and settings.higgsfield_api_secret:
+        return HiggsfieldProvider()
     return KieProvider()
+
+
+class HiggsfieldProvider(VideoGenProvider):
+    """Higgsfield Cloud API — the client's own account and the tool the approved
+    reference video was made with.
+
+    Same async shape as everything else: POST the model id, poll the request,
+    take the URL. Notable differences from kie: auth is ``Key <key>:<secret>``
+    (not Bearer), failed and NSFW generations are refunded automatically, and
+    generated files are retained for as little as 7 days — so the caller must
+    take ownership of the bytes promptly, which it already does.
+
+    Inputs are supplied as public URLs, so the character reference shots hosted
+    in Supabase are usable directly; nothing needs uploading into Higgsfield.
+    """
+
+    BASE_URL = "https://platform.higgsfield.ai"
+
+    # Set per-account after the V0 spike; DoP is Higgsfield's own motion model
+    # and is what gave the approved video its look.
+    BROLL_MODEL = "higgsfield-ai/dop/standard"
+    SPEAKING_MODEL = "higgsfield-ai/dop/standard"
+
+    def _headers(self) -> dict[str, str]:
+        settings = get_settings()
+        key, secret = settings.higgsfield_api_key, settings.higgsfield_api_secret
+        return {
+            "Authorization": f"Key {key}:{secret}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+    def _configured(self) -> bool:
+        settings = get_settings()
+        return bool(settings.higgsfield_api_key and settings.higgsfield_api_secret)
+
+    async def _submit(self, model_id: str, payload: dict, *, label: str) -> ClipResult:
+        if not self._configured():
+            return ClipResult(ok=False, error="higgsfield credentials not configured")
+        try:
+            async with httpx.AsyncClient(base_url=self.BASE_URL, timeout=60.0) as client:
+                resp = await client.post(f"/{model_id}", headers=self._headers(), json=payload)
+                if resp.status_code >= 400:
+                    return ClipResult(ok=False, error=f"{resp.status_code}: {resp.text[:200]}")
+                body = resp.json() or {}
+                request_id = body.get("request_id")
+                if not request_id:
+                    return ClipResult(ok=False, error="no request_id returned")
+                return await self._poll(client, str(request_id), label=label)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001 — a vendor fault must not crash the job
+            log.error("higgsfield submit failed", extra={"label": label, "error": str(exc)})
+            return ClipResult(ok=False, error=str(exc))
+
+    async def _poll(self, client: httpx.AsyncClient, request_id: str, *, label: str) -> ClipResult:
+        waited = 0.0
+        while waited < _POLL_TIMEOUT_S:
+            await asyncio.sleep(_POLL_INTERVAL_S)
+            waited += _POLL_INTERVAL_S
+            try:
+                resp = await client.get(f"/requests/{request_id}/status", headers=self._headers())
+                data = resp.json() or {}
+            except (httpx.HTTPError, ValueError):
+                continue  # transient — keep waiting
+            status = data.get("status")
+            if status == "completed":
+                url = (data.get("video") or {}).get("url")
+                if not url:
+                    images = data.get("images") or []
+                    url = images[0].get("url") if images else None
+                return (
+                    ClipResult(ok=True, url=str(url))
+                    if url
+                    else ClipResult(ok=False, error="completed without media")
+                )
+            if status in ("failed", "nsfw"):
+                # Higgsfield refunds these, so a retry costs nothing but time.
+                return ClipResult(ok=False, error=f"{status}: {data.get('error') or ''}"[:200])
+        log.error("higgsfield timed out", extra={"label": label, "request": request_id})
+        return ClipResult(ok=False, error=f"timed out after {int(_POLL_TIMEOUT_S)}s")
+
+    async def speaking_scene(self, keyframe_url: str, audio_url: str, prompt: str) -> ClipResult:
+        """Lip-synced scene.
+
+        Speak is not on Higgsfield's documented REST surface, so the model id and
+        audio parameter are configurable rather than assumed — set them once the
+        account's model gallery confirms what is exposed. Until then this fails
+        loudly instead of silently producing a mute clip that ignores the audio.
+        """
+        settings = get_settings()
+        model_id = settings.higgsfield_speaking_model or self.SPEAKING_MODEL
+        payload: dict = {"image_url": keyframe_url, "prompt": prompt[:2000]}
+        if settings.higgsfield_audio_param:
+            payload[settings.higgsfield_audio_param] = audio_url
+        else:
+            return ClipResult(
+                ok=False,
+                error=(
+                    "no lip-sync model configured for Higgsfield "
+                    "(set HIGGSFIELD_SPEAKING_MODEL and HIGGSFIELD_AUDIO_PARAM)"
+                ),
+            )
+        return await self._submit(model_id, payload, label="hf-speaking")
+
+    async def broll_scene(self, keyframe_url: str, prompt: str, seconds: float) -> ClipResult:
+        model_id = get_settings().higgsfield_broll_model or self.BROLL_MODEL
+        return await self._submit(
+            model_id,
+            {
+                "image_url": keyframe_url,
+                "prompt": prompt[:2000],
+                "duration": int(duration_bucket(seconds)),
+            },
+            label="hf-broll",
+        )

@@ -178,9 +178,7 @@ def build_args(
         # apad before -shortest, or the finished video is truncated to the length
         # of the voiceover and the end slide is cut off. Silence is padded to the
         # picture instead, and -shortest then stops at the last frame of video.
-        filters.append(
-            f"[{vo_idx}:a]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,apad[aout]"
-        )
+        filters.append(f"[{vo_idx}:a]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,apad[aout]")
         audio_label = "aout"
     elif music_idx is not None:
         filters.append(
