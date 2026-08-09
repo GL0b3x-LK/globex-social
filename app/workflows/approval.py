@@ -7,6 +7,7 @@ the stored GeneratedPost in context) so it survives restarts.
 from __future__ import annotations
 
 import asyncio
+from datetime import date as _date
 from typing import Any
 
 from app.ai import editor, image_gen
@@ -53,6 +54,20 @@ async def handle_approval(
         )
     await asyncio.to_thread(posts.set_status, post_id, "approved")
     await asyncio.to_thread(approvals.record, post_id, "approved")
+
+    # Calendar-scheduled posts hold until their date; the scheduler publishes them.
+    post = await asyncio.to_thread(posts.get, post_id)
+    publish_on = ((post or {}).get("render_meta") or {}).get("publish_on")
+    if publish_on and _date.fromisoformat(publish_on) > _date.today():
+        await conversation.transition(phone, state=ConversationState.IDLE)
+        await conversation.clear_post(phone)
+        pretty = _date.fromisoformat(publish_on).strftime("%A %d %B")
+        await twilio_client.send_text(
+            phone, f"✅ Approved — it will go out automatically on {pretty}."
+        )
+        log.info("post approved (scheduled)", extra={"post_id": post_id, "publish_on": publish_on})
+        return
+
     results = await publisher.publish_post(post_id)  # real multi-platform publish via Blotato
     await conversation.transition(phone, state=ConversationState.IDLE)
     await conversation.clear_post(phone)

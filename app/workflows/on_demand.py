@@ -484,6 +484,9 @@ async def _finalize_preview(
     treatment: str = "typographic",
     image_prompt: str | None = None,
     target_platforms: list[plat.Platform] | None = None,
+    event: tuple[str, str] | None = None,  # (event_type, event_id) — scheduler idempotency
+    extra_render_meta: dict[str, Any] | None = None,  # e.g. {"publish_on": "2026-08-17"}
+    caption_prefix: str = "",  # prepended to the preview caption ("Scheduled for Mon 17 Aug…")
 ) -> None:
     """Create the post, render (with overlay if an image is present), store, and preview."""
     post = await asyncio.to_thread(
@@ -492,6 +495,8 @@ async def _finalize_preview(
         caption=generated.caption,
         hashtags=generated.hashtags,
         template_type=generated.template_variant,
+        event_type=event[0] if event else None,
+        event_id=event[1] if event else None,
         status="pending_approval",
     )
     post_id = post["id"]
@@ -513,6 +518,8 @@ async def _finalize_preview(
         render_meta["image_prompt"] = image_prompt
     if raw_image_url is not None:
         render_meta["raw_image_url"] = raw_image_url
+    if extra_render_meta:
+        render_meta.update(extra_render_meta)
     await asyncio.to_thread(posts.set_render_meta, post_id, render_meta)
 
     context_patch: dict[str, Any] = {
@@ -533,7 +540,11 @@ async def _finalize_preview(
         current_post_id=post_id,
         context_patch=context_patch,
     )
-    caption = messages.preview_caption(generated) + messages.target_note(target_platforms)
+    caption = (
+        caption_prefix
+        + messages.preview_caption(generated)
+        + messages.target_note(target_platforms)
+    )
     await twilio_client.send_media(from_phone, caption, image_url)
     log.info(
         "preview sent",

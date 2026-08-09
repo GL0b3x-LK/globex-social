@@ -27,6 +27,7 @@ class TemplateSpec:
     optional_slots: tuple[str, ...] = ()
     needs_photo: bool = False
     description: str = ""
+    canvas: str = "square"  # PLATFORM_DIMENSIONS key; finals render 4:5 portrait
 
     def all_slots(self) -> tuple[str, ...]:
         base = ("sig",)  # every template accepts an optional footer signature
@@ -167,6 +168,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         required_slots=("photo", "headline"),
         optional_slots=("subline_strong", "subline_soft", "pill"),
         needs_photo=True,
+        canvas="portrait",
         description=(
             "FINAL. Photo-first with a bold rounded dip at the photo's bottom-left; "
             "ALL-CAPS letterspaced headline, optional cyan booth pill, logo bottom-right."
@@ -179,6 +181,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         required_slots=("photo", "headline"),
         optional_slots=("subline_strong", "subline_soft"),
         needs_photo=True,
+        canvas="portrait",
         description=(
             "FINAL. Square-cut photo in a thin navy frame with a full-width cyan "
             "divider; bold title-case headline, centered logo."
@@ -191,6 +194,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         required_slots=("photo", "headline"),
         optional_slots=("meta",),
         needs_photo=True,
+        canvas="portrait",
         description=(
             "FINAL. Editorial masthead on top (headline + date/location/booth meta "
             "with cyan bullets), photo below, centered logo in the bottom band."
@@ -203,6 +207,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         required_slots=("photo", "name"),
         optional_slots=("years", "eyebrow", "message", "role"),
         needs_photo=True,
+        canvas="portrait",
         description=(
             "FINAL. Employee-milestone card: full-bleed portrait, navy panel, cyan "
             "hairline frame and years badge (20+ year anniversaries only)."

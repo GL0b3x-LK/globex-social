@@ -15,6 +15,7 @@ from app.config import get_settings
 from app.db.client import ping as supabase_ping
 from app.logging_config import configure_logging, correlation_id_var, get_logger
 from app.messaging import webhook
+from app.scheduler import automation
 from app.templates.renderer import renderer
 
 log = get_logger("app.main")
@@ -40,7 +41,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         log.info("playwright renderer started")
     except Exception as exc:
         log.error("renderer failed to start", extra={"error": str(exc)})
+    automation.start()  # no-op unless SCHEDULER_ENABLED=true
     yield
+    automation.stop()
     await renderer.stop()
     log.info("shutdown")
 

@@ -1,0 +1,1415 @@
+{
+ "_meta": {
+  "name": "Globex 52-week content calendar",
+  "status": "client-approved draft (green-lit 2026-08-08); regenerate via the calendar generator on tweaks",
+  "cadence": "Mon/Wed/Fri static posts; Tue/Thu reserved for video",
+  "source": "Globex-Content-Calendar-52wk-DRAFT.xlsx / .pdf sent to Mike 2026-08-06",
+  "posts": 156
+ },
+ "posts": [
+  {
+   "week": 1,
+   "date": "2026-08-10",
+   "category": "product",
+   "title": "Whole bird, export grade",
+   "gist": "The whole-chicken program with sizes, specs and packing options — core-line clarity so importers can match a spec to their market in one read.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Core-line demand-gen"
+  },
+  {
+   "week": 1,
+   "date": "2026-08-12",
+   "category": "brand",
+   "title": "Inside the cold store",
+   "gist": "A walk through racks of Globex product held at -18°C — behind-the-scenes scale that shows buyers the depth of stock behind their orders.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Behind-the-scenes scale"
+  },
+  {
+   "week": 1,
+   "date": "2026-08-14",
+   "category": "packaging",
+   "title": "Premium Duck retail bag",
+   "gist": "A close-up of the whole-duck retail bag in its orange-and-green livery — posted so retail buyers can see exactly how the product presents on their shelves.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Retail buyers see shelf-ready branding"
+  },
+  {
+   "week": 2,
+   "date": "2026-08-17",
+   "category": "product",
+   "title": "Chicken cuts portfolio",
+   "gist": "Breasts, legs, wings and quarters — the full cut sheet, showing importers the depth behind a simple 'chicken' listing.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Shows range depth to importers"
+  },
+  {
+   "week": 2,
+   "date": "2026-08-19",
+   "category": "brand",
+   "title": "Loading day at the port",
+   "gist": "Cartons moving from truck to container at the terminal — logistics muscle on display, so partners see the machine that lands their cargo on time.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Logistics muscle on display"
+  },
+  {
+   "week": 2,
+   "date": "2026-08-21",
+   "category": "product",
+   "title": "Further-processed chicken",
+   "gist": "Marinated and portioned lines ready for foodservice — higher-value options that save kitchens prep time and cost.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Higher-value line awareness"
+  },
+  {
+   "week": 3,
+   "date": "2026-08-24",
+   "category": "packaging",
+   "title": "Premium Duck export carton",
+   "gist": "The duck master carton stacked in the cold store with export markings visible — proof of an export-scale duck program buyers can order against with confidence.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Signals export-scale duck program"
+  },
+  {
+   "week": 3,
+   "date": "2026-08-26",
+   "category": "brand",
+   "title": "QC before the seal",
+   "gist": "A quality check moments before a carton closes — evidence that Quality Control is a habit here, giving buyers confidence in every box.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Quality Control as a habit, not a slogan"
+  },
+  {
+   "week": 3,
+   "date": "2026-08-28",
+   "category": "product",
+   "title": "Griller vs roaster",
+   "gist": "Two whole-bird specs for two different markets — a quick education that helps buyers order the right bird the first time.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Educates buyers; invites inquiry"
+  },
+  {
+   "week": 4,
+   "date": "2026-08-31",
+   "category": "holiday",
+   "title": "National Poultry Month kickoff",
+   "gist": "September is National Poultry Month, and this opener frames a month of poultry-forward content — keeping the flagship category in buyers' feeds for four straight weeks.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Frames the month; sets up poultry features"
+  },
+  {
+   "week": 4,
+   "date": "2026-09-02",
+   "category": "product",
+   "title": "Whole duck, premium grade",
+   "gist": "The flagship whole duck: air-chilled quality, export packed — spotlighting the premium line the Globex name is known for.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Flagship-product spotlight"
+  },
+  {
+   "week": 4,
+   "date": "2026-09-04",
+   "category": "brand",
+   "title": "Line to freezer in minutes",
+   "gist": "How fast product moves from processing into deep-freeze — a freshness-lock story that translates directly into shelf life for the buyer.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Freshness-lock story"
+  },
+  {
+   "week": 5,
+   "date": "2026-09-07",
+   "category": "holiday",
+   "title": "Labor Day",
+   "gist": "A warm salute to the people who keep food moving, over a team photo — honoring the workforce and showing US partners the human machine behind their supply.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Honor the workforce; US partner goodwill"
+  },
+  {
+   "week": 5,
+   "date": "2026-09-09",
+   "category": "tradeshow",
+   "title": "Meet us at Americas Food & Beverage Show",
+   "gist": "The pre-show invite for Americas Food & Beverage Show with dates, city and booth number, and a call to book a meeting — filling the team's calendar with buyers before the doors even open.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Fill the meeting calendar before doors open"
+  },
+  {
+   "week": 5,
+   "date": "2026-09-11",
+   "category": "packaging",
+   "title": "Chicken retail line-up",
+   "gist": "The chicken retail range shot as a family in the blue colorway — showing importers the breadth of shelf-ready options in one frame.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Range breadth for retail importers"
+  },
+  {
+   "week": 6,
+   "date": "2026-09-14",
+   "category": "tradeshow",
+   "title": "Live at Americas Food & Beverage Show",
+   "gist": "A day-one photo from the floor at Americas Food & Beverage Show with real 'come find us' energy — pulling walk-up booth traffic while the show is live.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Real-time presence; pull walk-up booth traffic"
+  },
+  {
+   "week": 6,
+   "date": "2026-09-16",
+   "category": "tradeshow",
+   "title": "Thank you, Americas Food & Beverage Show",
+   "gist": "A thank-you to every partner who stopped by at Americas Food & Beverage Show, over the best floor photo of the week — a warm follow-up touch that keeps new contacts engaged after the show.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Post-show follow-up touch; warms new contacts"
+  },
+  {
+   "week": 6,
+   "date": "2026-09-18",
+   "category": "milestone",
+   "title": "Lana Petrenko — 26 years",
+   "gist": "A work-anniversary tribute to Accounting Manager Lana Petrenko and her 26 years keeping the numbers moving — because tenure like this tells partners their supplier is stable.",
+   "template": "MS-3-anniv-photo_4x5",
+   "purpose": "Humanize the brand; loyalty = stability partners can trust"
+  },
+  {
+   "week": 7,
+   "date": "2026-09-21",
+   "category": "product",
+   "title": "Duck breast, chef's cut",
+   "gist": "The duck breast line for foodservice and retail — a premium cut that lets buyers trade their customers up.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Premium duck line extension"
+  },
+  {
+   "week": 7,
+   "date": "2026-09-23",
+   "category": "product",
+   "title": "Duck for Asia's tables",
+   "gist": "Why Globex duck fits Asian market specs — direct relevance for the region that buys duck most, making the order decision easy.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Targets the key duck-buying region"
+  },
+  {
+   "week": 7,
+   "date": "2026-09-25",
+   "category": "brand",
+   "title": "The paperwork that travels",
+   "gist": "The export documents, certificates and specs that ride with every shipment — de-risking the decision for buyers trying a new supplier.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "De-risks buying from a new supplier"
+  },
+  {
+   "week": 8,
+   "date": "2026-09-28",
+   "category": "packaging",
+   "title": "Chicken export carton",
+   "gist": "Chicken master cartons palletized, strapped and container-ready — signaling the volume readiness distributors need to see before committing.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Volume-readiness message to distributors"
+  },
+  {
+   "week": 8,
+   "date": "2026-09-30",
+   "category": "holiday",
+   "title": "National Seafood Month kickoff",
+   "gist": "October opens National Seafood Month with the dock-to-90-countries story — a month-long push that gives the seafood line its moment with buyers.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Category push for seafood during its month"
+  },
+  {
+   "week": 8,
+   "date": "2026-10-02",
+   "category": "product",
+   "title": "Beef cuts program",
+   "gist": "The beef range with cuts, specs and volumes — visibility that keeps Globex on beef buyers' shortlists.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Beef program visibility"
+  },
+  {
+   "week": 9,
+   "date": "2026-10-05",
+   "category": "holiday",
+   "title": "National Pork Month feature",
+   "gist": "A mid-October nod to the pork program during National Pork Month — keeping pork visible in a month it shares with seafood.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Keeps pork visible; dual-observance month"
+  },
+  {
+   "week": 9,
+   "date": "2026-10-07",
+   "category": "product",
+   "title": "Beef trimmings supply",
+   "gist": "Consistent trimmings supply for processors — a steady input that industrial buyers can plan production around.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Speaks to industrial buyers"
+  },
+  {
+   "week": 9,
+   "date": "2026-10-09",
+   "category": "tradeshow",
+   "title": "Meet us at SIAL Paris",
+   "gist": "The pre-show invite for SIAL Paris with dates, city and booth number, and a call to book a meeting — filling the team's calendar with buyers before the doors even open.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Fill the meeting calendar before doors open"
+  },
+  {
+   "week": 10,
+   "date": "2026-10-12",
+   "category": "brand",
+   "title": "Container milestone",
+   "gist": "Another month, hundreds of containers shipped — a momentum stat in operational clothing, telling buyers the network keeps growing.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Momentum stat in operational clothing"
+  },
+  {
+   "week": 10,
+   "date": "2026-10-14",
+   "category": "product",
+   "title": "Whole turkey, on request",
+   "gist": "Seasonal turkey availability for holiday programs — flagging Q4 supply early so buyers reserve ahead of the rush.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Q4 seasonal line awareness"
+  },
+  {
+   "week": 10,
+   "date": "2026-10-16",
+   "category": "tradeshow",
+   "title": "Live at SIAL Paris",
+   "gist": "A day-one photo from the floor at SIAL Paris with real 'come find us' energy — pulling walk-up booth traffic while the show is live.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Real-time presence; pull walk-up booth traffic"
+  },
+  {
+   "week": 11,
+   "date": "2026-10-19",
+   "category": "packaging",
+   "title": "Beef line — black colorway",
+   "gist": "The beef program's black-livery packaging over a premium cut — upmarket positioning that helps buyers sell the range at better margins.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Premium positioning for the beef range"
+  },
+  {
+   "week": 11,
+   "date": "2026-10-21",
+   "category": "tradeshow",
+   "title": "Thank you, SIAL Paris",
+   "gist": "A thank-you to every partner who stopped by at SIAL Paris, over the best floor photo of the week — a warm follow-up touch that keeps new contacts engaged after the show.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Post-show follow-up touch; warms new contacts"
+  },
+  {
+   "week": 11,
+   "date": "2026-10-23",
+   "category": "product",
+   "title": "Pork cuts range",
+   "gist": "The pork lineup and the markets it ships to — keeping the category active for buyers who span proteins.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Pork program visibility"
+  },
+  {
+   "week": 12,
+   "date": "2026-10-26",
+   "category": "product",
+   "title": "Pork ribs, ready to ship",
+   "gist": "A ribs-forward seasonal feature — giving grill-market buyers a ready answer to seasonal demand.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Seasonal pull for grill markets"
+  },
+  {
+   "week": 12,
+   "date": "2026-10-28",
+   "category": "brand",
+   "title": "Reefer tech on board",
+   "gist": "Temperature loggers and remote monitoring riding on every shipment — technology that gives buyers live confidence in the cold chain.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Tech-forward reliability angle"
+  },
+  {
+   "week": 12,
+   "date": "2026-10-30",
+   "category": "packaging",
+   "title": "Pork line — red colorway",
+   "gist": "The pork range in its red colorway with clean product photography — keeping pork visible so category buyers remember Globex covers it.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Category visibility for pork buyers"
+  },
+  {
+   "week": 13,
+   "date": "2026-11-02",
+   "category": "product",
+   "title": "Whitefish program",
+   "gist": "Wild and farmed whitefish spec'd to order — seafood depth for buyers building a frozen fish program.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Seafood line depth"
+  },
+  {
+   "week": 13,
+   "date": "2026-11-04",
+   "category": "milestone",
+   "title": "Globex Founding Day — 33 Years",
+   "gist": "Thirty-three years since Ilona and Len Kogan founded Globex in 1993 — the flagship anniversary post, anchoring the credibility three decades in business has earned.",
+   "template": "MS-3-anniv-photo_4x5",
+   "purpose": "Anchor credibility moment of the year"
+  },
+  {
+   "week": 13,
+   "date": "2026-11-06",
+   "category": "brand",
+   "title": "Many origins, one intake standard",
+   "gist": "How intake QC turns hundreds of sources into one consistent product — explaining why Globex supply holds steady when any single origin wobbles.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Explains the sourcing model's value"
+  },
+  {
+   "week": 14,
+   "date": "2026-11-09",
+   "category": "product",
+   "title": "Shrimp, sized to spec",
+   "gist": "Shrimp counts and formats across the range — a high-demand SKU presented so buyers can order by exact size.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "High-demand SKU spotlight"
+  },
+  {
+   "week": 14,
+   "date": "2026-11-11",
+   "category": "product",
+   "title": "The duck gift season",
+   "gist": "Duck demand peaks around festive seasons, and here are the order windows — helping buyers time purchases so they never miss the peak.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Seasonal urgency for duck"
+  },
+  {
+   "week": 14,
+   "date": "2026-11-13",
+   "category": "brand",
+   "title": "Booked to the last slot",
+   "gist": "This month's sailing schedule, fully booked — a gentle scarcity nudge that rewards the buyers who commit early.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Scarcity nudge for buyers"
+  },
+  {
+   "week": 15,
+   "date": "2026-11-16",
+   "category": "packaging",
+   "title": "Seafood line — green colorway",
+   "gist": "Seafood packs in the green livery over crushed ice — a freshness cue that reassures buyers about the most delicate category.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Freshness cue for the seafood program"
+  },
+  {
+   "week": 15,
+   "date": "2026-11-18",
+   "category": "brand",
+   "title": "Peak-season capacity",
+   "gist": "Stocked and staffed for the year-end demand spike — reassuring buyers that holiday orders will ship in full and on time.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Reassures buyers before holiday orders"
+  },
+  {
+   "week": 15,
+   "date": "2026-11-20",
+   "category": "product",
+   "title": "Gizzards: the quiet bestseller",
+   "gist": "Why specialty poultry parts outsell expectations in key markets — pointing buyers to margin they may be leaving on the table.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Educates + moves a margin line"
+  },
+  {
+   "week": 16,
+   "date": "2026-11-23",
+   "category": "product",
+   "title": "Hearts, livers & more",
+   "gist": "The full specialty-parts catalogue — completing the nose-to-tail story so nothing a buyer needs is missing from the list.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Completes the nose-to-tail story"
+  },
+  {
+   "week": 16,
+   "date": "2026-11-25",
+   "category": "holiday",
+   "title": "Thanksgiving",
+   "gist": "A gratitude message to partners, suppliers and the Globex team in a Thanksgiving look — thanking the network at peak season so key US relationships feel valued.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Relationship warmth with US buyers at peak season"
+  },
+  {
+   "week": 16,
+   "date": "2026-11-27",
+   "category": "brand",
+   "title": "The last pallet out",
+   "gist": "Friday's final shipment leaving the dock — a human end-of-week beat that keeps the brand feeling alive and working.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Human end-of-week operational beat"
+  },
+  {
+   "week": 17,
+   "date": "2026-11-30",
+   "category": "packaging",
+   "title": "Gizzards & specialty pack",
+   "gist": "The specialty and offal line's packaging, an underrated bestseller — surfaced so buyers discover margin-rich SKUs they may not know we carry.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Niche-line awareness; high-margin SKUs"
+  },
+  {
+   "week": 17,
+   "date": "2026-12-02",
+   "category": "product",
+   "title": "Pet-food-grade ingredients",
+   "gist": "Protein ingredients spec'd for pet-food production — opening a vertical where consistent supply is the whole game.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Opens the pet-food vertical"
+  },
+  {
+   "week": 17,
+   "date": "2026-12-04",
+   "category": "brand",
+   "title": "150 ships on the water",
+   "gist": "Right now roughly 150 vessels are carrying Globex product across the world's oceans — the live scale of the operation, so partners know the size of the machine behind them.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Headline scale stat (client-verified figure)"
+  },
+  {
+   "week": 18,
+   "date": "2026-12-07",
+   "category": "product",
+   "title": "Grains at scale",
+   "gist": "The grain side of Globex with origins and volumes — diversification that lets buyers consolidate suppliers.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Diversification story"
+  },
+  {
+   "week": 18,
+   "date": "2026-12-09",
+   "category": "packaging",
+   "title": "Pet food ingredients format",
+   "gist": "Bulk pet-food-ingredient packaging from the quiet growth line — opening conversations with pet-food makers who need reliable protein supply.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Opens the pet-food vertical"
+  },
+  {
+   "week": 18,
+   "date": "2026-12-11",
+   "category": "brand",
+   "title": "90+ countries served",
+   "gist": "From one desk in New York to more than 90 destination markets — reach that tells buyers their region is already covered.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Reach stat; global credibility (client-verified figure)"
+  },
+  {
+   "week": 19,
+   "date": "2026-12-14",
+   "category": "product",
+   "title": "Frozen veggies program",
+   "gist": "Vegetable lines riding the same cold chain — an easy cross-sell that fills buyers' containers more efficiently.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Cross-sell to existing buyers"
+  },
+  {
+   "week": 19,
+   "date": "2026-12-16",
+   "category": "product",
+   "title": "Custom specs, no drama",
+   "gist": "Tell us the spec and we source, pack and ship it — flexibility as the differentiator for buyers with particular requirements.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Positions flexibility as the differentiator"
+  },
+  {
+   "week": 19,
+   "date": "2026-12-18",
+   "category": "special",
+   "title": "2027 Trade Show Calendar",
+   "gist": "Every 2027 trade show, with dates and cities, in one branded graphic — an evergreen reference partners save and share, broadcasting global scale in a single image.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Evergreen reference post; broadcasts global scale in one image"
+  },
+  {
+   "week": 20,
+   "date": "2026-12-21",
+   "category": "packaging",
+   "title": "Grains & veggies pack",
+   "gist": "The plant-side range in Globex livery — breadth beyond protein, so buyers can consolidate more of their list with one partner.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Shows breadth beyond protein"
+  },
+  {
+   "week": 20,
+   "date": "2026-12-23",
+   "category": "brand",
+   "title": "300+ suppliers, one standard",
+   "gist": "A sourcing network of 300+ suppliers, all cleared by one QC bar — supply security buyers can lean on when any single origin tightens.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Supply-security message (client-verified figure)"
+  },
+  {
+   "week": 20,
+   "date": "2026-12-25",
+   "category": "holiday",
+   "title": "Happy Holidays",
+   "gist": "Season's greetings from the Globex family to partners worldwide — a festive touchpoint that keeps the brand warm and visible through the holiday lull.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Global goodwill; stay visible over the holiday lull"
+  },
+  {
+   "week": 21,
+   "date": "2026-12-28",
+   "category": "product",
+   "title": "Volume without wobble",
+   "gist": "Holding quality steady at hundreds of containers a month — answering the scale-versus-quality doubt head-on.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Answers the scale-vs-quality doubt"
+  },
+  {
+   "week": 21,
+   "date": "2026-12-30",
+   "category": "brand",
+   "title": "The 2026 year in review",
+   "gist": "The year's shipments, new markets and milestones in one recap — a credibility statement to close the year strong.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Year-end credibility recap"
+  },
+  {
+   "week": 21,
+   "date": "2027-01-01",
+   "category": "holiday",
+   "title": "New Year's Day",
+   "gist": "A welcome to 2027 with a look at the year of shows, shipments and growth ahead — signaling momentum so partners start the year with Globex front of mind.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Fresh-start positioning; signals momentum"
+  },
+  {
+   "week": 22,
+   "date": "2027-01-04",
+   "category": "product",
+   "title": "New market? We're there",
+   "gist": "The certifications and documents for the markets you are entering — an invitation to expand with the paperwork already solved.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Invites expansion conversations"
+  },
+  {
+   "week": 22,
+   "date": "2027-01-06",
+   "category": "brand",
+   "title": "2027 outlook",
+   "gist": "Where global protein trade is heading and how Globex is positioned for it — a forward view that makes us worth following, not just buying from.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Forward-looking authority"
+  },
+  {
+   "week": 22,
+   "date": "2027-01-08",
+   "category": "packaging",
+   "title": "The label, up close",
+   "gist": "A macro shot of a Globex label with specs, batch and origin at a glance — transparency that lets buyers trace exactly what they are getting.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Transparency and traceability trust"
+  },
+  {
+   "week": 23,
+   "date": "2027-01-11",
+   "category": "product",
+   "title": "Foodservice, served",
+   "gist": "How the range maps to kitchens and catering — segment relevance that makes foodservice buyers feel seen.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Segment-specific relevance"
+  },
+  {
+   "week": 23,
+   "date": "2027-01-13",
+   "category": "brand",
+   "title": "New year, full warehouses",
+   "gist": "A January inventory shot with warehouses full and ready for Q1 programs — prompting early-year orders while stock is deep.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Prompts early-year ordering"
+  },
+  {
+   "week": 23,
+   "date": "2027-01-15",
+   "category": "brand",
+   "title": "950+ trade partners",
+   "gist": "The 950+ trade partners who buy year after year — social proof at network scale for anyone still deciding.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Social proof at network scale (client-verified figure)"
+  },
+  {
+   "week": 24,
+   "date": "2027-01-18",
+   "category": "tradeshow",
+   "title": "Meet us at IPPE / NPFDA",
+   "gist": "The pre-show invite for IPPE / NPFDA with dates, city and booth number, and a call to book a meeting — filling the team's calendar with buyers before the doors even open.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Fill the meeting calendar before doors open"
+  },
+  {
+   "week": 24,
+   "date": "2027-01-20",
+   "category": "brand",
+   "title": "Ramadan-season readiness",
+   "gist": "Certified lines stocked ahead of Ramadan demand — timely reassurance for Middle East and Southeast Asian buyers planning the season.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Timely for Middle East / SE Asia buyers ahead of Feb 8"
+  },
+  {
+   "week": 24,
+   "date": "2027-01-22",
+   "category": "holiday",
+   "title": "National Hot Sauce Day",
+   "gist": "A playful nod to the industry day, tying heat to the proteins that carry it — light engagement that keeps the feed human between commercial posts.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Light engagement; food-industry culture"
+  },
+  {
+   "week": 25,
+   "date": "2027-01-25",
+   "category": "tradeshow",
+   "title": "Live at IPPE / NPFDA",
+   "gist": "A day-one photo from the floor at IPPE / NPFDA with real 'come find us' energy — pulling walk-up booth traffic while the show is live.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Real-time presence; pull walk-up booth traffic"
+  },
+  {
+   "week": 25,
+   "date": "2027-01-27",
+   "category": "product",
+   "title": "Soup & stew cuts",
+   "gist": "Cuts built for comfort-food season — a winter-relevant feature that helps buyers plan their cold-month ranges.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Winter seasonal relevance"
+  },
+  {
+   "week": 25,
+   "date": "2027-01-29",
+   "category": "tradeshow",
+   "title": "Thank you, IPPE / NPFDA",
+   "gist": "A thank-you to every partner who stopped by at IPPE / NPFDA, over the best floor photo of the week — a warm follow-up touch that keeps new contacts engaged after the show.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Post-show follow-up touch; warms new contacts"
+  },
+  {
+   "week": 26,
+   "date": "2027-02-01",
+   "category": "product",
+   "title": "Retail programs that stick",
+   "gist": "Building a frozen program retailers can rely on — framed around what keeps shoppers coming back to their shelves.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Retail vertical pitch"
+  },
+  {
+   "week": 26,
+   "date": "2027-02-03",
+   "category": "packaging",
+   "title": "Cold-chain seal integrity",
+   "gist": "How every pack is sealed to survive -18°C from plant to port to shelf — quality proof that the product arrives exactly as it left.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Quality-control proof point"
+  },
+  {
+   "week": 26,
+   "date": "2027-02-05",
+   "category": "holiday",
+   "title": "Lunar New Year",
+   "gist": "Prosperity wishes to partners across China and East Asia — a cultural gesture that strengthens relationships in key Asian markets.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Cultural connection with key Asian markets"
+  },
+  {
+   "week": 27,
+   "date": "2027-02-08",
+   "category": "holiday",
+   "title": "Ramadan Kareem",
+   "gist": "A respectful greeting to partners and communities observing Ramadan — cultural awareness that deepens trust with Middle East and Southeast Asian buyers.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Cultural connection with Middle East / SE Asia buyers"
+  },
+  {
+   "week": 27,
+   "date": "2027-02-10",
+   "category": "product",
+   "title": "Wings for game day",
+   "gist": "Wing supply for the sports-season spike — a topical push that meets US demand right when it surges.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Topical US demand moment before Super Bowl"
+  },
+  {
+   "week": 27,
+   "date": "2027-02-12",
+   "category": "holiday",
+   "title": "Super Bowl Sunday",
+   "gist": "A game-day look at the wings and party platters America eats, and the supply chain behind them — riding a topical moment to showcase poultry capability.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Topical US moment tied to poultry demand"
+  },
+  {
+   "week": 28,
+   "date": "2027-02-15",
+   "category": "product",
+   "title": "Chilled vs frozen formats",
+   "gist": "The difference between chilled and frozen programs and when each fits — educational clarity that helps buyers choose the right supply chain for their market.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Educational authority content"
+  },
+  {
+   "week": 28,
+   "date": "2027-02-17",
+   "category": "brand",
+   "title": "Since 1993",
+   "gist": "Three decades of feeding the globe told in one short story — longevity that shortcuts the trust question for new buyers.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Longevity = reliability shorthand"
+  },
+  {
+   "week": 28,
+   "date": "2027-02-19",
+   "category": "product",
+   "title": "Poultry for processors",
+   "gist": "Raw-material streams for further processing — steady inputs that industrial buyers can build production on.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Industrial buyer angle"
+  },
+  {
+   "week": 29,
+   "date": "2027-02-22",
+   "category": "packaging",
+   "title": "Five colorways, one family",
+   "gist": "All five packaging colorways lined up side by side — a brand-system moment showing buyers they are dealing with a serious, organized exporter.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Brand-system moment; serious exporter look"
+  },
+  {
+   "week": 29,
+   "date": "2027-02-24",
+   "category": "brand",
+   "title": "One partner, zero guesswork",
+   "gist": "The core promise: sourcing, QC, documentation and delivery handled end to end — so buyers manage one relationship instead of five.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Brand-promise anchor post"
+  },
+  {
+   "week": 29,
+   "date": "2027-02-26",
+   "category": "product",
+   "title": "Breast meat benchmarks",
+   "gist": "What consistent breast-meat quality looks like, spec by spec — the specificity that turns quality claims into earned trust.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Quality specificity builds trust"
+  },
+  {
+   "week": 30,
+   "date": "2027-03-01",
+   "category": "milestone",
+   "title": "Irina Rebe — 23 years",
+   "gist": "Celebrating Irina Rebe, Director of Operations, and 23 years of precision behind every shipment — so buyers see the experience actually running their orders.",
+   "template": "MS-3-anniv-photo_4x5",
+   "purpose": "Leadership tenure = operational reliability signal"
+  },
+  {
+   "week": 30,
+   "date": "2027-03-03",
+   "category": "product",
+   "title": "Leg quarters at volume",
+   "gist": "The workhorse SKU of global poultry trade, at Globex volume — core-commodity confidence for the biggest buyers.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Core-commodity visibility"
+  },
+  {
+   "week": 30,
+   "date": "2027-03-05",
+   "category": "holiday",
+   "title": "Employee Appreciation Day",
+   "gist": "A company-wide thank-you to the Globex team over a group photo — pride on the inside, and proof to partners that a stable team handles their orders.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Employer brand; internal pride, external trust"
+  },
+  {
+   "week": 31,
+   "date": "2027-03-08",
+   "category": "holiday",
+   "title": "International Women's Day",
+   "gist": "A spotlight on the women leading logistics, accounting and operations at Globex — a values signal that humanizes the leadership behind every shipment.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Values signal; humanizes leadership"
+  },
+  {
+   "week": 31,
+   "date": "2027-03-10",
+   "category": "tradeshow",
+   "title": "Meet us at Gulfood 2027",
+   "gist": "The pre-show invite for Gulfood 2027 with dates, city and booth number, and a call to book a meeting — filling the team's calendar with buyers before the doors even open.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Fill the meeting calendar before doors open"
+  },
+  {
+   "week": 31,
+   "date": "2027-03-12",
+   "category": "packaging",
+   "title": "Retail-ready shelf presence",
+   "gist": "A Globex pack shot in a retail freezer context — helping buyers picture the product in their own stores before they order.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Helps buyers picture it in their stores"
+  },
+  {
+   "week": 32,
+   "date": "2027-03-15",
+   "category": "tradeshow",
+   "title": "Live at Gulfood 2027",
+   "gist": "A day-one photo from the floor at Gulfood 2027 with real 'come find us' energy — pulling walk-up booth traffic while the show is live.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Real-time presence; pull walk-up booth traffic"
+  },
+  {
+   "week": 32,
+   "date": "2027-03-17",
+   "category": "tradeshow",
+   "title": "Thank you, Gulfood 2027",
+   "gist": "A thank-you to every partner who stopped by at Gulfood 2027, over the best floor photo of the week — a warm follow-up touch that keeps new contacts engaged after the show.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Post-show follow-up touch; warms new contacts"
+  },
+  {
+   "week": 32,
+   "date": "2027-03-19",
+   "category": "holiday",
+   "title": "National Poultry Day",
+   "gist": "Poultry moves through our network every single day, and today we tip our hat to it — owning the category on its flagship day so buyers associate poultry with Globex.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Own the category on its flagship day"
+  },
+  {
+   "week": 33,
+   "date": "2027-03-22",
+   "category": "tradeshow",
+   "title": "Meet us at Food & Hotel Vietnam",
+   "gist": "The pre-show invite for Food & Hotel Vietnam with dates, city and booth number, and a call to book a meeting — filling the team's calendar with buyers before the doors even open.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Fill the meeting calendar before doors open"
+  },
+  {
+   "week": 33,
+   "date": "2027-03-24",
+   "category": "tradeshow",
+   "title": "Live at Food & Hotel Vietnam",
+   "gist": "A day-one photo from the floor at Food & Hotel Vietnam with real 'come find us' energy — pulling walk-up booth traffic while the show is live.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Real-time presence; pull walk-up booth traffic"
+  },
+  {
+   "week": 33,
+   "date": "2027-03-26",
+   "category": "holiday",
+   "title": "Easter",
+   "gist": "A spring greeting to partners who celebrate — a seasonal touchpoint that keeps Western-market relationships warm.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Cultural touchpoint for Western markets"
+  },
+  {
+   "week": 34,
+   "date": "2027-03-29",
+   "category": "tradeshow",
+   "title": "Thank you, Food & Hotel Vietnam",
+   "gist": "A thank-you to every partner who stopped by at Food & Hotel Vietnam, over the best floor photo of the week — a warm follow-up touch that keeps new contacts engaged after the show.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Post-show follow-up touch; warms new contacts"
+  },
+  {
+   "week": 34,
+   "date": "2027-03-31",
+   "category": "brand",
+   "title": "Spring restock, sorted",
+   "gist": "Q2 availability across the range — keeping the order pipeline warm as buyers plan their spring programs.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Keeps the order pipeline warm"
+  },
+  {
+   "week": 34,
+   "date": "2027-04-02",
+   "category": "product",
+   "title": "MDM & mechanically separated",
+   "gist": "Ingredient lines for processed foods — completing the industrial catalogue so processors can source everything in one place.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Completes the industrial catalogue"
+  },
+  {
+   "week": 35,
+   "date": "2027-04-05",
+   "category": "product",
+   "title": "Eggs & egg products",
+   "gist": "The egg side of the poultry program — adjacent-line visibility for buyers who did not know we cover it.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Adjacent-line visibility"
+  },
+  {
+   "week": 35,
+   "date": "2027-04-07",
+   "category": "brand",
+   "title": "Quality Control, always on",
+   "gist": "Inside the QC discipline that checks every lot — the habit that means a buyer's own name is safe on our product.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "The trust-builder buyers care most about"
+  },
+  {
+   "week": 35,
+   "date": "2027-04-09",
+   "category": "packaging",
+   "title": "Foodservice bulk formats",
+   "gist": "The bulk formats built for kitchens, caterers and processors — so foodservice buyers see formats made for their volumes, not retail afterthoughts.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Speaks to the foodservice segment"
+  },
+  {
+   "week": 36,
+   "date": "2027-04-12",
+   "category": "product",
+   "title": "Sauces & condiments sourcing",
+   "gist": "The specialty sauce and condiment line — a nod to the portfolio that rounds out the offer beyond core proteins.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Nods to the specialty portfolio"
+  },
+  {
+   "week": 36,
+   "date": "2027-04-14",
+   "category": "tradeshow",
+   "title": "Save the date — Seafood Expo Global",
+   "gist": "An early save-the-date announcing that Globex will exhibit at Seafood Expo Global — building awareness now so buyers plan to meet us once dates are confirmed.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Early awareness while dates and booths firm up"
+  },
+  {
+   "week": 36,
+   "date": "2027-04-16",
+   "category": "brand",
+   "title": "The logistics desk",
+   "gist": "The team that books, tracks and lands every container — the faces behind the machine, so partners know who is working their cargo.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Faces behind the machine"
+  },
+  {
+   "week": 37,
+   "date": "2027-04-19",
+   "category": "tradeshow",
+   "title": "Save the date — FHA Food & Hospitality Asia",
+   "gist": "An early save-the-date announcing that Globex will exhibit at FHA Food & Hospitality Asia — building awareness now so buyers plan to meet us once dates are confirmed.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Early awareness while dates and booths firm up"
+  },
+  {
+   "week": 37,
+   "date": "2027-04-21",
+   "category": "holiday",
+   "title": "Earth Day",
+   "gist": "How efficient cold-chain and full-container loads cut waste per ton shipped — honest sustainability credibility buyers can pass on to their own customers.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Sustainability credibility without greenwashing"
+  },
+  {
+   "week": 37,
+   "date": "2027-04-23",
+   "category": "product",
+   "title": "Cold-water vs warm-water",
+   "gist": "Seafood origins explained simply — educational authority that helps buyers choose the right fish for their market.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Educational authority content"
+  },
+  {
+   "week": 38,
+   "date": "2027-04-26",
+   "category": "packaging",
+   "title": "Private-label capability",
+   "gist": "Your brand, our supply: the private-label packaging option — inviting retailers and brands to build their own lines on Globex sourcing.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Lead-gen for private-label deals"
+  },
+  {
+   "week": 38,
+   "date": "2027-04-28",
+   "category": "product",
+   "title": "Portion-controlled proteins",
+   "gist": "Fixed-weight portions for chains and airlines — precision that removes waste from high-volume kitchens.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Precision segment pitch"
+  },
+  {
+   "week": 38,
+   "date": "2027-04-30",
+   "category": "brand",
+   "title": "Docs done right",
+   "gist": "Compliance and documentation treated as a competitive edge — clean paperwork that means cargo clears customs without drama.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "De-risks switching to Globex"
+  },
+  {
+   "week": 39,
+   "date": "2027-05-03",
+   "category": "holiday",
+   "title": "National Beef Month kickoff",
+   "gist": "May opens National Beef Month with the beef program's cuts, volume and reach — a category push so beef buyers see Globex as a serious supplier.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Category push for beef during its month"
+  },
+  {
+   "week": 39,
+   "date": "2027-05-05",
+   "category": "product",
+   "title": "The spec sheet tour",
+   "gist": "The anatomy of a Globex product spec and what is guaranteed inside it — process transparency that shortens a buyer's due diligence.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Process transparency"
+  },
+  {
+   "week": 39,
+   "date": "2027-05-07",
+   "category": "packaging",
+   "title": "Palletized for export",
+   "gist": "A finished pallet, corner-boarded and wrapped, awaiting pickup — operational care made visible, so buyers trust the handling of their cargo.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Operational competence made visible"
+  },
+  {
+   "week": 40,
+   "date": "2027-05-10",
+   "category": "product",
+   "title": "Origin story: one shipment",
+   "gist": "One container followed from source to shelf — the whole model in miniature, so prospects understand exactly how working with Globex feels.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Narrative post; the model in miniature"
+  },
+  {
+   "week": 40,
+   "date": "2027-05-12",
+   "category": "tradeshow",
+   "title": "Save the date — SIAL Shanghai",
+   "gist": "An early save-the-date announcing that Globex will exhibit at SIAL Shanghai — building awareness now so buyers plan to meet us once dates are confirmed.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Early awareness while dates and booths firm up"
+  },
+  {
+   "week": 40,
+   "date": "2027-05-14",
+   "category": "brand",
+   "title": "Cold chain, unbroken",
+   "gist": "Temperature integrity from plant gate to port of discharge — the proof point every frozen buyer needs before switching suppliers.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Core operational proof point"
+  },
+  {
+   "week": 41,
+   "date": "2027-05-17",
+   "category": "product",
+   "title": "What's new for 2027",
+   "gist": "The lines and markets we are adding next year — a forward look that invites early commitments.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Forward-looking; invites early commitments"
+  },
+  {
+   "week": 41,
+   "date": "2027-05-19",
+   "category": "tradeshow",
+   "title": "Save the date — USAPEEC Americas Expo",
+   "gist": "An early save-the-date announcing that Globex will exhibit at USAPEEC Americas Expo — building awareness now so buyers plan to meet us once dates are confirmed.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Early awareness while dates and booths firm up"
+  },
+  {
+   "week": 41,
+   "date": "2027-05-21",
+   "category": "packaging",
+   "title": "Container-load precision",
+   "gist": "Inside a loaded reefer container with every carton in its place — scale and care in one image, showing the standard each shipment meets.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Scale + care in one image"
+  },
+  {
+   "week": 42,
+   "date": "2027-05-24",
+   "category": "product",
+   "title": "Summer BBQ bundles",
+   "gist": "A grilling-season product mix idea for retailers — merchandising inspiration buyers can lift straight into their stores.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Merchandising inspiration for buyers"
+  },
+  {
+   "week": 42,
+   "date": "2027-05-26",
+   "category": "milestone",
+   "title": "Yakov Rybakov — 22 years",
+   "gist": "Celebrating Controller Yakov Rybakov's 22 years, given his own moment clear of Memorial Day — financial steadiness that reassures every counterparty.",
+   "template": "MS-3-anniv-photo_4x5",
+   "purpose": "Depth of team; financial steadiness story"
+  },
+  {
+   "week": 42,
+   "date": "2027-05-28",
+   "category": "brand",
+   "title": "New York HQ, global reach",
+   "gist": "The Lexington Avenue nerve center of a worldwide network — grounding the brand in a real place buyers can call.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Grounds the brand in a real place"
+  },
+  {
+   "week": 43,
+   "date": "2027-05-31",
+   "category": "holiday",
+   "title": "Memorial Day",
+   "gist": "An understated US remembrance message — showing respect and brand maturity to the domestic audience.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "US audience respect; brand maturity"
+  },
+  {
+   "week": 43,
+   "date": "2027-06-02",
+   "category": "packaging",
+   "title": "-18°C, guaranteed",
+   "gist": "The frozen-solid promise, temperature-logged from plant to port — answering the cold-chain worry every frozen buyer has before switching suppliers.",
+   "template": "TS-p1-bolddip_4x5",
+   "purpose": "Cold-chain reliability, the core buyer worry"
+  },
+  {
+   "week": 43,
+   "date": "2027-06-04",
+   "category": "milestone",
+   "title": "Zara Karapetyan — 25 years",
+   "gist": "A quarter-century for Documentation & Logistics Specialist Zara Karapetyan — 25 years is rare anywhere, and it tells partners the paperwork behind their cargo is in veteran hands.",
+   "template": "MS-3-anniv-photo_4x5",
+   "purpose": "Flagship people-story; 25 yrs is rare in any industry"
+  },
+  {
+   "week": 44,
+   "date": "2027-06-07",
+   "category": "packaging",
+   "title": "Unboxing the Globex standard",
+   "gist": "Opening a master carton to show exactly what a buyer finds inside — setting expectations so the first delivery holds no surprises.",
+   "template": "TS-p2-cut-navyborder_4x5",
+   "purpose": "Sets expectations; quality theater"
+  },
+  {
+   "week": 44,
+   "date": "2027-06-09",
+   "category": "tradeshow",
+   "title": "Save the date — Alimentec",
+   "gist": "An early save-the-date announcing that Globex will exhibit at Alimentec — building awareness now so buyers plan to meet us once dates are confirmed.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Early awareness while dates and booths firm up"
+  },
+  {
+   "week": 44,
+   "date": "2027-06-11",
+   "category": "brand",
+   "title": "Meet the traders",
+   "gist": "The trading team matching supply to demand across time zones — expertise humanized, so buyers know who is on the other end of the line.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Expertise humanized"
+  },
+  {
+   "week": 45,
+   "date": "2027-06-14",
+   "category": "brand",
+   "title": "A day in dispatch",
+   "gist": "Twenty-four hours of bookings, loadings and sailings — operational storytelling that shows the rhythm partners plug into.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Operational storytelling"
+  },
+  {
+   "week": 45,
+   "date": "2027-06-16",
+   "category": "brand",
+   "title": "Summer grilling supply",
+   "gist": "Grill-season cuts moving at volume — seasonal demand-gen that helps US and EU buyers ride the barbecue peak.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Seasonal demand-gen, US + EU"
+  },
+  {
+   "week": 45,
+   "date": "2027-06-18",
+   "category": "brand",
+   "title": "Sourcing map: Americas",
+   "gist": "Where Globex sources across North and South America — regional depth that reassures buyers of proximity and options.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Regional authority series 1/5"
+  },
+  {
+   "week": 46,
+   "date": "2027-06-21",
+   "category": "brand",
+   "title": "Sourcing map: Europe",
+   "gist": "The European supplier network, mapped — showing EU-market buyers the origins closest to them.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Regional authority series 2/5"
+  },
+  {
+   "week": 46,
+   "date": "2027-06-23",
+   "category": "brand",
+   "title": "Sourcing map: Asia",
+   "gist": "Asia sourcing and the markets it feeds — regional authority in the fastest-growing part of the network.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Regional authority series 3/5"
+  },
+  {
+   "week": 46,
+   "date": "2027-06-25",
+   "category": "brand",
+   "title": "Serving the Middle East",
+   "gist": "Supply built to meet MENA market requirements as a matter of course — so regional buyers know their standards are already standard practice here.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Regional authority series 4/5"
+  },
+  {
+   "week": 47,
+   "date": "2027-06-28",
+   "category": "holiday",
+   "title": "National Logistics Day",
+   "gist": "A tribute to the invisible machine of vessels, reefers, documents and the people who run them — celebrating the core competency partners rely on.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Industry authority; celebrates core competency"
+  },
+  {
+   "week": 47,
+   "date": "2027-06-30",
+   "category": "brand",
+   "title": "Serving Africa's markets",
+   "gist": "The growing routes into African destinations — commitment to markets others treat as afterthoughts.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Regional authority series 5/5"
+  },
+  {
+   "week": 47,
+   "date": "2027-07-02",
+   "category": "holiday",
+   "title": "Independence Day",
+   "gist": "A July 4th greeting from a proudly New York-headquartered global trader — a US identity moment for domestic partners.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "US identity moment for domestic partners"
+  },
+  {
+   "week": 48,
+   "date": "2027-07-05",
+   "category": "brand",
+   "title": "Why traders pick partners",
+   "gist": "What 30 years teaches about choosing reliable counterparties — thought leadership that flatters the reader while quietly making our case.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Thought-leadership; flatters the buyer"
+  },
+  {
+   "week": 48,
+   "date": "2027-07-07",
+   "category": "brand",
+   "title": "The price of a stockout",
+   "gist": "Why supply reliability beats chasing spot prices — reframing value so buyers weigh the real cost of an empty shelf.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Reframes value vs price"
+  },
+  {
+   "week": 48,
+   "date": "2027-07-09",
+   "category": "brand",
+   "title": "Precision and care",
+   "gist": "The company motto illustrated by one perfect shipment — the brand voice distilled into a single frame.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Brand-voice moment"
+  },
+  {
+   "week": 49,
+   "date": "2027-07-12",
+   "category": "brand",
+   "title": "From handshake to harbor",
+   "gist": "How a Globex deal actually flows from first call to discharge port — demystifying the process so prospects know exactly what to expect.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Demystifies working with us"
+  },
+  {
+   "week": 49,
+   "date": "2027-07-14",
+   "category": "tradeshow",
+   "title": "Save the date — WOFEX World Food Expo",
+   "gist": "An early save-the-date announcing that Globex will exhibit at WOFEX World Food Expo — building awareness now so buyers plan to meet us once dates are confirmed.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Early awareness while dates and booths firm up"
+  },
+  {
+   "week": 49,
+   "date": "2027-07-16",
+   "category": "brand",
+   "title": "Certifications wall",
+   "gist": "The certifications and audit trail the operation holds, presented from documents Globex provides — so buyers' QA teams can verify rather than take our word.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Compliance credibility (client-provided documents)"
+  },
+  {
+   "week": 50,
+   "date": "2027-07-19",
+   "category": "brand",
+   "title": "Partners for decades",
+   "gist": "Some customers have bought from Globex for more than 20 years, and here is what keeps them — retention as the strongest social proof there is.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Retention as social proof"
+  },
+  {
+   "week": 50,
+   "date": "2027-07-21",
+   "category": "brand",
+   "title": "The G-man turns 33",
+   "gist": "A little history of the logo everyone in the trade recognizes — brand affection tied back to the founding year.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Brand-affection moment tied to founding year"
+  },
+  {
+   "week": 50,
+   "date": "2027-07-23",
+   "category": "brand",
+   "title": "Behind every label",
+   "gist": "The people whose work sits behind one shipped carton — pride that reminds buyers there is a team, not just a SKU.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Team pride; humanizes ops"
+  },
+  {
+   "week": 51,
+   "date": "2027-07-26",
+   "category": "brand",
+   "title": "Global desks, one team",
+   "gist": "Coverage across time zones without handoff drops — responsiveness buyers feel when they call at odd hours.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Responsiveness promise"
+  },
+  {
+   "week": 51,
+   "date": "2027-07-28",
+   "category": "brand",
+   "title": "Freight market, translated",
+   "gist": "This season's freight swings explained in plain terms for food buyers — helpful expertise that earns the next order.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Helpful-expert positioning"
+  },
+  {
+   "week": 51,
+   "date": "2027-07-30",
+   "category": "brand",
+   "title": "What 'export grade' means",
+   "gist": "The bar a product clears before it ships under the Globex name — standards transparency that sets clear expectations.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Standards transparency"
+  },
+  {
+   "week": 52,
+   "date": "2027-08-02",
+   "category": "brand",
+   "title": "Your shelf, our supply",
+   "gist": "How consistent frozen programs keep retail shelves full — a proof frame retail buyers can take to their own bosses.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Retail vertical proof"
+  },
+  {
+   "week": 52,
+   "date": "2027-08-04",
+   "category": "brand",
+   "title": "Feeding the globe, literally",
+   "gist": "One week of Globex destinations plotted on a map — reach made visual and shareable.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Reach visualization; shareable"
+  },
+  {
+   "week": 52,
+   "date": "2027-08-06",
+   "category": "brand",
+   "title": "Thank you, partners",
+   "gist": "A plain thank-you to the whole network, no sales angle — relationship equity, banked.",
+   "template": "TS-p3-editorial_4x5",
+   "purpose": "Relationship equity deposit"
+  }
+ ]
+}

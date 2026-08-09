@@ -60,6 +60,15 @@ class Settings(BaseSettings):
     timezone: str = "America/New_York"
     log_level: str = "INFO"
 
+    # --- Calendar scheduler (Phase 6) ---
+    # Drafts upcoming calendar posts and sends them to the approver's WhatsApp;
+    # publishes approved posts on their scheduled date. Off by default so dev
+    # servers and tests never fire real drafts.
+    scheduler_enabled: bool = False
+    draft_lead_days: int = 3  # draft/preview posts this many days before post_date
+    draft_hour: int = 7  # local hour (timezone above) the daily draft job runs
+    publish_hour: int = 9  # local hour an approved post goes live on its date
+
     @property
     def authorized_numbers_list(self) -> list[str]:
         """Normalised allowlist of WhatsApp senders (lowercased, no spaces)."""

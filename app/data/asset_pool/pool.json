@@ -1,0 +1,164 @@
+{
+ "assets": [
+  {
+   "file": "pack-chicken-breast.jpg",
+   "tags": [
+    "packaging",
+    "chicken",
+    "breast",
+    "poultry"
+   ]
+  },
+  {
+   "file": "pack-chicken-drumstick.jpg",
+   "tags": [
+    "packaging",
+    "chicken",
+    "drumstick",
+    "poultry"
+   ]
+  },
+  {
+   "file": "pack-chicken-carton.jpg",
+   "tags": [
+    "packaging",
+    "chicken",
+    "carton",
+    "poultry"
+   ]
+  },
+  {
+   "file": "pack-duck-carton.jpg",
+   "tags": [
+    "packaging",
+    "duck",
+    "carton"
+   ]
+  },
+  {
+   "file": "pack-duck-retail.jpg",
+   "tags": [
+    "packaging",
+    "duck",
+    "retail",
+    "gift"
+   ]
+  },
+  {
+   "file": "prod-chicken-breast.jpg",
+   "tags": [
+    "product",
+    "chicken",
+    "breast",
+    "poultry"
+   ]
+  },
+  {
+   "file": "prod-chicken-chest.jpg",
+   "tags": [
+    "product",
+    "chicken",
+    "poultry"
+   ]
+  },
+  {
+   "file": "prod-chicken-gizzard.jpg",
+   "tags": [
+    "product",
+    "chicken",
+    "gizzard",
+    "specialty",
+    "offal"
+   ]
+  },
+  {
+   "file": "prod-chicken-leg.jpg",
+   "tags": [
+    "product",
+    "chicken",
+    "leg",
+    "quarter",
+    "poultry"
+   ]
+  },
+  {
+   "file": "prod-whole-bird.jpg",
+   "tags": [
+    "product",
+    "chicken",
+    "whole",
+    "bird",
+    "griller",
+    "poultry"
+   ]
+  },
+  {
+   "file": "prod-chicken-frame.jpg",
+   "tags": [
+    "product",
+    "chicken",
+    "frame",
+    "specialty",
+    "poultry"
+   ]
+  },
+  {
+   "file": "brand-box.jpg",
+   "tags": [
+    "packaging",
+    "brand",
+    "box",
+    "logistics"
+   ]
+  },
+  {
+   "file": "brand-package.jpg",
+   "tags": [
+    "packaging",
+    "brand",
+    "box"
+   ]
+  },
+  {
+   "file": "brand-boxes-closeup.jpg",
+   "tags": [
+    "brand",
+    "box",
+    "packaging",
+    "warehouse"
+   ]
+  },
+  {
+   "file": "brand-port-ship.jpg",
+   "tags": [
+    "brand",
+    "port",
+    "ship",
+    "container",
+    "logistics",
+    "stats",
+    "tradeshow",
+    "special",
+    "holiday"
+   ]
+  },
+  {
+   "file": "brand-quality-control.jpg",
+   "tags": [
+    "brand",
+    "quality",
+    "control",
+    "hands",
+    "inspection",
+    "product"
+   ]
+  },
+  {
+   "file": "placeholder-portrait.jpg",
+   "tags": [
+    "milestone",
+    "placeholder"
+   ]
+  }
+ ]
+}
