@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     kie_image_model: str = "nano-banana-2"  # text->image; verified live 2026-06-04
     kie_edit_model: str = "nano-banana-2"  # image->image (img2img) via image_input
 
+    # --- ElevenLabs (video engine: one locked voice per character) ---
+    # Optional: unset only disables the video engine's speech, not the app.
+    elevenlabs_api_key: str | None = None
+
     # --- Twilio ---
     twilio_account_sid: str
     twilio_auth_token: str

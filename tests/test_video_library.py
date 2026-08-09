@@ -217,3 +217,36 @@ def test_reference_urls_are_recorded_front_first() -> None:
         assert c.reference_image_urls, f"{c.slug} has no hosted references"
         assert c.reference_image_urls[0].endswith("front.jpg"), c.slug
         assert len(c.reference_image_urls) == len(c.reference_paths), c.slug
+
+
+def test_every_character_has_a_locked_voice() -> None:
+    """A voice, like a face, is designed once and referenced by id forever."""
+    for c in library.load_characters():
+        assert c.voice_id, f"{c.slug} has no locked voice_id"
+        assert len(c.voice_id) > 10, c.slug
+    assert len({c.voice_id for c in library.load_characters()}) == 10  # no shared voices
+
+
+def test_all_voices_are_american_and_never_accent_matched_to_appearance() -> None:
+    """Globex is a US company; the client rejected accent variation outright."""
+    forbidden = ("inflected", "east asian accent", "latin accent", "indian", "west african")
+    for c in library.load_characters():
+        direction = c.voice_direction.lower()
+        assert "american" in direction, f"{c.slug} voice is not American"
+        for term in forbidden:
+            assert term not in direction, f"{c.slug} voice still carries '{term}'"
+
+
+def test_voice_description_always_pins_the_accent() -> None:
+    from app.video import voices
+
+    c = library.get_character("wei")
+    assert c is not None
+    assert "American English" in voices.voice_description(c.voice_direction, c.role)
+
+
+def test_preview_line_obeys_the_no_say_list() -> None:
+    from app.video import voices
+
+    assert library.banned_terms_in(voices.PREVIEW_TEXT) == []
+    assert 100 <= len(voices.PREVIEW_TEXT) <= 1000  # ElevenLabs design constraint

@@ -15,7 +15,8 @@
       "total": 10,
       "male": 5,
       "female": 5
-    }
+    },
+    "voice_rule": "ALL characters speak in neutral American English. Globex is a US company and the client rejected accent variation (and any mid-video accent shift) in the design rounds. Characters stay distinct by age, register, pace and warmth — never by accent. Ethnic diversity is visual only; do not infer an accent from appearance."
   },
   "characters": [
     {
@@ -46,7 +47,7 @@
       ],
       "visual_prompt": "A 58-year-old Caucasian man with silver-grey hair and a close-cropped beard, weathered friendly face, wearing a plain navy food-safety coat and white hairnet, standing on a clean modern food-processing floor",
       "voice_direction": "Warm, gravelly, older American male. Unhurried and credible — a foreman, not a narrator.",
-      "voice_id": null,
+      "voice_id": "ltVQ45M0Qo5jJTKC6rbH",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/john/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/john/context.jpg",
@@ -86,8 +87,8 @@
         "export"
       ],
       "visual_prompt": "A 34-year-old East Asian man with short black hair, clean-shaven, alert and friendly, wearing a navy food-industry work coat over a collared shirt, standing at a refrigerated loading dock",
-      "voice_direction": "Clear, energetic male, neutral international English with a light East Asian accent. Professional and warm — never rushed.",
-      "voice_id": null,
+      "voice_direction": "Clear, energetic American male, mid-thirties. Brisk and articulate, professional and warm — never rushed.",
+      "voice_id": "0Qs7d5rpPlxPoF7KjT84",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/wei/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/wei/context.jpg",
@@ -126,8 +127,8 @@
         "logistics"
       ],
       "visual_prompt": "A 41-year-old African man with dark skin, short natural hair and a trimmed beard, calm confident expression, wearing a navy insulated food-industry work coat, standing inside a clean refrigerated cold-storage room",
-      "voice_direction": "Deep, calm male voice, West African-inflected international English. Reassuring authority.",
-      "voice_id": null,
+      "voice_direction": "Deep, calm American male, early forties. Steady and deliberate — reassuring authority.",
+      "voice_id": "Zw6yOv6xa2eccEp6N1qX",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/kwame/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/kwame/context.jpg",
@@ -165,8 +166,8 @@
         "poultry"
       ],
       "visual_prompt": "A 27-year-old Latino man with short black hair and light stubble, friendly direct expression, wearing a navy food-safety coat, white hairnet and blue disposable gloves, standing beside a modern packing line",
-      "voice_direction": "Younger male, bright and conversational, neutral American English with a light Latin accent. Energy without hype.",
-      "voice_id": null,
+      "voice_direction": "Younger American male, late twenties. Bright and conversational, natural contractions — energy without hype.",
+      "voice_id": "qUluWxVaaa9LRFsXTVuz",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/diego/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/diego/context.jpg",
@@ -206,8 +207,8 @@
         "logistics"
       ],
       "visual_prompt": "A 46-year-old South Asian man with black hair greying at the temples, a neat moustache and wire-frame glasses, thoughtful professional expression, wearing a navy work coat over a collared shirt, standing in a bright logistics office overlooking a warehouse",
-      "voice_direction": "Mid-range male, articulate and measured, Indian-inflected international English. Calm expertise.",
-      "voice_id": null,
+      "voice_direction": "Measured American male, mid-forties. Articulate and precise, slightly formal — calm expertise.",
+      "voice_id": "w6EZV8ET2S2GdOHGGhbI",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/arjun/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/arjun/context.jpg",
@@ -247,8 +248,8 @@
         "quality"
       ],
       "visual_prompt": "A 52-year-old East Asian woman with black hair streaked with grey pulled back under a white hairnet, calm attentive expression, wearing a navy quality-control coat, standing at a clean stainless-steel inspection bench in a food plant",
-      "voice_direction": "Mature female, calm and precise, neutral international English with a light East Asian accent. Quiet authority.",
-      "voice_id": null,
+      "voice_direction": "Mature American female, fifties. Calm and precise, lower register — quiet authority.",
+      "voice_id": "jh2ndfNYlCWowvUNpshS",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/mei/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/mei/context.jpg",
@@ -286,8 +287,8 @@
         "poultry"
       ],
       "visual_prompt": "A 29-year-old African woman with dark skin and braided hair tucked under a white hairnet, bright confident expression, wearing a navy quality-control coat, standing at a stainless-steel inspection bench in a modern food plant",
-      "voice_direction": "Younger female, bright and articulate, West African-inflected international English. Engaged and warm.",
-      "voice_id": null,
+      "voice_direction": "Younger American female, late twenties. Bright and articulate with an audible smile — engaged and warm.",
+      "voice_id": "vFyWMqnPEtNRuJL6I051",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/grace/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/grace/context.jpg",
@@ -327,8 +328,8 @@
         "packaging"
       ],
       "visual_prompt": "A 36-year-old Caucasian woman with light brown hair tied back, practical confident expression, wearing a navy work coat, standing in a large clean cold-storage warehouse with stacked pallets behind her",
-      "voice_direction": "Female, efficient and confident, neutral European-inflected English. Straightforward, no gloss.",
-      "voice_id": null,
+      "voice_direction": "American female, mid-thirties. Efficient and confident, dry warmth — straightforward, no gloss.",
+      "voice_id": "P7IOFZ2ixDeeyn8VqlQE",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/anna/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/anna/context.jpg",
@@ -368,8 +369,8 @@
         "packaging"
       ],
       "visual_prompt": "A 44-year-old Latina woman with dark hair pinned under a white hairnet, warm engaging expression, wearing a navy supervisor coat, standing on a busy clean food-processing floor",
-      "voice_direction": "Female, warm and expressive, neutral American English with a light Latin accent. Storyteller energy, professional.",
-      "voice_id": null,
+      "voice_direction": "American female, forties. Warm and expressive with natural rise and fall — storyteller energy, professional.",
+      "voice_id": "4jMuxmQppjyrPkdoEODZ",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/sofia/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/sofia/context.jpg",
@@ -409,8 +410,8 @@
       ],
       "visual_prompt": "A South Asian woman in her mid-twenties, an adult quality-control professional, long dark hair fully tucked under a white hairnet, curious friendly expression, wearing a navy quality-control coat and blue gloves, working at a packing line in a bright modern food plant",
       "visual_prompt_note": "Phrased as 'in her mid-twenties / adult professional' rather than an explicit age: the generator's safety filter false-positives on a numeric young age for a young woman and refuses the shot.",
-      "voice_direction": "Young female, light and friendly, Indian-inflected international English. Curious and clear, never girlish.",
-      "voice_id": null,
+      "voice_direction": "Young American female, mid-twenties. Light, clear and curious — never girlish.",
+      "voice_id": "IgTxFeAg4v03A0w910EA",
       "reference_image_urls": [
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/priya/front.jpg",
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/characters/priya/context.jpg",
