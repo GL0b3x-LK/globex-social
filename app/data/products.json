@@ -1,0 +1,232 @@
+{
+  "_meta": {
+    "purpose": "The video engine's product library — and, in the absence of any master Globex product list, the working master list.",
+    "coverage_note": "SKELETON ONLY (2026-08-09). Seeded from the 17-image app/data/asset_pool we actually hold, which is poultry and duck. Globex also trades pork, beef, seafood and grains — those products are added later once Ilan supplies the SKU list and pack shots. Adding a product = one entry here (plus pack-shot files); no code change.",
+    "global_claims_forbidden": [
+      "Halal",
+      "90+ countries",
+      "inspected by hand",
+      "hand inspected",
+      "hand-inspected"
+    ],
+    "global_claims_note": "Client-mandated no-say list from the June/July 2026 feedback rounds. Approved substitutions: 'shipped globally' (not '90+ countries'), 'Quality Control' (not 'inspected by hand'). Enforced in code by app/video/library.banned_terms_in().",
+    "global_visual_rules": {
+      "no_graphic_carcass": true,
+      "prefer_packaged": true,
+      "packaging_must_be_real": "Reference the actual pack shot; never let a model invent Globex packaging or labels."
+    }
+  },
+  "products": [
+    {
+      "slug": "chicken-breast",
+      "name": "Chicken Breast",
+      "aliases": ["breast", "chicken breasts", "boneless breast", "breast fillet"],
+      "category": "poultry",
+      "description": "Skinless boneless chicken breast, frozen for export.",
+      "formats": ["retail pack", "bulk carton"],
+      "pack_shot_files": ["pack-chicken-breast.jpg"],
+      "product_shot_files": ["prod-chicken-breast.jpg"],
+      "talking_points": [
+        "Highest-demand cut across most export markets",
+        "Blast-frozen to lock in condition after packing",
+        "Graded and Quality Control checked before it is cartoned"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": { "prefer_packaged": true },
+      "markets": ["usa", "latam", "africa", "asia", "middle_east"],
+      "status": "active"
+    },
+    {
+      "slug": "chicken-drumstick",
+      "name": "Chicken Drumsticks",
+      "aliases": ["drumstick", "drumsticks", "drums"],
+      "category": "poultry",
+      "description": "Frozen chicken drumsticks in retail-ready packaging.",
+      "formats": ["retail pack", "bulk carton"],
+      "pack_shot_files": ["pack-chicken-drumstick.jpg"],
+      "product_shot_files": [],
+      "talking_points": [
+        "Retail-ready packaging built for supermarket shelves",
+        "Consistent sizing pack to pack",
+        "A staple line for family and food-service buyers"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": { "prefer_packaged": true },
+      "markets": ["africa", "latam", "asia"],
+      "status": "active"
+    },
+    {
+      "slug": "chicken-leg-quarter",
+      "name": "Chicken Leg Quarters",
+      "aliases": ["leg quarter", "leg quarters", "quarters", "chicken legs", "leg"],
+      "category": "poultry",
+      "description": "Frozen chicken leg quarters — a core export volume line.",
+      "formats": ["bulk carton"],
+      "pack_shot_files": [],
+      "product_shot_files": ["prod-chicken-leg.jpg"],
+      "talking_points": [
+        "One of the highest-volume lines Globex ships",
+        "Packed in export cartons built for long cold-chain journeys",
+        "Value cut with consistent yield"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": { "prefer_packaged": true },
+      "markets": ["africa", "latam", "asia"],
+      "status": "active"
+    },
+    {
+      "slug": "whole-chicken",
+      "name": "Whole Chicken (Griller)",
+      "aliases": ["whole bird", "griller", "grillers", "whole chickens", "whole birds"],
+      "category": "poultry",
+      "description": "Whole frozen griller chickens, export grade.",
+      "formats": ["individually wrapped", "bulk carton"],
+      "pack_shot_files": ["brand-box.jpg"],
+      "pack_shot_note": "STAND-IN: the generic Globex export carton this line ships in. A dedicated whole-bird pack shot is outstanding — see docs/missing_assets.md.",
+      "product_shot_files": ["prod-whole-bird.jpg"],
+      "talking_points": [
+        "Graded to consistent weight bands per carton",
+        "Individually wrapped before cartoning",
+        "Export grade, cold chain unbroken from plant to port"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "never_raw_hero": true,
+        "note": "Never front a video with an unpackaged whole carcass — Len rejected graphic carcass imagery. Wrapped or cartoned presentation only."
+      },
+      "markets": ["africa", "latam", "asia"],
+      "status": "active"
+    },
+    {
+      "slug": "chicken-gizzard",
+      "name": "Chicken Gizzards",
+      "aliases": ["gizzard", "gizzards", "offal"],
+      "category": "poultry_specialty",
+      "description": "Frozen chicken gizzards — specialty line for markets where offal is a staple.",
+      "formats": ["retail pack", "bulk carton"],
+      "pack_shot_files": ["brand-box.jpg"],
+      "pack_shot_note": "STAND-IN: generic Globex export carton. A dedicated gizzard pack shot is outstanding — see docs/missing_assets.md.",
+      "product_shot_files": ["prod-chicken-gizzard.jpg"],
+      "talking_points": [
+        "Specialty cut with strong demand in specific markets",
+        "Cleaned, graded and frozen to the same standard as primal cuts"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "never_raw_hero": true,
+        "note": "Packaged presentation only — raw offal close-ups are off-brand."
+      },
+      "markets": ["africa", "asia"],
+      "status": "active"
+    },
+    {
+      "slug": "chicken-frame",
+      "name": "Chicken Frames",
+      "aliases": ["frame", "frames", "carcass frame", "backs"],
+      "category": "poultry_specialty",
+      "description": "Frozen chicken frames — value line for soup and stock markets.",
+      "formats": ["bulk carton"],
+      "pack_shot_files": ["brand-box.jpg"],
+      "pack_shot_note": "STAND-IN: generic Globex export carton. A dedicated frames pack shot is outstanding — see docs/missing_assets.md.",
+      "product_shot_files": ["prod-chicken-frame.jpg"],
+      "talking_points": [
+        "Value line serving soup and stock demand",
+        "Nothing is wasted — every part of the bird finds its market"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "never_raw_hero": true,
+        "note": "Cartoned presentation only."
+      },
+      "markets": ["africa", "asia"],
+      "status": "active"
+    },
+    {
+      "slug": "chicken-carton-export",
+      "name": "Chicken Export Carton",
+      "aliases": ["chicken carton", "export carton", "chicken box"],
+      "category": "packaging",
+      "description": "Globex-branded chicken export carton — the shipping format buyers actually see on arrival.",
+      "formats": ["export carton"],
+      "pack_shot_files": ["pack-chicken-carton.jpg"],
+      "product_shot_files": [],
+      "talking_points": [
+        "Branded carton built for stacking and long cold-chain transit",
+        "Clear labelling so cold stores and customs can move it fast"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": { "prefer_packaged": true },
+      "markets": ["usa", "africa", "latam", "asia", "middle_east"],
+      "status": "active"
+    },
+    {
+      "slug": "duck-carton",
+      "name": "Duck Export Carton",
+      "aliases": ["duck box", "duck cartons", "duck export"],
+      "category": "duck",
+      "description": "Globex duck export carton with the orange/green label livery.",
+      "formats": ["export carton"],
+      "pack_shot_files": ["pack-duck-carton.jpg"],
+      "product_shot_files": [],
+      "talking_points": [
+        "Duck is a specialist line with concentrated demand in Asian markets",
+        "Distinct label livery so buyers recognise it instantly on the dock"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "packaging_required": true,
+        "note": "Duck must appear in the REAL orange/green-label packaging — never clear bags, never invented packaging. Client called this out explicitly."
+      },
+      "markets": ["asia", "europe"],
+      "presenter_preference": ["asia"],
+      "status": "active"
+    },
+    {
+      "slug": "duck-retail",
+      "name": "Duck Retail Pack",
+      "aliases": ["duck retail", "retail duck", "duck gift pack", "duck"],
+      "category": "duck",
+      "description": "Retail-facing duck pack in the orange/green Globex livery — the consumer-shelf format.",
+      "formats": ["retail pack", "gift presentation"],
+      "pack_shot_files": ["pack-duck-retail.jpg"],
+      "product_shot_files": [],
+      "talking_points": [
+        "Consumer-ready presentation for premium retail shelves",
+        "Peak demand around Lunar New Year and festive seasons",
+        "Presentation designed to survive the cold chain and still look premium"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "packaging_required": true,
+        "note": "Real orange/green retail packaging only."
+      },
+      "markets": ["asia", "europe"],
+      "presenter_preference": ["asia"],
+      "status": "active"
+    },
+    {
+      "slug": "globex-brand-carton",
+      "name": "Globex Branded Carton",
+      "aliases": ["brand box", "globex box", "branded packaging", "our packaging", "boxes"],
+      "category": "packaging",
+      "description": "The general Globex branded shipping carton — the brand's most visible physical asset.",
+      "formats": ["export carton"],
+      "pack_shot_files": ["brand-box.jpg", "brand-package.jpg", "brand-boxes-closeup.jpg"],
+      "product_shot_files": [],
+      "talking_points": [
+        "The carton is how most customers first see the brand",
+        "Built to stack, travel and arrive intact",
+        "Packaging content runs roughly weekly per the approved calendar"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": { "prefer_packaged": true },
+      "markets": ["usa", "africa", "latam", "asia", "middle_east", "europe"],
+      "status": "active"
+    }
+  ]
+}

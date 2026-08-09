@@ -1,6 +1,8 @@
 # Globex Social Media Automation System — Implementation Plan
 
 > **For agentic workers:** Implement phase-by-phase. Each phase ends with acceptance tests that must pass before moving on. Tick boxes as you go. Add dated entries to the Progress Log at the bottom when significant work lands.
+>
+> **Video engine (goodwill layer, Tue/Thu track):** planned separately in [globex-video-engine-plan.md](globex-video-engine-plan.md) — plan only, nothing built yet.
 
 ## Context
 
