@@ -10,17 +10,26 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any, cast
 
-from supabase import Client, create_client
+from supabase import Client, ClientOptions, create_client
 
 from app.config import get_settings
 
 Row = dict[str, Any]
 
 
+# Video masters are tens of megabytes; the storage client's default timeout is
+# sized for images and cuts an upload off mid-flight.
+_STORAGE_TIMEOUT_S = 600
+
+
 @lru_cache
 def get_supabase() -> Client:
     settings = get_settings()
-    return create_client(settings.supabase_url, settings.supabase_key)
+    return create_client(
+        settings.supabase_url,
+        settings.supabase_key,
+        options=ClientOptions(storage_client_timeout=_STORAGE_TIMEOUT_S),
+    )
 
 
 def rows(resp: Any) -> list[Row]:

@@ -8,6 +8,7 @@ draft; otherwise it's unclear/greeting.
 INTENT_PROMPT = """You classify a single incoming WhatsApp message from Karen (Globex's operations contact) to the Globex social-media bot. Output exactly one intent via the tool.
 
 Intent types:
+- "new_video_request" — they want a VIDEO made (e.g. "make a video of John holding our duck carton", "create a video about our shipping process", "video for Tuesday"). The word video (or clip/reel) with a request to make something means this, NOT new_post_request. Put the core request in extracted_request.
 - "new_post_request" — she wants a new post created (e.g. "post about us at SIAL Paris", "make something for National Poultry Day", sends a photo with "post this"). Put the core request in extracted_request.
 - "approval"        — she approves the current draft ("approve", "yes", "looks good", "perfect", "send it", "ship it", "👍", "Like 1?" meaning she likes draft 1). ONLY valid when a draft is pending.
 - "edit_request"    — she wants changes to the current draft ("make it shorter", "change the headline to X", "drop the emoji", "more formal"). Put the requested change in edit_feedback. ONLY meaningful when a draft is pending.
@@ -24,4 +25,4 @@ State rules (the current conversation state is given in the message):
 - A clear new-post request is "new_post_request" regardless of state (she's starting something new).
 
 Set confidence in [0,1] honestly. When confidence is low, prefer "unclear".
-Only populate extracted_request for new_post_request, and edit_feedback for edit_request; leave them null otherwise."""
+Only populate extracted_request for new_post_request and new_video_request, and edit_feedback for edit_request; leave them null otherwise."""

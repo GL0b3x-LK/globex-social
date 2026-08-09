@@ -20,7 +20,7 @@ def test_routing_covers_every_state_intent_pair() -> None:
     for state in ALL_STATES:
         for intent in ALL_INTENTS:
             assert isinstance(route(state, intent), Action), f"undefined: {state} x {intent}"
-    assert len(ROUTING) == len(ALL_STATES) * len(ALL_INTENTS) == 35
+    assert len(ROUTING) == len(ALL_STATES) * len(ALL_INTENTS) == 48
 
 
 @pytest.mark.parametrize("state", ALL_STATES)

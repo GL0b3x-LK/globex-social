@@ -13,6 +13,7 @@ from app.ai.prompts.intent import INTENT_PROMPT
 
 class IntentType(StrEnum):
     new_post_request = "new_post_request"
+    new_video_request = "new_video_request"
     approval = "approval"
     edit_request = "edit_request"
     cancellation = "cancellation"

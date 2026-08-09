@@ -24,6 +24,7 @@ from app.messaging.transcription import Outcome
 from app.publishing import platforms as plat
 from app.templates import renderer as render_mod
 from app.workflows import approval, intake, messages, render_pipeline
+from app.workflows import video as video_flow
 
 # VHS HUD overlay (transparent 9:16), composited onto Karen's video by ffmpeg.
 _VHS_OVERLAY_FILE = "_vhs_overlay.html"
@@ -83,6 +84,17 @@ async def handle_incoming_message(
     convo = await conversation.get_or_create(from_phone)
     state = conversation.state_of(convo)
 
+    # A video in play owns the conversation: approve/cancel/feedback all belong
+    # to it, so it is handled before the post routing table ever sees the message.
+    if state is ConversationState.VIDEO:
+        memory = await ai_memory.build_context(
+            from_phone, (convo.get("context") or {}).get("summary")
+        )
+        intent = await ai_intent.classify_intent(body, state.value, memory)
+        if await video_flow.handle_while_in_video(from_phone, body, str(intent.type)):
+            await _update_summary(from_phone)
+            return
+
     # Guided 4-question flow in progress — this message answers the current step.
     if state is ConversationState.INTAKE:
         await intake.handle_answer(from_phone, convo, body, photo)
@@ -133,6 +145,11 @@ async def handle_incoming_message(
         "routing message",
         extra={"state": str(state), "intent": str(intent.type), "action": str(action)},
     )
+
+    if action is Action.GENERATE_VIDEO:
+        await video_flow.begin(from_phone, intent.extracted_request or body)
+        await _update_summary(from_phone)
+        return
 
     if action is Action.GENERATE:
         # A bare "new post" (no photo, no real brief) starts the guided 4-question

@@ -8,21 +8,41 @@ Blotato fetches the image by URL at publish time, so the bucket is public-read.
 from __future__ import annotations
 
 import asyncio
+import time
 from uuid import UUID
 
 from app.db.client import get_supabase
+from app.logging_config import get_logger
+
+log = get_logger("app.db.storage")
 
 BUCKET = "post-images"
 
 
+_UPLOAD_RETRIES = 3
+
+
 def _upload_sync(path: str, data: bytes, content_type: str = "image/png") -> str:
+    """Upload with retries — a dropped connection mid-transfer is common for
+    multi-megabyte video and should not lose an expensive generated asset."""
     sb = get_supabase()
-    sb.storage.from_(BUCKET).upload(
-        path,
-        data,
-        {"content-type": content_type, "cache-control": "3600", "upsert": "true"},
-    )
-    return sb.storage.from_(BUCKET).get_public_url(path)
+    last: Exception | None = None
+    for attempt in range(_UPLOAD_RETRIES):
+        try:
+            sb.storage.from_(BUCKET).upload(
+                path,
+                data,
+                {"content-type": content_type, "cache-control": "3600", "upsert": "true"},
+            )
+            return str(sb.storage.from_(BUCKET).get_public_url(path))
+        except Exception as exc:  # noqa: BLE001 — retried below, re-raised if terminal
+            last = exc
+            log.warning(
+                "storage upload failed; retrying",
+                extra={"path": path, "attempt": attempt + 1, "error": str(exc)[:120]},
+            )
+            time.sleep(2.0 * (attempt + 1))
+    raise RuntimeError(f"upload failed after {_UPLOAD_RETRIES} attempts: {last}")
 
 
 async def upload_png(post_id: str | UUID, png_bytes: bytes, *, suffix: str = "") -> str:
@@ -48,6 +68,25 @@ def upload_character_reference(slug: str, shot: str, jpeg_bytes: bytes) -> str:
     Synchronous — this is one-time setup run from a script, not request-path code.
     """
     return _upload_sync(f"characters/{slug}/{shot}.jpg", jpeg_bytes, "image/jpeg")
+
+
+def public_url(path: str) -> str:
+    """The public URL for an object already in the bucket."""
+    return str(get_supabase().storage.from_(BUCKET).get_public_url(path))
+
+
+def upload_bytes(path: str, data: bytes, content_type: str) -> str:
+    """Host arbitrary bytes at `path`; return the public URL. Overwrites."""
+    return _upload_sync(path, data, content_type)
+
+
+def upload_video_asset(video_id: str, name: str, data: bytes, content_type: str) -> str:
+    """Host one artifact of a video under ``videos/{video_id}/{name}``.
+
+    Generation providers fetch inputs by URL, so keyframes and voice tracks must
+    be publicly reachable before a clip can be made from them.
+    """
+    return _upload_sync(f"videos/{video_id}/{name}", data, content_type)
 
 
 def ensure_bucket() -> None:

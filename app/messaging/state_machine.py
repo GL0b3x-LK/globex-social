@@ -16,6 +16,7 @@ from app.messaging.conversation import ConversationState
 
 class Action(StrEnum):
     GENERATE = "generate"  # start a new draft (supersedes any pending one)
+    GENERATE_VIDEO = "generate_video"  # start a video (script first, then build)
     APPROVE = "approve"  # approve + publish the pending draft
     EDIT = "edit"  # apply an edit to the pending draft
     CANCEL = "cancel"  # cancel the pending draft
@@ -31,6 +32,7 @@ _I = IntentType
 # A draft is in play (AWAITING_APPROVAL / EDITING).
 _WITH_DRAFT: dict[IntentType, Action] = {
     _I.new_post_request: Action.GENERATE,
+    _I.new_video_request: Action.GENERATE_VIDEO,
     _I.approval: Action.APPROVE,
     _I.edit_request: Action.EDIT,
     _I.cancellation: Action.CANCEL,
@@ -42,6 +44,7 @@ _WITH_DRAFT: dict[IntentType, Action] = {
 # Nothing pending (IDLE / AWAITING_CLARIFICATION).
 _NO_DRAFT: dict[IntentType, Action] = {
     _I.new_post_request: Action.GENERATE,
+    _I.new_video_request: Action.GENERATE_VIDEO,
     _I.approval: Action.NOTHING_PENDING,
     _I.edit_request: Action.NOTHING_PENDING,
     _I.cancellation: Action.NOTHING_PENDING,
@@ -60,6 +63,7 @@ for _state in (
     ConversationState.IDLE,
     ConversationState.AWAITING_CLARIFICATION,
     ConversationState.INTAKE,
+    ConversationState.VIDEO,
 ):
     for _intent, _action in _NO_DRAFT.items():
         ROUTING[(_state, _intent)] = _action

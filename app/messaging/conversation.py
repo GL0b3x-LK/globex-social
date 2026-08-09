@@ -21,6 +21,7 @@ class ConversationState(StrEnum):
     EDITING = "editing"
     AWAITING_CLARIFICATION = "awaiting_clarification"
     INTAKE = "intake"  # guided 4-question flow (about / why / photo / template)
+    VIDEO = "video"  # a video is in play: script review, generating, or cut review
 
 
 def state_of(conversation: Row) -> ConversationState:

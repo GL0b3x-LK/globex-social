@@ -163,6 +163,32 @@ async def generate(
     return await _run(body, label="generate")
 
 
+async def edit_multi(
+    image_urls: list[str],
+    prompt: str,
+    *,
+    aspect_ratio: str = "1:1",
+    model: str | None = None,
+) -> ImageResult:
+    """Compose from SEVERAL reference images at once.
+
+    This is what keeps a character looking like themselves while holding the real
+    product: the person's stored photo and the actual pack shot go in together,
+    and the model places known things rather than inventing them.
+    """
+    chosen = model or get_settings().kie_edit_model
+    body = {
+        "model": chosen,
+        "input": {
+            "prompt": prompt,
+            _edit_field(chosen): image_urls,
+            "aspect_ratio": aspect_ratio,
+            "output_format": "png",
+        },
+    }
+    return await _run(body, label=f"edit_multi[{len(image_urls)}]")
+
+
 async def edit(image_url: str, prompt: str, *, aspect_ratio: str = "1:1") -> ImageResult:
     """Image→image (img2img): apply `prompt` as a change to the image at `image_url`."""
     settings = get_settings()
