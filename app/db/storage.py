@@ -40,6 +40,16 @@ async def upload_video(post_id: str | UUID, mp4_bytes: bytes) -> str:
     return await asyncio.to_thread(_upload_sync, f"{post_id}.mp4", mp4_bytes, "video/mp4")
 
 
+def upload_character_reference(slug: str, shot: str, jpeg_bytes: bytes) -> str:
+    """Host a character's reference shot; return its public URL.
+
+    These are generated once and then reused forever: every keyframe references
+    the hosted image, so a character's face never depends on re-running a prompt.
+    Synchronous — this is one-time setup run from a script, not request-path code.
+    """
+    return _upload_sync(f"characters/{slug}/{shot}.jpg", jpeg_bytes, "image/jpeg")
+
+
 def ensure_bucket() -> None:
     """Create the public ``post-images`` bucket if absent. Idempotent one-time setup."""
     sb = get_supabase()

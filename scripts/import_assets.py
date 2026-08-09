@@ -19,6 +19,7 @@ Requires ImageMagick + Ghostscript (installed via Scoop). Tool discovery below
 prepends the Scoop locations to PATH and sets the MAGICK_* env vars so the
 portable ImageMagick build can find its coder modules + config.
 """
+
 from __future__ import annotations
 
 import json
@@ -53,8 +54,8 @@ LOGO_MAP = {
     "Globex_logo_top-Globex-only_Pantone-288.eps": "globex-wordmark-navy",
 }
 
-TARGET_WIDTH = 2160          # final logo width in px (per plan / retina)
-RENDER_WIDTH = 2592          # oversample width before downscale (~1.2x)
+TARGET_WIDTH = 2160  # final logo width in px (per plan / retina)
+RENDER_WIDTH = 2592  # oversample width before downscale (~1.2x)
 
 log = logging.getLogger("import_assets")
 
@@ -125,13 +126,37 @@ def convert_logo(gs: str, magick: str, src: Path, stem: str) -> dict:
     tmp = LOGO_DIR / f"{stem}.tmp.png"
 
     # 1. Render the vector PostScript to a transparent PNG (ignores TIFF preview).
-    _run([gs, "-q", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-dEPSCrop",
-          "-sDEVICE=pngalpha", f"-r{dpi}", f"-sOutputFile={tmp}", str(src)])
+    _run(
+        [
+            gs,
+            "-q",
+            "-dSAFER",
+            "-dBATCH",
+            "-dNOPAUSE",
+            "-dEPSCrop",
+            "-sDEVICE=pngalpha",
+            f"-r{dpi}",
+            f"-sOutputFile={tmp}",
+            str(src),
+        ]
+    )
     # 2. Normalise to target width, strip metadata.
     _run([magick, str(tmp), "-resize", f"{TARGET_WIDTH}x", "-strip", str(out_full)])
     # 3. Reversed variant for dark backgrounds: recolour navy -> white, keep cyan.
-    _run([magick, str(out_full), "-fuzz", "20%", "-fill", "white",
-          "-opaque", BRAND_NAVY, "-strip", str(out_white)])
+    _run(
+        [
+            magick,
+            str(out_full),
+            "-fuzz",
+            "20%",
+            "-fill",
+            "white",
+            "-opaque",
+            BRAND_NAVY,
+            "-strip",
+            str(out_white),
+        ]
+    )
     tmp.unlink(missing_ok=True)
 
     return {"stem": stem, "dpi": dpi, "full": identify(magick, out_full)}
@@ -160,13 +185,15 @@ def parse_employees(wb) -> list[dict]:
         name = row[1]
         if not name or not str(name).strip():
             continue
-        out.append({
-            "name": _clean(name),
-            "title": _clean(row[5]) if row[5] else None,
-            "hire_date": _iso(row[3]),          # col D — Date of Hire
-            "department": None,
-            "active": True,
-        })
+        out.append(
+            {
+                "name": _clean(name),
+                "title": _clean(row[5]) if row[5] else None,
+                "hire_date": _iso(row[3]),  # col D — Date of Hire
+                "department": None,
+                "active": True,
+            }
+        )
     return out
 
 
@@ -224,24 +251,35 @@ def parse_trade_shows(wb) -> list[dict]:
         if location and location.upper() == "TBC":
             location = None
 
-        out.append({
-            "name": name,
-            "month": _clean(row[0]) if row[0] else None,
-            "start_date": start,
-            "end_date": end,
-            "location": location,
-            "booth": _clean(row[4]) if row[4] else None,
-            "link": _clean(row[5]) if row[5] else None,
-            "hidden": hidden,
-            "needs_date_confirmation": needs_confirm,
-            "notes": notes,
-        })
+        out.append(
+            {
+                "name": name,
+                "month": _clean(row[0]) if row[0] else None,
+                "start_date": start,
+                "end_date": end,
+                "location": location,
+                "booth": _clean(row[4]) if row[4] else None,
+                "link": _clean(row[5]) if row[5] else None,
+                "hidden": hidden,
+                "needs_date_confirmation": needs_confirm,
+                "notes": notes,
+            }
+        )
     return out
 
 
 FOOD_KW = ("hot sauce", "poultry", "beef", "pork", "seafood", "fish", "logistics", "meat")
-CULTURAL_KW = ("lunar new year", "ramadan", "easter", "thanksgiving", "happy holidays",
-               "christmas", "hanukkah", "diwali", "women's day")
+CULTURAL_KW = (
+    "lunar new year",
+    "ramadan",
+    "easter",
+    "thanksgiving",
+    "happy holidays",
+    "christmas",
+    "hanukkah",
+    "diwali",
+    "women's day",
+)
 
 
 def _classify(name: str, is_founding: bool) -> str:
@@ -274,7 +312,7 @@ def parse_holidays(wb) -> tuple[list[dict], list[str]]:
         if not raw_name or not str(raw_name).strip():
             continue
         name = _clean(raw_name)
-        if name.lower() == "holiday":         # header row
+        if name.lower() == "holiday":  # header row
             continue
 
         # Name cleanup + flags.
@@ -282,9 +320,7 @@ def parse_holidays(wb) -> tuple[list[dict], list[str]]:
         name = _clean(re.sub(r"\(changes\)", "", name, flags=re.I)).rstrip("?").strip()
 
         c26, c27 = row[3], row[4]
-        is_month_long = any(
-            isinstance(c, str) and "entire month" in c.lower() for c in (c26, c27)
-        )
+        is_month_long = any(isinstance(c, str) and "entire month" in c.lower() for c in (c26, c27))
         date_2026 = _iso(c26)
         date_2027 = _iso(c27)
 
@@ -293,7 +329,10 @@ def parse_holidays(wb) -> tuple[list[dict], list[str]]:
         )
         if is_founding:
             name = "Globex Founding Day"
-            date_2026, date_2027 = "2026-11-05", "2027-11-05"  # fix sheet typo (2027 cell read 2026)
+            date_2026, date_2027 = (
+                "2026-11-05",
+                "2027-11-05",
+            )  # fix sheet typo (2027 cell read 2026)
 
         # Skip dateless, non-month-long rows (e.g. National Fish Day — no date set).
         if not is_month_long and date_2026 is None and date_2027 is None:
@@ -308,22 +347,26 @@ def parse_holidays(wb) -> tuple[list[dict], list[str]]:
         if is_month_long:
             descriptions.append("Month-long observance.")
 
-        holidays.append({
-            "name": name,
-            "month": current_month,
-            "date_2026": None if is_month_long else date_2026,
-            "date_2027": None if is_month_long else date_2027,
-            "is_month_long": is_month_long,
-            "category": _classify(name, is_founding),
-            "description": " ".join(descriptions) or None,
-            "recurring": True,
-        })
+        holidays.append(
+            {
+                "name": name,
+                "month": current_month,
+                "date_2026": None if is_month_long else date_2026,
+                "date_2027": None if is_month_long else date_2027,
+                "is_month_long": is_month_long,
+                "category": _classify(name, is_founding),
+                "description": " ".join(descriptions) or None,
+                "recurring": True,
+            }
+        )
 
     # Easter dedup: the sheet lists two "Easter Sunday" rows; keep the one whose
     # 2026 date falls in April (the correct one), drop the March duplicate.
     easters = [h for h in holidays if h["name"].lower().startswith("easter")]
     if len(easters) > 1:
-        keep = next((h for h in easters if (h["date_2026"] or "").startswith("2026-04")), easters[0])
+        keep = next(
+            (h for h in easters if (h["date_2026"] or "").startswith("2026-04")), easters[0]
+        )
         for h in easters:
             if h is not keep:
                 holidays.remove(h)
@@ -375,7 +418,7 @@ consolidated request — do not dripfeed._
 ## Imported OK
 - **{len(employees)} employees** (hire dates only; no DOB/age/passwords persisted).
 - **{len(shows)} trade shows** ({len(tbc)} with TBC dates).
-- **{len(holidays)} holidays** ({sum(h['is_month_long'] for h in holidays)} month-long observances).
+- **{len(holidays)} holidays** ({sum(h["is_month_long"] for h in holidays)} month-long observances).
 - **3 logos** converted to transparent PNG (+ reversed white variants).
 
 ## BLOCKING — re-extracted asset ZIP (0-byte in current download)
@@ -389,9 +432,9 @@ These block Phase 3 templates and the Phase 6 packaging rotation:
 - [ ] **The 20 rotating brand/packaging posts** — images + per-slot copy/angle, OR free rein for Claude to draft for one-time approval.
 
 ## DATA GAPS (Karen fills over time; system degrades gracefully)
-- [ ] **TBC trade-show dates** — {len(tbc)} shows: {', '.join(tbc) if tbc else 'none'}.
+- [ ] **TBC trade-show dates** — {len(tbc)} shows: {", ".join(tbc) if tbc else "none"}.
 - [ ] **Booth numbers** — all blank in the Events tab.
-- [ ] **Dropped (dateless / duplicate) holiday rows** — {', '.join(skipped) if skipped else 'none'}. Confirm National Fish Day date or leave dropped.
+- [ ] **Dropped (dateless / duplicate) holiday rows** — {", ".join(skipped) if skipped else "none"}. Confirm National Fish Day date or leave dropped.
 
 ## LAUNCH (Phase 8)
 - [ ] Production Twilio WhatsApp Business sender (Meta approval, 2–7 days) — dedicated number, not Karen's personal line.
@@ -451,8 +494,9 @@ def main() -> None:
     # --- Inventory report ---------------------------------------------------
     tbc = sum(s["needs_date_confirmation"] for s in shows)
     month_long = sum(h["is_month_long"] for h in holidays)
-    qualifiers = [e["name"] for e in employees
-                  if e["hire_date"] and (2026 - int(e["hire_date"][:4])) >= 20]
+    qualifiers = [
+        e["name"] for e in employees if e["hire_date"] and (2026 - int(e["hire_date"][:4])) >= 20
+    ]
     log.info("\n" + "=" * 60)
     log.info("PHASE 0 INVENTORY")
     log.info("=" * 60)
@@ -462,8 +506,12 @@ def main() -> None:
     log.info("Trade shows     : %d (%d TBC)", len(shows), tbc)
     log.info("Holidays        : %d (%d month-long)", len(holidays), month_long)
     log.info("  dropped rows  : %s", ", ".join(skipped) if skipped else "none")
-    log.info("Photos staged   : %d  | contract: %s | chat stub: %s",
-             staged["photos"], staged["contract"], staged["chat_stub"])
+    log.info(
+        "Photos staged   : %d  | contract: %s | chat stub: %s",
+        staged["photos"],
+        staged["contract"],
+        staged["chat_stub"],
+    )
     log.info("Outputs -> app/data/*.json, app/templates/assets/logos/*.png, docs/missing_assets.md")
 
 

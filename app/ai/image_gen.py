@@ -35,6 +35,9 @@ _CREATE_RETRIES = 3  # for HTTP 429 (rate limited — the request does not enter
 # Models that take their input images under "image_input" (vs "image_urls").
 _IMAGE_INPUT_MODELS = ("nano-banana-2", "nano-banana-pro")
 
+# GPT Image models take `resolution` (1K/2K/4K) and reject `output_format`.
+_GPT_IMAGE_MODELS = ("gpt-image-",)
+
 
 @dataclass(frozen=True)
 class ImageResult:
@@ -49,6 +52,16 @@ def _headers(key: str) -> dict[str, str]:
 
 def _edit_field(model: str) -> str:
     return "image_input" if model.startswith(_IMAGE_INPUT_MODELS) else "image_urls"
+
+
+def _generate_input(model: str, prompt: str, aspect_ratio: str, resolution: str) -> dict[str, str]:
+    """Each kie.ai model family accepts a different input shape — send only its own.
+
+    An unknown key is rejected at task creation, so this cannot be one shared dict.
+    """
+    if model.startswith(_GPT_IMAGE_MODELS):
+        return {"prompt": prompt, "aspect_ratio": aspect_ratio, "resolution": resolution}
+    return {"prompt": prompt, "aspect_ratio": aspect_ratio, "output_format": "png"}
 
 
 async def _create_task(client: httpx.AsyncClient, key: str, body: dict) -> tuple[str | None, str]:
@@ -130,12 +143,22 @@ async def _run(body: dict, *, label: str) -> ImageResult:
     return ImageResult(ok=True, image_bytes=image_bytes)
 
 
-async def generate(prompt: str, *, aspect_ratio: str = "1:1") -> ImageResult:
-    """Text→image. Returns an ImageResult; never raises."""
-    settings = get_settings()
+async def generate(
+    prompt: str,
+    *,
+    aspect_ratio: str = "1:1",
+    model: str | None = None,
+    resolution: str = "2K",
+) -> ImageResult:
+    """Text→image. Returns an ImageResult; never raises.
+
+    `model` overrides the configured default — used by the video engine's
+    character sheets, which run on GPT Image rather than the post pipeline's model.
+    """
+    chosen = model or get_settings().kie_image_model
     body = {
-        "model": settings.kie_image_model,
-        "input": {"prompt": prompt, "aspect_ratio": aspect_ratio, "output_format": "png"},
+        "model": chosen,
+        "input": _generate_input(chosen, prompt, aspect_ratio, resolution),
     }
     return await _run(body, label="generate")
 

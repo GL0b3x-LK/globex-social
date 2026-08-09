@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>{{ font_face_css|safe }}</style>
+  {# Contact sheet for the video-engine character roster — the artefact Ilan and
+     Len review once to approve who may front Globex videos. Brand colours only:
+     navy #002D70, light blue #5BC0DE. Not a post template; an internal document,
+     so it is deliberately plain. #}
+  <style>
+    :root {
+      --navy: #002D70;
+      --cyan: #5BC0DE;
+      --white: #ffffff;
+      --w70: rgba(255, 255, 255, 0.70);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      font-family: 'Poppins', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: var(--navy);
+      color: var(--white);
+    }
+    .sheet { padding: 56px 56px 44px; }
+
+    header { margin-bottom: 40px; }
+    h1 {
+      font-size: 40px; font-weight: 700; letter-spacing: -0.4px;
+    }
+    .sub {
+      margin-top: 10px; font-size: 19px; font-weight: 400; color: var(--w70);
+    }
+    .rule { height: 5px; width: 96px; background: var(--cyan); margin-top: 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat({{ columns }}, 1fr);
+      gap: 30px 26px;
+    }
+    .card { display: flex; flex-direction: column; }
+    .shots { display: flex; gap: 8px; }
+    .shot {
+      border: 3px solid var(--cyan);
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+    }
+    .shot.front { flex: 0 0 58%; aspect-ratio: 1 / 1; }
+    .shot.context { flex: 1 1 auto; aspect-ratio: 9 / 16; }
+    .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .missing {
+      width: 100%; height: 100%; display: flex; align-items: center;
+      justify-content: center; font-size: 13px; color: var(--w70); text-align: center;
+      padding: 8px;
+    }
+
+    .name { margin-top: 13px; font-size: 25px; font-weight: 700; line-height: 1.1; }
+    .meta { margin-top: 5px; font-size: 15px; font-weight: 600; color: var(--cyan); }
+    .role { margin-top: 3px; font-size: 15px; color: var(--w70); line-height: 1.35; }
+
+    footer {
+      margin-top: 42px; padding-top: 22px;
+      border-top: 1px solid rgba(255,255,255,0.18);
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 30px;
+    }
+    .note { font-size: 15px; color: var(--w70); line-height: 1.5; max-width: 1180px; }
+    .note b { color: var(--white); font-weight: 600; }
+    .logo { height: 54px; flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <header>
+      <h1>{{ title }}</h1>
+      <div class="sub">{{ subtitle }}</div>
+      <div class="rule"></div>
+    </header>
+
+    <div class="grid">
+      {% for c in characters %}
+      <div class="card">
+        <div class="shots">
+          <div class="shot front">
+            {% if c.front %}<img src="{{ c.front }}" alt="">
+            {% else %}<div class="missing">portrait pending</div>{% endif %}
+          </div>
+          <div class="shot context">
+            {% if c.context %}<img src="{{ c.context }}" alt="">
+            {% else %}<div class="missing">context pending</div>{% endif %}
+          </div>
+        </div>
+        <div class="name">{{ c.name }}</div>
+        <div class="meta">{{ c.meta }}</div>
+        <div class="role">{{ c.role }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <footer>
+      <div class="note">{{ note|safe }}</div>
+      {% if logos.lockup_side_white %}<img class="logo" src="{{ logos.lockup_side_white }}" alt="">{% endif %}
+    </footer>
+  </div>
+</body>
+</html>

@@ -35,6 +35,11 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 CHARACTERS_PATH = DATA_DIR / "characters.json"
 PRODUCTS_PATH = DATA_DIR / "products.json"
 ASSET_POOL = DATA_DIR / "asset_pool"
+REFERENCE_DIR = DATA_DIR / "characters"  # <slug>/front.jpg, context.jpg, ...
+
+# The identity anchor. Every keyframe references this file (or its hosted URL),
+# never the text prompt that produced it.
+PRIMARY_SHOT = "front"
 
 # Words too generic to identify a product on their own — matching on these would
 # make every poultry line a candidate for every brief.
@@ -90,13 +95,42 @@ class Character:
     status: str
 
     @property
-    def usable(self) -> bool:
-        """Approved, and (if a real person) covered by recorded likeness consent.
+    def reference_dir(self) -> Path:
+        return REFERENCE_DIR / self.slug
 
-        Draft characters are deliberately unusable: Len approves each sheet once,
-        and only then can that face front the brand.
+    @property
+    def reference_paths(self) -> tuple[Path, ...]:
+        """The stored reference shots, generated ONCE and reused for every video.
+
+        ``visual_prompt`` exists only to produce these files the first time. It is
+        never used at video time — re-prompting would give a different-looking
+        person each run, which is exactly the failure this library prevents.
         """
-        if self.status != "approved":
+        directory = self.reference_dir
+        return tuple(sorted(directory.glob("*.jpg"))) if directory.is_dir() else ()
+
+    @property
+    def primary_reference(self) -> Path | None:
+        """The front portrait: the identity anchor passed to every keyframe."""
+        path = self.reference_dir / f"{PRIMARY_SHOT}.jpg"
+        return path if path.exists() else None
+
+    @property
+    def has_references(self) -> bool:
+        return bool(self.reference_paths)
+
+    @property
+    def usable(self) -> bool:
+        """Approved, backed by stored reference images, and consent-clear.
+
+        Three independent gates, each closing a different failure:
+          * draft status  — Len approves each sheet once before that face is used;
+          * no references — a character with no stored image could only be
+            re-generated from its prompt, which would not look like itself;
+          * likeness      — a real person needs recorded consent (invented
+            personas are exempt because there is no one to consent).
+        """
+        if self.status != "approved" or not self.has_references:
             return False
         return not self.is_real_person or bool(self.likeness_consent)
 

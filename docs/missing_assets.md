@@ -25,7 +25,10 @@ These block Phase 3 templates and the Phase 6 packaging rotation:
 - [ ] **Dropped (dateless / duplicate) holiday rows** — National Fish Day, Easter Sunday (duplicate 2026-03-28). Confirm National Fish Day date or leave dropped.
 
 ## VIDEO ENGINE (goodwill layer — see globex-video-engine-plan.md)
-- [ ] **`KIE_API_KEY` is empty in `.env`** — blocks generating the 10 character reference sheets (`scripts/generate_characters.py`). Supply a key, or wire generation through the Higgsfield account.
+- [x] ~~`KIE_API_KEY`~~ — supplied 2026-08-09; all 10 character sheets generated on GPT Image-2. Contact sheet for approval: `app/data/characters/_contact_sheet.png`.
+- [ ] **Len/Ilan to approve the character roster** — then flip each approved persona to `status: "approved"` in `app/data/characters.json` (a draft character cannot be used in a video).
+- [ ] **`ELEVENLABS_API_KEY`** — needed to create and lock one voice per approved character (plus a narrator voice).
+- [ ] **`SUPABASE_DB_URL`** — still empty. The project URL (`https://dmgftqalbwldhxptlupg.supabase.co`) was already configured as `SUPABASE_URL`; applying `schema.sql` needs the **Postgres connection string** instead: Dashboard → Settings → Database → Connection string → URI (Session pooler), which contains the DB password. Not blocking V0/V1 — the libraries read JSON.
 - [ ] **Dedicated pack shots** for three lines we only hold RAW photography of: **whole bird / griller, chicken gizzards, chicken frames**. Len rejected graphic carcass imagery, so these can't lead a post; they currently fall back to the generic branded carton (flagged inline in `app/data/products.json`).
 - [ ] **Full product/SKU list from Ilan** — `app/data/products.json` is a 10-entry skeleton covering only poultry and duck. Pork, beef, seafood and grains are missing entirely (no master list exists anywhere — confirmed 2026-08-08).
 - [ ] **Real factory / port / packing-line video clips** — the approved UGC video was real footage, and real b-roll beats generated b-roll every time. Biggest single quality lever available.

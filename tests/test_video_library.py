@@ -176,3 +176,44 @@ def test_wardrobe_and_generation_rules_are_available_to_prompts() -> None:
     assert "logo" in library.wardrobe_rule().lower()
     rules = " ".join(library.generation_rules()).lower()
     assert "steam" in rules and "carcass" in rules
+
+
+# --------------------------------------------------------------------------- #
+# generate once, reuse forever
+# --------------------------------------------------------------------------- #
+
+
+def test_every_character_has_stored_reference_shots() -> None:
+    """The roster's identity lives in files on disk, not in a prompt re-run."""
+    for c in library.load_characters():
+        assert c.has_references, f"{c.slug} has no generated reference shots"
+        assert c.primary_reference is not None, f"{c.slug} is missing its front portrait"
+        assert c.primary_reference.name == "front.jpg"
+
+
+def test_a_character_without_references_can_never_be_used() -> None:
+    """Approval alone is not enough — without a stored face, a video would have to
+    re-generate one from the prompt, and it would not look like the same person."""
+    john = library.get_character("john")
+    assert john is not None
+    approved = library.Character(**{**john.__dict__, "status": "approved"})
+    assert approved.usable  # has references on disk
+
+    ghost = library.Character(**{**john.__dict__, "slug": "nobody", "status": "approved"})
+    assert not ghost.has_references
+    assert not ghost.usable
+
+
+def test_reference_paths_are_stable_across_calls() -> None:
+    c = library.get_character("mei")
+    assert c is not None
+    assert c.reference_paths == c.reference_paths
+    assert all(p.suffix == ".jpg" and p.exists() for p in c.reference_paths)
+
+
+def test_reference_urls_are_recorded_front_first() -> None:
+    """Hosted URLs are what the generator fetches; identity anchor must be first."""
+    for c in library.load_characters():
+        assert c.reference_image_urls, f"{c.slug} has no hosted references"
+        assert c.reference_image_urls[0].endswith("front.jpg"), c.slug
+        assert len(c.reference_image_urls) == len(c.reference_paths), c.slug

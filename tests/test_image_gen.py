@@ -191,3 +191,41 @@ def test_edit_field_mapping() -> None:
     assert image_gen._edit_field("nano-banana-2") == "image_input"
     assert image_gen._edit_field("nano-banana-pro") == "image_input"
     assert image_gen._edit_field("google/nano-banana-edit") == "image_urls"
+
+
+# --------------------------------------------------------------------------- #
+# per-model input shapes
+# --------------------------------------------------------------------------- #
+
+
+def test_gpt_image_takes_resolution_not_output_format() -> None:
+    """GPT Image rejects unknown keys at task creation, so it must not receive
+    the nano-banana `output_format`."""
+    body = image_gen._generate_input("gpt-image-2-text-to-image", "a portrait", "9:16", "1K")
+    assert body == {"prompt": "a portrait", "aspect_ratio": "9:16", "resolution": "1K"}
+
+
+def test_nano_banana_keeps_its_own_input_shape() -> None:
+    body = image_gen._generate_input("nano-banana-2", "a port", "1:1", "2K")
+    assert body == {"prompt": "a port", "aspect_ratio": "1:1", "output_format": "png"}
+    assert "resolution" not in body
+
+
+async def test_model_override_reaches_the_request(monkeypatch) -> None:
+    seen: dict = {}
+
+    class _Capture(_FakeClient):
+        async def post(self, path, headers=None, json=None):
+            seen.update(json or {})
+            return await super().post(path, headers=headers, json=json)
+
+    script = {
+        "create": _Resp(json_data={"code": 200, "data": {"taskId": "t1"}}),
+        "poll": [_ok_poll()],
+        "download": _Resp(content=b"PNG"),
+    }
+    monkeypatch.setattr(image_gen.httpx, "AsyncClient", lambda *a, **k: _Capture(script))
+    result = await image_gen.generate("x", model="gpt-image-2-text-to-image", resolution="1K")
+    assert result.ok
+    assert seen["model"] == "gpt-image-2-text-to-image"
+    assert seen["input"]["resolution"] == "1K"

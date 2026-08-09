@@ -6,6 +6,7 @@ DDL — so this one script connects directly via psycopg using SUPABASE_DB_URL
 
 Run:  .venv\\Scripts\\python.exe scripts\\apply_schema.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -36,7 +37,9 @@ def ensure_bucket() -> None:
         get_supabase().storage.create_bucket(bucket, options={"public": True})
         log.info("storage bucket created", extra={"bucket": bucket})
     except Exception as exc:  # already exists -> idempotent no-op
-        log.info("storage bucket ensure (likely exists)", extra={"bucket": bucket, "note": str(exc)})
+        log.info(
+            "storage bucket ensure (likely exists)", extra={"bucket": bucket, "note": str(exc)}
+        )
 
 
 def main() -> None:

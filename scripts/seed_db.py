@@ -6,6 +6,7 @@ not duplicate rows. branded_packaging_rotation is skipped until its data lands
 
 Run:  .venv\\Scripts\\python.exe scripts\\seed_db.py
 """
+
 from __future__ import annotations
 
 import json
