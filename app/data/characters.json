@@ -1,7 +1,7 @@
 {
   "_meta": {
     "purpose": "The video engine's character roster — 10 invented personas (5M/5F) who front Globex videos.",
-    "status_note": "All seed characters are status=draft. Len/Ilan approve each sheet ONCE; only status=approved characters can appear in a video.",
+    "status_note": "Roster APPROVED by Len Kogan on 2026-08-09 — all 10 personas. Only status=approved characters with stored reference images and a locked voice can appear in a video. A new or replacement character re-enters as 'draft' and needs its own approval; never approve one implicitly.",
     "wardrobe_rule": "Plain navy food-safety workwear (smock/coat), hairnet or cap where the setting is a processing floor, gloves when handling product. NEVER a logo, wordmark or badge on clothing — generative models mangle logos, and the Globex mark only ever arrives in post via the template/end-slide.",
     "generation_rules": [
       "No steam, smoke, particles or spotlight effects (Len rejected these).",
@@ -16,7 +16,13 @@
       "male": 5,
       "female": 5
     },
-    "voice_rule": "ALL characters speak in neutral American English. Globex is a US company and the client rejected accent variation (and any mid-video accent shift) in the design rounds. Characters stay distinct by age, register, pace and warmth — never by accent. Ethnic diversity is visual only; do not infer an accent from appearance."
+    "voice_rule": "ALL characters speak in neutral American English. Globex is a US company and the client rejected accent variation (and any mid-video accent shift) in the design rounds. Characters stay distinct by age, register, pace and warmth — never by accent. Ethnic diversity is visual only; do not infer an accent from appearance.",
+    "approval": {
+      "approved_by": "Len Kogan",
+      "approved_on": "2026-08-09",
+      "scope": "all 10 seed personas (faces + American-English voices)",
+      "relayed_by": "Abdul"
+    }
   },
   "characters": [
     {
@@ -57,7 +63,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "wei",
@@ -98,7 +105,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "kwame",
@@ -138,7 +146,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "diego",
@@ -177,7 +186,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "arjun",
@@ -218,7 +228,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "mei",
@@ -259,7 +270,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "grace",
@@ -298,7 +310,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "anna",
@@ -339,7 +352,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "sofia",
@@ -380,7 +394,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     },
     {
       "slug": "priya",
@@ -421,7 +436,8 @@
       "provider_refs": {},
       "is_real_person": false,
       "likeness_consent": null,
-      "status": "draft"
+      "status": "approved",
+      "approved_at": "2026-08-09"
     }
   ]
 }

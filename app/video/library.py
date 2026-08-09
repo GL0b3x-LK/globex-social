@@ -93,6 +93,7 @@ class Character:
     is_real_person: bool
     likeness_consent: dict[str, Any] | None
     status: str
+    approved_at: str | None = None
 
     @property
     def reference_dir(self) -> Path:
@@ -212,6 +213,7 @@ def load_characters() -> tuple[Character, ...]:
             voice_direction=c.get("voice_direction", ""),
             voice_id=c.get("voice_id"),
             reference_image_urls=_tuple(c.get("reference_image_urls")),
+            approved_at=c.get("approved_at"),
             is_real_person=bool(c.get("is_real_person")),
             likeness_consent=c.get("likeness_consent"),
             status=c.get("status", "draft"),

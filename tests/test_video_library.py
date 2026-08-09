@@ -48,13 +48,24 @@ def test_every_character_has_what_generation_needs() -> None:
         assert c.market_tags and c.setting_affinity, c.slug
 
 
-def test_seed_characters_are_invented_and_not_yet_usable() -> None:
-    """Nobody fronts the brand before Len approves the sheet — enforced, not implied."""
+def test_roster_is_approved_with_an_audit_trail() -> None:
+    """Len approved all 10 on 2026-08-09. Approval is recorded, not assumed."""
     for c in library.load_characters():
         assert not c.is_real_person, c.slug
-        assert c.status == "draft", c.slug
-        assert not c.usable, c.slug
-    assert library.match_characters(EXAMPLE_BRIEF, usable_only=True) == []
+        assert c.status == "approved", c.slug
+        assert c.approved_at, f"{c.slug} is approved but has no approval date"
+        assert c.usable, c.slug
+    assert library.resolve_character(EXAMPLE_BRIEF, usable_only=True) is not None
+
+
+def test_a_draft_character_still_cannot_front_a_video() -> None:
+    """The gate survives approval: a NEW persona re-enters as draft and must be
+    approved on its own. Approving the seed roster must not approve future ones."""
+    john = library.get_character("john")
+    assert john is not None
+    newcomer = library.Character(**{**john.__dict__, "slug": "john", "status": "draft"})
+    assert newcomer.has_references  # face and voice ready...
+    assert not newcomer.usable  # ...but unapproved, so unusable
 
 
 def test_a_real_person_needs_consent_to_be_usable() -> None:
