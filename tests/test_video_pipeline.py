@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import httpx
 import pytest
 
 from app.video import assembly, captions, providers
@@ -325,15 +326,47 @@ def test_explicit_provider_choice_is_honoured(monkeypatch) -> None:
     assert isinstance(providers.get_provider(), providers.KieProvider)
 
 
-async def test_higgsfield_refuses_lipsync_rather_than_shipping_a_mute_clip(monkeypatch) -> None:
-    """Speak is not on Higgsfield's documented REST surface. Guessing would
-    produce a clip that silently ignores the voice track — fail loudly instead."""
-    from app.config import get_settings
+def test_higgsfield_uses_the_models_the_account_actually_exposes() -> None:
+    """Verified against the live /models list: Speak 2.0 for lip-sync, DoP for
+    motion. Both take inputs this pipeline already produces."""
+    hf = providers.HiggsfieldProvider()
+    assert hf.SPEAKING_MODEL == "higgsfield-ai/speak"
+    assert hf.AUDIO_PARAM == "audio_url"
+    assert hf.BROLL_MODEL.startswith("higgsfield-ai/dop/")
 
-    s = get_settings()
-    monkeypatch.setattr(s, "higgsfield_api_key", "k", raising=False)
-    monkeypatch.setattr(s, "higgsfield_api_secret", "s", raising=False)
-    monkeypatch.setattr(s, "higgsfield_audio_param", None, raising=False)
-    result = await providers.HiggsfieldProvider().speaking_scene("f.jpg", "a.mp3", "talk")
-    assert not result.ok
-    assert "lip-sync" in (result.error or "")
+
+def test_an_empty_wallet_is_reported_in_words_an_operator_can_act_on() -> None:
+    """'not_enough_credits' means nothing to Ilan; the reply must say what to do."""
+    resp = httpx.Response(400, json={"detail": "not_enough_credits"})
+    msg = providers._friendly_error(resp)
+    assert "out of credits" in msg and "top it up" in msg
+    assert "nothing was charged" in msg
+
+
+def test_speech_is_converted_to_wav_for_lipsync() -> None:
+    """Higgsfield Speak rejects MP3 and M4A with invalid_audio_format (verified
+    live), so the URL handed to a lip-sync model must be WAV."""
+    import subprocess
+
+    if not assembly.ffmpeg_path():
+        pytest.skip("ffmpeg not installed")
+    src = subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=1",
+            "-c:a",
+            "libmp3lame",
+            "-f",
+            "mp3",
+            "pipe:1",
+        ],
+        capture_output=True,
+        check=False,
+    ).stdout
+    wav = assembly.to_wav(src)
+    assert wav is not None
+    assert wav[:4] == b"RIFF" and wav[8:12] == b"WAVE"

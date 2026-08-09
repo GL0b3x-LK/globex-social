@@ -221,9 +221,16 @@ async def _voice_for(video_id: str, doc: VideoScript, character: library.Charact
         audio, words = await asyncio.to_thread(voices.speak, voice_id, scene.dialogue)
         if not audio:
             continue
-        url = await asyncio.to_thread(
-            storage.upload_video_asset, video_id, f"vo_{scene.idx}.mp3", audio, "audio/mpeg"
+        # Lip-sync models reject MP3 (Higgsfield Speak returns invalid_audio_format),
+        # so the URL handed to a provider is always WAV. The MP3 bytes are kept for
+        # the assembled voiceover track.
+        wav = await asyncio.to_thread(assembly.to_wav, audio)
+        name, payload, ctype = (
+            (f"vo_{scene.idx}.wav", wav, "audio/wav")
+            if wav
+            else (f"vo_{scene.idx}.mp3", audio, "audio/mpeg")
         )
+        url = await asyncio.to_thread(storage.upload_video_asset, video_id, name, payload, ctype)
         per_scene[scene.idx] = url
         chunks.append(audio)
         for w in words:

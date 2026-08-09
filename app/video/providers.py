@@ -196,6 +196,22 @@ def get_provider() -> VideoGenProvider:
     return KieProvider()
 
 
+def _friendly_error(resp: httpx.Response) -> str:
+    """Turn a vendor error into something the operator can actually act on."""
+    try:
+        detail = (resp.json() or {}).get("detail")
+    except ValueError:
+        detail = None
+    if detail == "not_enough_credits":
+        return (
+            "the Higgsfield account is out of credits — top it up at "
+            "cloud.higgsfield.ai and try again (nothing was charged)"
+        )
+    if detail == "model_not_found":
+        return "that Higgsfield model is not available on this account"
+    return f"{resp.status_code}: {detail or resp.text[:160]}"
+
+
 class HiggsfieldProvider(VideoGenProvider):
     """Higgsfield Cloud API — the client's own account and the tool the approved
     reference video was made with.
@@ -212,10 +228,13 @@ class HiggsfieldProvider(VideoGenProvider):
 
     BASE_URL = "https://platform.higgsfield.ai"
 
-    # Set per-account after the V0 spike; DoP is Higgsfield's own motion model
-    # and is what gave the approved video its look.
-    BROLL_MODEL = "higgsfield-ai/dop/standard"
-    SPEAKING_MODEL = "higgsfield-ai/dop/standard"
+    # Verified against the live account's /models list on 2026-08-09.
+    # DoP is Higgsfield's own motion model and is what gave the approved
+    # reference video its look; Speak 2.0 does the lip-sync and takes exactly
+    # the same three inputs our pipeline already produces.
+    BROLL_MODEL = "higgsfield-ai/dop/standard"  # 9 credits; lite=2, turbo=6.5
+    SPEAKING_MODEL = "higgsfield-ai/speak"
+    AUDIO_PARAM = "audio_url"
 
     def _headers(self) -> dict[str, str]:
         settings = get_settings()
@@ -237,7 +256,7 @@ class HiggsfieldProvider(VideoGenProvider):
             async with httpx.AsyncClient(base_url=self.BASE_URL, timeout=60.0) as client:
                 resp = await client.post(f"/{model_id}", headers=self._headers(), json=payload)
                 if resp.status_code >= 400:
-                    return ClipResult(ok=False, error=f"{resp.status_code}: {resp.text[:200]}")
+                    return ClipResult(ok=False, error=_friendly_error(resp))
                 body = resp.json() or {}
                 request_id = body.get("request_id")
                 if not request_id:
@@ -277,27 +296,15 @@ class HiggsfieldProvider(VideoGenProvider):
         return ClipResult(ok=False, error=f"timed out after {int(_POLL_TIMEOUT_S)}s")
 
     async def speaking_scene(self, keyframe_url: str, audio_url: str, prompt: str) -> ClipResult:
-        """Lip-synced scene.
-
-        Speak is not on Higgsfield's documented REST surface, so the model id and
-        audio parameter are configurable rather than assumed — set them once the
-        account's model gallery confirms what is exposed. Until then this fails
-        loudly instead of silently producing a mute clip that ignores the audio.
-        """
+        """Lip-synced scene via Speak 2.0 — image + our own voice track + prompt."""
         settings = get_settings()
         model_id = settings.higgsfield_speaking_model or self.SPEAKING_MODEL
-        payload: dict = {"image_url": keyframe_url, "prompt": prompt[:2000]}
-        if settings.higgsfield_audio_param:
-            payload[settings.higgsfield_audio_param] = audio_url
-        else:
-            return ClipResult(
-                ok=False,
-                error=(
-                    "no lip-sync model configured for Higgsfield "
-                    "(set HIGGSFIELD_SPEAKING_MODEL and HIGGSFIELD_AUDIO_PARAM)"
-                ),
-            )
-        return await self._submit(model_id, payload, label="hf-speaking")
+        audio_param = settings.higgsfield_audio_param or self.AUDIO_PARAM
+        return await self._submit(
+            model_id,
+            {"image_url": keyframe_url, audio_param: audio_url, "prompt": prompt[:2000]},
+            label="hf-speaking",
+        )
 
     async def broll_scene(self, keyframe_url: str, prompt: str, seconds: float) -> ClipResult:
         model_id = get_settings().higgsfield_broll_model or self.BROLL_MODEL

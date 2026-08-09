@@ -299,3 +299,37 @@ async def compress_for_whatsapp(src: Path, dst: Path, *, max_mb: float = 15.0) -
 
 def workdir() -> tempfile.TemporaryDirectory:
     return tempfile.TemporaryDirectory(prefix="globex-video-")
+
+
+def to_wav(mp3_bytes: bytes) -> bytes | None:
+    """Transcode speech to 44.1kHz mono WAV.
+
+    Higgsfield Speak rejects MP3 and M4A with `invalid_audio_format` — verified
+    against the live API — so the voice track is converted before it is handed to
+    a lip-sync model. Returns None if ffmpeg is unavailable, letting the caller
+    fall back rather than fail.
+    """
+    if not ffmpeg_path():
+        return None
+    with tempfile.TemporaryDirectory(prefix="globex-audio-") as tmp:
+        src, dst = Path(tmp) / "in.mp3", Path(tmp) / "out.wav"
+        src.write_bytes(mp3_bytes)
+        ok, err = _run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(src),
+                "-ar",
+                "44100",
+                "-ac",
+                "1",
+                "-c:a",
+                "pcm_s16le",
+                str(dst),
+            ]
+        )
+        if not ok or not dst.exists():
+            log.error("wav conversion failed", extra={"error": err[-200:]})
+            return None
+        return dst.read_bytes()
