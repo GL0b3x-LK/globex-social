@@ -90,6 +90,49 @@ def ffprobe_duration(path: Path) -> float:
         return 0.0
 
 
+def _apad(total_seconds: float | None) -> str:
+    """Pad the audio out to the picture — but to a FINITE length.
+
+    A bare ``apad`` pads forever. ``-shortest`` is documented to stop at the
+    shortest input, but it does not reliably terminate an infinite stream coming
+    out of ``-filter_complex``: the video finished at 28s and ffmpeg then sat at
+    100% CPU encoding silence with nothing left to write. Giving the pad an
+    explicit end makes both streams finite, so the encode simply completes.
+    """
+    if total_seconds and total_seconds > 0:
+        return f"apad=whole_dur={total_seconds:.3f}"
+    return "apad"
+
+
+def timeline_seconds(
+    spec: EditSpec, clip_paths: dict[int, Path], *, end_slide: bool = False
+) -> float:
+    """How long the finished picture runs.
+
+    Needed because the audio has to be padded to a KNOWN length: a bare ``apad``
+    pads forever, and ``-shortest`` does not reliably stop a filter-generated
+    infinite stream, so ffmpeg encodes silence until it is killed.
+
+    Measured from the clips themselves, not from the plan. A cut's ``end`` is
+    what the script asked for, and a clip is regularly shorter than that — a
+    lip-synced shot comes back exactly as long as the line takes to say. Trusting
+    the plan would pad the audio past the last frame of picture.
+    """
+    total = 0.0
+    for cut in spec.cuts:
+        path = clip_paths.get(cut.scene)
+        if path is None:
+            continue
+        actual = ffprobe_duration(path)
+        end = cut.end if cut.end is not None else actual
+        if actual > 0:
+            end = min(end, actual)  # a clip cannot play for longer than it is
+        total += max(0.0, end - cut.start)
+    if end_slide:
+        total += spec.end_slide_seconds
+    return total
+
+
 def _scale_filter(label_in: str, label_out: str) -> str:
     """Fill 1080x1920 without distortion: scale to cover, then centre-crop."""
     return (
@@ -107,8 +150,13 @@ def build_args(
     music: Path | None = None,
     end_slide: Path | None = None,
     captions: Path | None = None,
+    total_seconds: float | None = None,
 ) -> list[str]:
-    """The ffmpeg argv for one cut. Pure function — unit-testable without running it."""
+    """The ffmpeg argv for one cut. Pure function — unit-testable without running it.
+
+    ``total_seconds`` is how long the picture runs; the audio is padded to exactly
+    that. Without it the pad is unbounded, which hangs the encode (see ``_apad``).
+    """
     inputs: list[str] = []
     filters: list[str] = []
     segments: list[str] = []
@@ -170,15 +218,20 @@ def build_args(
             "release=400:makeup=1[musduck]"
         )
         filters.append("[vo1][musduck]amix=inputs=2:duration=first:dropout_transition=0[amix]")
-        # apad for the same reason as the voice-only branch: the picture, not the
-        # voiceover, decides how long the video is.
-        filters.append(f"[amix]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,apad[aout]")
+        # Padded for the same reason as the voice-only branch: the picture, not
+        # the voiceover, decides how long the video is.
+        filters.append(
+            f"[amix]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,{_apad(total_seconds)}[aout]"
+        )
         audio_label = "aout"
     elif vo_idx is not None:
-        # apad before -shortest, or the finished video is truncated to the length
-        # of the voiceover and the end slide is cut off. Silence is padded to the
-        # picture instead, and -shortest then stops at the last frame of video.
-        filters.append(f"[{vo_idx}:a]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,apad[aout]")
+        # Padded, or the finished video is truncated to the length of the
+        # voiceover and the end slide is cut off every time. Silence is added out
+        # to the picture instead.
+        filters.append(
+            f"[{vo_idx}:a]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,"
+            f"{_apad(total_seconds)}[aout]"
+        )
         audio_label = "aout"
     elif music_idx is not None:
         filters.append(
@@ -230,6 +283,7 @@ async def render(
     if not ffmpeg_path():
         log.error("ffmpeg not available")
         return False
+    total = timeline_seconds(spec, clip_paths, end_slide=end_slide is not None)
     try:
         args = build_args(
             spec,
@@ -239,10 +293,12 @@ async def render(
             music=music,
             end_slide=end_slide,
             captions=captions,
+            total_seconds=total,
         )
     except ValueError as exc:
         log.error("cannot assemble", extra={"error": str(exc)})
         return False
+    log.info("assembling", extra={"seconds": round(total, 2), "clips": len(clip_paths)})
     ok, err = await asyncio.to_thread(_run, args)
     if not ok:
         log.error("ffmpeg failed", extra={"error": err[-400:]})

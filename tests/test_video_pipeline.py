@@ -29,7 +29,11 @@ from app.workflows import video as flow
 
 
 def _scene(
-    idx=1, kind=SceneKind.speaking, seconds=6.0, dialogue="Quality Control signs off"
+    idx=1,
+    kind=SceneKind.speaking,
+    seconds=6.0,
+    # ~15 words: a speaking scene has to actually fill the time it books.
+    dialogue="Quality Control signs off on every pallet before it leaves this floor, every single time",
 ) -> Scene:
     return Scene(
         idx=idx,
@@ -474,3 +478,119 @@ async def test_a_failed_keyframe_upload_does_not_abort_the_other_scenes(monkeypa
     frames = await keyframes.render_all("vid", scenes, None, None)
 
     assert set(frames) == {1, 3}
+
+
+# --------------------------------------------------------------------------- #
+# assembly — the pad must end, or the encode never does
+# --------------------------------------------------------------------------- #
+
+
+def test_the_audio_pad_is_bounded_to_the_picture() -> None:
+    """A bare apad pads forever and -shortest does not stop a filter-generated
+    infinite stream: ffmpeg finished the video then sat at 100% CPU encoding
+    silence. The pad needs an explicit end."""
+    spec = EditSpec(cuts=[Cut(scene=1, clip_url="u", end=7.0)], voiceover_url="v")
+    args = assembly.build_args(
+        spec,
+        {1: Path("a.mp4")},
+        Path("out.mp4"),
+        voiceover=Path("vo.mp3"),
+        end_slide=Path("end.png"),
+        total_seconds=10.0,
+    )
+    chain = args[args.index("-filter_complex") + 1]
+    assert "apad=whole_dur=10.000" in chain
+    assert ",apad[" not in chain  # never the unbounded form
+
+
+def test_the_timeline_includes_the_end_slide() -> None:
+    """Pad to the cuts alone and the end slide plays silent — or gets cut."""
+    spec = EditSpec(cuts=[Cut(scene=1, clip_url="u", end=7.0), Cut(scene=2, clip_url="u", end=6.0)])
+    paths = {1: Path("a.mp4"), 2: Path("b.mp4")}
+    assert assembly.timeline_seconds(spec, paths) == pytest.approx(13.0)
+    assert assembly.timeline_seconds(spec, paths, end_slide=True) == pytest.approx(
+        13.0 + spec.end_slide_seconds
+    )
+
+
+def test_a_dropped_scene_is_not_counted_in_the_timeline() -> None:
+    """A cut whose clip never arrived contributes no time — padding to it would
+    leave the video ending on silence."""
+    spec = EditSpec(cuts=[Cut(scene=1, clip_url="u", end=7.0), Cut(scene=2, clip_url="u", end=6.0)])
+    assert assembly.timeline_seconds(spec, {1: Path("a.mp4")}) == pytest.approx(7.0)
+
+
+@pytest.mark.asyncio
+async def test_clips_already_hosted_are_not_uploaded_a_second_time(monkeypatch, tmp_path) -> None:
+    """Generation hosts each clip as it finishes, then _cache_scenes uploaded every
+    one again — sending the whole video over the wire twice for nothing."""
+    from app.db import storage
+
+    uploaded: list[str] = []
+
+    def spy_upload(video_id, name, data, content_type):
+        uploaded.append(name)
+        return f"https://x.test/{storage.BUCKET}/videos/{video_id}/{name}"
+
+    hosted = f"https://x.test/{storage.BUCKET}/videos/vid/scene_1.mp4"
+    monkeypatch.setattr(flow.storage, "upload_video_asset", spy_upload)
+    monkeypatch.setattr(flow, "_get_row", lambda _vid: {"render_meta": {"clips": {"1": hosted}}})
+    monkeypatch.setattr(flow.videos_db, "patch_meta", lambda *a, **kw: None)
+
+    clip = tmp_path / "scene_1.mp4"
+    clip.write_bytes(b"mp4")
+    await flow._cache_scenes("vid", {1: clip})
+
+    assert uploaded == []
+
+
+@pytest.mark.asyncio
+async def test_a_clip_left_on_a_provider_url_is_still_rescued(monkeypatch, tmp_path) -> None:
+    """Provider URLs expire within days, so one whose upload failed must retry."""
+    from app.db import storage
+
+    uploaded: list[str] = []
+
+    def spy_upload(video_id, name, data, content_type):
+        uploaded.append(name)
+        return f"https://x.test/{storage.BUCKET}/videos/{video_id}/{name}"
+
+    monkeypatch.setattr(flow.storage, "upload_video_asset", spy_upload)
+    monkeypatch.setattr(
+        flow, "_get_row", lambda _vid: {"render_meta": {"clips": {"1": "https://kie.ai/tmp/x.mp4"}}}
+    )
+    monkeypatch.setattr(flow.videos_db, "patch_meta", lambda *a, **kw: None)
+
+    clip = tmp_path / "scene_1.mp4"
+    clip.write_bytes(b"mp4")
+    await flow._cache_scenes("vid", {1: clip})
+
+    assert uploaded == ["scene_1.mp4"]
+
+
+def test_a_speaking_scene_padded_with_dead_time_is_rejected() -> None:
+    """A lip-synced shot is exactly as long as the line, so booking 7s for a
+    3-second line quietly loses 4 seconds — the reason a 30s request came back
+    as a 21s video."""
+    scene = _scene(seconds=7.0, dialogue="Straight off the line")
+    problems = script_engine.lint(_script(scenes=[scene]))
+    assert any("booked at 7s" in p for p in problems)
+
+
+def test_a_speaking_scene_that_fills_its_time_passes() -> None:
+    scene = _scene(seconds=6.0, dialogue=" ".join(["word"] * 14))
+    assert not any("booked at" in p for p in script_engine.lint(_script(scenes=[scene])))
+
+
+def test_broll_may_run_longer_than_its_narration() -> None:
+    """B-roll is generated to a length and trimmed, so a short line over a longer
+    shot is legitimate — the rule is only about lip-synced shots."""
+    scene = _scene(idx=1, kind=SceneKind.broll, seconds=8.0, dialogue="Sealed and chilled")
+    problems = script_engine.lint(_script(mode=VideoMode.voiceover, scenes=[scene]))
+    assert not any("booked at" in p for p in problems)
+
+
+def test_a_scene_longer_than_one_generated_clip_is_rejected() -> None:
+    """Generators top out around 10s; a longer scene cannot be made in one piece."""
+    scene = _scene(seconds=12.0, dialogue=" ".join(["word"] * 28))
+    assert any("scenes must be" in p for p in script_engine.lint(_script(scenes=[scene])))

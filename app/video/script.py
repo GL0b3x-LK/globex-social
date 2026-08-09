@@ -18,7 +18,7 @@ from __future__ import annotations
 from app.ai.client import generate_structured
 from app.logging_config import get_logger
 from app.video import library
-from app.video.models import Brief, Scene, VideoMode, VideoScript
+from app.video.models import Brief, Scene, SceneKind, VideoMode, VideoScript
 
 log = get_logger("app.video.script")
 
@@ -26,9 +26,13 @@ log = get_logger("app.video.script")
 # professional read. Scenes are checked against this, with headroom for breath.
 WORDS_PER_SECOND = 2.5
 _TIMING_TOLERANCE = 1.15  # allow 15% over before rejecting
+_MIN_FILL = 0.7  # a speaking scene runs as long as its line, not as long as planned
 
 MIN_SCENE_SECONDS = 3.0
-MAX_SCENE_SECONDS = 12.0
+# Generators sell fixed clip lengths and top out around 10s, so a scene is never
+# longer than one generated clip. Longer stories are told in more scenes and
+# stitched together by ffmpeg, which is free.
+MAX_SCENE_SECONDS = 10.0
 MAX_TOTAL_SECONDS = 90.0  # Facebook only accepts API video as Reels: 3-90s
 
 _MAX_REPAIRS = 2
@@ -53,6 +57,13 @@ them means the video is rejected:
   in keyframe_prompt — those come from reference photographs. Describe only the
   setting, the framing and what is happening.
 - Every scene's dialogue must be sayable in its `seconds` at 2.5 words/second.
+- A scene where the character SPEAKS runs for exactly as long as their line takes
+  to say — the shot is generated from the audio. So `seconds` must match the
+  line: roughly words / 2.5. Booking 7 seconds for a 3-second line does not make
+  a longer shot, it just makes the finished video shorter than asked for. If a
+  scene needs to be longer, give the character more to say.
+- To hit the requested length, add scenes rather than stretching them. The whole
+  video is stitched from short clips, so more scenes costs nothing structurally.
 """
 
 
@@ -186,6 +197,16 @@ def _timing_problem(scene: Scene) -> list[str]:
         return [
             f"Scene {scene.idx} has {words} words but only {scene.seconds:.0f}s "
             f"— cut it to about {budget} words."
+        ]
+    # A lip-synced shot comes back exactly as long as the line takes to say, so a
+    # scene booked at 7s for a 3-second line silently loses 4 seconds from the
+    # finished video. Asking for 30s and getting 21s is how that shows up.
+    if scene.kind is SceneKind.speaking and words < scene.seconds * WORDS_PER_SECOND * _MIN_FILL:
+        spoken = max(MIN_SCENE_SECONDS, words / WORDS_PER_SECOND)
+        return [
+            f"Scene {scene.idx} is booked at {scene.seconds:.0f}s but its line only takes "
+            f"about {spoken:.0f}s to say. A speaking shot runs exactly as long as the "
+            f"words, so either give it more to say or set seconds to {spoken:.0f}."
         ]
     return []
 

@@ -436,13 +436,22 @@ def _get_row(video_id: str) -> dict:
 
 
 async def _cache_scenes(video_id: str, local_clips: dict[int, Path]) -> None:
-    """Host the generated clips so a later re-cut costs nothing to reassemble.
+    """Make sure every clip has a durable home, so a later re-cut is free.
 
-    Runs after the operator already has their preview, and never raises: losing
-    the cache only means a future re-cut has to re-fetch, which is annoying, not
-    expensive — losing the video would be both.
+    Generation already hosts each clip as it finishes; this is the retry for the
+    ones whose upload failed and are still pointing at a provider URL that
+    expires within days. Clips already in our own storage are skipped — re-sending
+    them was uploading the whole video a second time for nothing.
+
+    Runs after the operator has their preview, and never raises: losing the cache
+    only means a future re-cut has to re-fetch, which is annoying, not expensive
+    — losing the video would be both.
     """
+    ours = f"/{storage.BUCKET}/videos/{video_id}/"
+    clips = dict(videos_db.meta(await asyncio.to_thread(_get_row, video_id)).get("clips") or {})
     for idx, path in local_clips.items():
+        if ours in str(clips.get(str(idx), "")):
+            continue  # already durable — re-uploading it is pure waste
         try:
             url = await asyncio.to_thread(
                 storage.upload_video_asset,

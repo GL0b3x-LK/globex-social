@@ -67,6 +67,26 @@ class Failover(providers.VideoGenProvider):
         return await self._try("broll_scene", keyframe_url, prompt, seconds)
 
 
+async def reassemble(video_id: str, phone: str) -> int:
+    """Re-cut an existing video from its cached clips and re-send the preview.
+
+    The whole point of splitting generation from assembly: this touches nothing
+    expensive, so a bug in the cut costs nothing to iterate on.
+    """
+    from app.video.models import EditSpec
+
+    meta, doc, _character, _product = flow.load(video_id)
+    spec = EditSpec.model_validate(meta["edit_spec"])
+    print(f"re-cutting {video_id}: {len(spec.cuts)} cuts, stage={meta.get('stage')}")
+    await flow.assemble_and_preview(video_id, phone, spec, doc, None, meta.get("words") or [])
+
+    fresh = videos_db.meta(await asyncio.to_thread(lambda: posts_db.get(video_id)) or {})
+    print("\n=== RESULT ===")
+    print("master  :", fresh.get("master_url"))
+    print("preview :", fresh.get("preview_url"))
+    return 0 if fresh.get("master_url") else 1
+
+
 async def run(request: str, *, phone: str, failover: bool) -> int:
     settings = get_settings()
     print(f"provider : {settings.video_provider}")
@@ -110,9 +130,10 @@ async def run(request: str, *, phone: str, failover: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("request")
+    parser.add_argument("request", nargs="?", default="")
     parser.add_argument("--phone", default="", help="defaults to AUTHORIZED_NUMBERS[0]")
     parser.add_argument("--failover", action="store_true", help="retry refused clips on kie.ai")
+    parser.add_argument("--reassemble", default="", metavar="VIDEO_ID", help="re-cut, no spend")
     args = parser.parse_args()
 
     configure_logging()
@@ -120,6 +141,11 @@ def main() -> int:
     phone = args.phone or (allowed[0] if allowed else "")
     if not phone:
         print("no phone: set AUTHORIZED_NUMBERS or pass --phone")
+        return 1
+    if args.reassemble:
+        return asyncio.run(reassemble(args.reassemble, phone))
+    if not args.request:
+        print("give a request, or --reassemble <video_id>")
         return 1
     return asyncio.run(run(args.request, phone=phone, failover=args.failover))
 
