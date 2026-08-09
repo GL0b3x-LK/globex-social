@@ -275,3 +275,14 @@ def test_script_preview_reads_like_a_message_not_json() -> None:
     text = flow.script_preview(_script(), None, 18.0)
     assert "🎬" in text and "approve" in text
     assert "{" not in text and "scene_idx" not in text
+
+
+def test_audio_is_padded_so_the_end_slide_is_never_cut(tmp_path: Path) -> None:
+    """Without apad, -shortest truncates the video to the voiceover and the
+    client-required end slide disappears from every video."""
+    vo = tmp_path / "vo.mp3"
+    vo.write_bytes(b"x")
+    args = assembly.build_args(_spec(), _paths(tmp_path), tmp_path / "o.mp4", voiceover=vo)
+    graph = args[args.index("-filter_complex") + 1]
+    assert "apad" in graph
+    assert "-shortest" in args  # picture length wins, audio is padded to match

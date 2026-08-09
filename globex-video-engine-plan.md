@@ -1,6 +1,6 @@
 # Globex Video Engine — Goodwill Build Plan
 
-> **Status: PLAN ONLY — nothing here is built.** Companion to [globex-sm-automation-plan.md](globex-sm-automation-plan.md) (the contracted static system, which is code-complete and deployed). The video engine is the goodwill layer on top: same WhatsApp command center, same approval discipline, new medium.
+> **Status (2026-08-09): BUILT.** The pipeline described below exists and runs — see the progress log. What remains is tuning and the operational items in §19, not construction. Companion to [globex-sm-automation-plan.md](globex-sm-automation-plan.md) (the contracted static system, which is code-complete and deployed). The video engine is the goodwill layer on top: same WhatsApp command center, same approval discipline, new medium.
 >
 > **For agentic workers:** read §1 (the rules we already paid to learn) before touching anything. Every architectural choice below traces back to either a client-approved artifact or a mistake that already cost money. Build phase-by-phase (§18); tick boxes; date the progress log.
 
@@ -495,6 +495,23 @@ Fixed: ElevenLabs $6 + Epidemic ~$49 ≈ **$55/mo**. At full Tue/Thu cadence (~9
 All tool facts in this plan were verified against the live web on **2026-08-09** across four research passes: (1) Higgsfield — official Cloud API confirmed (`platform.higgsfield.ai`, key:secret auth, webhooks, Python SDK, DoP/Seedance/Kling model ids, Soul ID, Business/Team workspaces; no Higgsfield models on kie.ai/fal/replicate; Segmind wrappers priced); (2) edit layer — Remotion's aggregated-headcount licensing + $100/mo Automators minimum, HyperFrames (Apache-2.0), ffmpeg libass/sidechaincompress substrate; (3) publishing/delivery — Blotato video support + per-platform requirements, FB Reels 3–90 s governor, LinkedIn 9:16 org video, Twilio 16-vs-20 MB contradiction, sandbox 72 h join expiry + 24 h-window enforcement, Meta mandatory AI-disclosure + C2PA auto-labeling; (4) voice/music/compositing — ElevenLabs Starter + timestamps endpoint, music API gating (Epidemic/Artlist partner-only; Mubert/Soundstripe self-serve), nano-banana-2 and Seedream 5.0 multi-reference + kie.ai pricing, arena rankings.
 
 **Known UNVERIFIED items, deliberately parked as the V0 spike:** Speak on the official REST API (vs MCP/CLI vs Segmind), Soul ID training via REST, the 9:16 enum on the REST video endpoints, end-frame parameter via REST, whether Cloud API access is gated to higher plan tiers, and the exact per-model API price sheet (Higgsfield shows prices on the generate confirmation rather than publishing a table). None of these changes the architecture — each has a verified fallback named inline above.
+
+## What actually got built (module map)
+
+| Module | Does |
+|---|---|
+| `app/video/models.py` | `VideoScript` / `Scene` / `EditSpec` / `EditDecision` — the screenplay and the cut, kept separate on purpose |
+| `app/video/script.py` | Brief parsing, screenplay generation, **claims linter + timing physics**, revision loop, human diff |
+| `app/video/keyframes.py` | Character reference + real pack shot → locked 9:16 start frame per scene |
+| `app/video/voices.py` | Locked per-character voices; speech with word timings |
+| `app/video/providers.py` | `VideoGenProvider` → Kling AI Avatar (speaking, audio-driven) / Kling i2v (b-roll) on kie.ai |
+| `app/video/assembly.py` | Edit spec + clips → master MP4: cuts, VO, ducked music, end slide, −14 LUFS, platform-safe encode |
+| `app/video/captions.py` | Word-timed ASS captions from the TTS alignment (off by default) |
+| `app/db/videos.py` | Video state on the existing `posts` table — inherits the approval lifecycle, needs no new DDL |
+| `app/workflows/video.py` | Orchestration, both approval gates, the 4-class vibe-edit loop, publishing |
+| `scripts/make_video.py` | Runs the whole pipeline from a terminal, printing what WhatsApp would send |
+
+**WhatsApp wiring:** `IntentType.new_video_request` + `ConversationState.VIDEO` + `Action.GENERATE_VIDEO`. A live video owns the conversation, so approve / cancel / feedback all reach it before the post router sees them.
 
 ## Progress log
 

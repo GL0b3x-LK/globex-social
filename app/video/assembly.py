@@ -170,10 +170,17 @@ def build_args(
             "release=400:makeup=1[musduck]"
         )
         filters.append("[vo1][musduck]amix=inputs=2:duration=first:dropout_transition=0[amix]")
-        filters.append(f"[amix]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11[aout]")
+        # apad for the same reason as the voice-only branch: the picture, not the
+        # voiceover, decides how long the video is.
+        filters.append(f"[amix]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,apad[aout]")
         audio_label = "aout"
     elif vo_idx is not None:
-        filters.append(f"[{vo_idx}:a]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11[aout]")
+        # apad before -shortest, or the finished video is truncated to the length
+        # of the voiceover and the end slide is cut off. Silence is padded to the
+        # picture instead, and -shortest then stops at the last frame of video.
+        filters.append(
+            f"[{vo_idx}:a]loudnorm=I={spec.loudness_lufs}:TP=-1.5:LRA=11,apad[aout]"
+        )
         audio_label = "aout"
     elif music_idx is not None:
         filters.append(

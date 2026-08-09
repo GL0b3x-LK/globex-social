@@ -89,3 +89,4 @@ docs/template-previews/
 
 # Generated PNG previews — keep baselines only, not ad-hoc renders
 app/templates/assets/_scratch/
+globex_video_demo.mp4

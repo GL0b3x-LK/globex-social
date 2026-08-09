@@ -348,8 +348,38 @@ async def produce(video_id: str, phone: str) -> None:
         await assemble_and_preview(
             video_id, phone, spec, doc, audio_chunks, words, local_clips=local_clips
         )
+        await _cache_scenes(video_id, local_clips)
     finally:
         tmp.cleanup()
+
+
+def _get_row(video_id: str) -> dict:
+    """posts_db.get narrowed for the thread bridge (a missing row is just empty)."""
+    return posts_db.get(video_id) or {}
+
+
+async def _cache_scenes(video_id: str, local_clips: dict[int, Path]) -> None:
+    """Host the generated clips so a later re-cut costs nothing to reassemble.
+
+    Runs after the operator already has their preview, and never raises: losing
+    the cache only means a future re-cut has to re-fetch, which is annoying, not
+    expensive — losing the video would be both.
+    """
+    for idx, path in local_clips.items():
+        try:
+            url = await asyncio.to_thread(
+                storage.upload_video_asset,
+                video_id,
+                f"scene_{idx}.mp4",
+                path.read_bytes(),
+                "video/mp4",
+            )
+            row = await asyncio.to_thread(_get_row, video_id)
+            clips = dict(videos_db.meta(row).get("clips") or {})
+            clips[str(idx)] = url
+            videos_db.patch_meta(video_id, clips=clips)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("scene cache skipped", extra={"scene": idx, "err": str(exc)[:120]})
 
 
 async def assemble_and_preview(
