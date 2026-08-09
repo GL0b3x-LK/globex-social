@@ -12,7 +12,10 @@ operator approves what they can see before anything expensive runs.
 from __future__ import annotations
 
 import asyncio
+import io
 from dataclasses import dataclass
+
+from PIL import Image
 
 from app.ai import image_gen
 from app.db import storage
@@ -26,6 +29,15 @@ log = get_logger("app.video.keyframes")
 # and preserves both. Verified against our own pack shots before selection.
 KEYFRAME_MODEL = "nano-banana-2"
 ASPECT = "9:16"
+
+# The generator hands back 7-8 MB stills at its own native resolution, which is
+# larger than anything downstream can use — the finished video is 1080x1920.
+# Those megabytes are paid for twice: once uploading to storage, and again when
+# the generation provider fetches the frame back over the same link. Normalising
+# to frame size costs no visible quality and shrinks the file roughly 20x, which
+# is the difference between an upload that completes and one that times out.
+FRAME_WIDTH, FRAME_HEIGHT = 1080, 1920
+_JPEG_QUALITY = 88
 
 _NEGATIVES = (
     "Do not include: any logo, brand mark, wordmark or printed signage that is not "
@@ -46,6 +58,25 @@ class Keyframe:
     scene_idx: int
     url: str
     prompt: str
+
+
+def to_frame_jpeg(data: bytes) -> bytes:
+    """Shrink a generated still to frame size as a JPEG.
+
+    Only ever downscales, so a frame that is already small is left alone. If the
+    bytes cannot be decoded the original is returned untouched — a frame we paid
+    for is worth more than a tidy file size.
+    """
+    try:
+        opened = Image.open(io.BytesIO(data))
+        image = opened.convert("RGB") if opened.mode != "RGB" else opened
+        image.thumbnail((FRAME_WIDTH, FRAME_HEIGHT), Image.Resampling.LANCZOS)
+        buffer = io.BytesIO()
+        image.save(buffer, "JPEG", quality=_JPEG_QUALITY, optimize=True)
+        return buffer.getvalue()
+    except Exception as exc:  # noqa: BLE001 — never lose a paid-for frame to a resize
+        log.warning("keyframe downscale failed; using original", extra={"error": str(exc)[:120]})
+        return data
 
 
 def build_prompt(
@@ -124,14 +155,25 @@ async def render_scene(
         )
         return None
 
-    url = await asyncio.to_thread(
-        storage.upload_video_asset,
-        video_id,
-        f"keyframe_{scene.idx}.jpg",
-        result.image_bytes,
-        "image/jpeg",
+    payload = to_frame_jpeg(result.image_bytes)
+    try:
+        url = await asyncio.to_thread(
+            storage.upload_video_asset,
+            video_id,
+            f"keyframe_{scene.idx}.jpg",
+            payload,
+            "image/jpeg",
+        )
+    except Exception as exc:  # noqa: BLE001 — one bad upload must not abort the batch
+        log.error(
+            "keyframe upload failed",
+            extra={"video": video_id, "scene": scene.idx, "error": str(exc)[:160]},
+        )
+        return None
+    log.info(
+        "keyframe ready",
+        extra={"video": video_id, "scene": scene.idx, "kb": len(payload) // 1024},
     )
-    log.info("keyframe ready", extra={"video": video_id, "scene": scene.idx})
     return Keyframe(scene_idx=scene.idx, url=url, prompt=prompt)
 
 
@@ -150,5 +192,14 @@ async def render_all(
         async with sem:
             return await render_scene(video_id, scene, character, product)
 
-    done = await asyncio.gather(*(one(s) for s in scenes))
-    return {k.scene_idx: k for k in done if k is not None}
+    # return_exceptions: a scene that blows up is a missing scene, not a dead
+    # video. produce() already handles an incomplete frame set, and by this point
+    # the generation has been paid for — losing the rest to it would be waste.
+    done = await asyncio.gather(*(one(s) for s in scenes), return_exceptions=True)
+    for scene, outcome in zip(scenes, done, strict=True):
+        if isinstance(outcome, BaseException):
+            log.error(
+                "keyframe errored",
+                extra={"video": video_id, "scene": scene.idx, "error": str(outcome)[:160]},
+            )
+    return {k.scene_idx: k for k in done if isinstance(k, Keyframe)}

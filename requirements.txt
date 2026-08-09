@@ -13,5 +13,6 @@ pydantic-settings==2.14.1
 httpx==0.28.1
 tenacity==9.1.4
 python-multipart==0.0.30
+pillow==12.3.0  # downscales generated keyframes to frame size before upload
 tzdata==2026.2
 psycopg[binary]==3.3.4

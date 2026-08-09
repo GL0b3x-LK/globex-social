@@ -403,3 +403,74 @@ def test_rejected_visuals_are_caught_in_the_direction_too() -> None:
     scene = _scene()
     scene.motion_prompt = "Slow push in as steam rises across the frame"
     assert any("steam" in p for p in script_engine.lint(_script(scenes=[scene])))
+
+
+# --------------------------------------------------------------------------- #
+# keyframes — protecting frames that have already been paid for
+# --------------------------------------------------------------------------- #
+
+
+def _still(width: int, height: int) -> bytes:
+    from io import BytesIO
+
+    from PIL import Image
+
+    buffer = BytesIO()
+    Image.new("RGB", (width, height), (0, 45, 112)).save(buffer, "JPEG", quality=95)
+    return buffer.getvalue()
+
+
+def test_an_oversized_still_is_cut_down_to_frame_size() -> None:
+    """The generator returns multi-megabyte stills; uploading one at that size is
+    what made a keyframe upload time out mid-run."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    from app.video import keyframes
+
+    out = keyframes.to_frame_jpeg(_still(4000, 7111))
+    assert Image.open(BytesIO(out)).size == (keyframes.FRAME_WIDTH, keyframes.FRAME_HEIGHT)
+
+
+def test_a_frame_already_small_enough_is_not_enlarged() -> None:
+    from io import BytesIO
+
+    from PIL import Image
+
+    from app.video import keyframes
+
+    out = keyframes.to_frame_jpeg(_still(540, 960))
+    assert Image.open(BytesIO(out)).size == (540, 960)
+
+
+def test_undecodable_bytes_survive_the_resize() -> None:
+    """A frame we cannot shrink is still a frame we paid for."""
+    from app.video import keyframes
+
+    assert keyframes.to_frame_jpeg(b"not an image") == b"not an image"
+
+
+@pytest.mark.asyncio
+async def test_a_failed_keyframe_upload_does_not_abort_the_other_scenes(monkeypatch) -> None:
+    """One storage hiccup used to raise through gather() and kill the whole video
+    after the images had already been generated and charged for."""
+    from app.ai import image_gen
+    from app.video import keyframes
+
+    async def fake_generate(*a, **kw):
+        return image_gen.ImageResult(ok=True, image_bytes=_still(1080, 1920))
+
+    def flaky_upload(video_id, name, data, content_type):
+        if name.endswith("_2.jpg"):
+            raise RuntimeError("Server disconnected")
+        return f"https://example.test/{name}"
+
+    monkeypatch.setattr(keyframes.image_gen, "generate", fake_generate)
+    monkeypatch.setattr(keyframes.image_gen, "edit_multi", fake_generate)
+    monkeypatch.setattr(keyframes.storage, "upload_video_asset", flaky_upload)
+
+    scenes = [_scene(idx=1), _scene(idx=2), _scene(idx=3)]
+    frames = await keyframes.render_all("vid", scenes, None, None)
+
+    assert set(frames) == {1, 3}
