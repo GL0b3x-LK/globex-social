@@ -10,7 +10,7 @@ Pick the template_variant:
 
 Tone by category:
 - food_industry (National Poultry Day, National Seafood Month, etc.): tie naturally to Globex's trade in that protein/category — a confident nod to the part of the food world Globex moves daily.
-- cultural (Lunar New Year, Ramadan, etc.): warm, respectful, globally aware. Globex serves 90+ countries — acknowledge that without tokenism.
+- cultural (Lunar New Year, Ramadan, etc.): warm, respectful, globally aware. Globex ships globally — acknowledge that without tokenism.
 - general (New Year's, Memorial Day, etc.): brief, professional, human.
 
 Never religious overreach, never preachy. No recipes. 3-6 hashtags including #GlobexInternational."""

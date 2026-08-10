@@ -23,6 +23,7 @@ from app.ai.prompts import (
     trade_show,
 )
 from app.ai.prompts.brand import BRAND_BLOCK
+from app.logging_config import get_logger
 
 
 class ContentCategory(StrEnum):
@@ -50,6 +51,9 @@ _PROMPTS: dict[ContentCategory, str] = {
     ContentCategory.branded_packaging: branded_packaging.BRANDED_PACKAGING_PROMPT,
     ContentCategory.custom: custom.CUSTOM_PROMPT,
 }
+
+
+log = get_logger("app.ai.generator")
 
 
 class GeneratedPost(BaseModel):
@@ -116,6 +120,49 @@ def _user_content(
     ]
 
 
+def banned_claims(post: GeneratedPost) -> list[str]:
+    """Forbidden claims anywhere the reader will see them.
+
+    'Halal', '90+ countries' and 'inspected by hand' were struck by the client.
+    The prompts no longer ask for them, but a prompt is a request and a check is
+    a guarantee — the model volunteered "halal on request" and "90+ countries"
+    into the first scheduled caption entirely on its own.
+    """
+    from app.video import library  # local import: keeps the AI layer standalone
+
+    visible = " ".join(
+        part for part in (post.caption, post.headline, post.subhead, *post.hashtags) if part
+    )
+    return library.banned_terms_in(visible)
+
+
+async def _repair_claims(
+    post: GeneratedPost, system: str, user_content: Any, terms: list[str]
+) -> GeneratedPost:
+    """Rewrite a post that used a struck phrase, naming the phrase."""
+    log.warning("post used forbidden claims; rewriting", extra={"terms": terms})
+    return await generate_structured(
+        system=system,
+        user_content=[
+            {"type": "text", "text": str(user_content) if isinstance(user_content, str) else ""},
+            {
+                "type": "text",
+                "text": (
+                    "Your previous draft used phrases the client has struck: "
+                    + ", ".join(f"'{t}'" for t in terms)
+                    + ".\nWrite the post again without any of them. Say 'shipped globally' "
+                    "instead of naming a number of countries, and 'Quality Control' instead "
+                    "of describing hand inspection. Never mention Halal."
+                ),
+            },
+        ],
+        output_model=GeneratedPost,
+        tool_name="emit_post",
+        tool_description=_EMIT_DESC,
+        max_tokens=1500,
+    )
+
+
 async def generate_post(
     category: ContentCategory,
     context: dict[str, Any] | None,
@@ -123,14 +170,24 @@ async def generate_post(
     image_bytes: bytes | None = None,
     image_media_type: str = "image/jpeg",
 ) -> GeneratedPost:
-    return await generate_structured(
-        system=system_for(category),
-        user_content=_user_content(context, user_message, image_bytes, image_media_type),
+    system = system_for(category)
+    user_content = _user_content(context, user_message, image_bytes, image_media_type)
+    post = await generate_structured(
+        system=system,
+        user_content=user_content,
         output_model=GeneratedPost,
         tool_name="emit_post",
         tool_description=_EMIT_DESC,
         max_tokens=1500,
     )
+    terms = banned_claims(post)
+    if terms:
+        post = await _repair_claims(post, system, user_message or "", terms)
+        if still := banned_claims(post):
+            # Surfaced rather than silently shipped: the operator still approves
+            # every post, and a caption they can see is one they can reject.
+            log.error("post still contains forbidden claims after rewrite", extra={"terms": still})
+    return post
 
 
 def freeform_system() -> str:
@@ -157,7 +214,7 @@ async def generate_freeform(
 ) -> GeneratedPost:
     """On-demand path: the model selects the template_variant itself, then writes the post."""
     content = _with_memory(_user_content(None, request, image_bytes, image_media_type), memory)
-    return await generate_structured(
+    post = await generate_structured(
         system=freeform_system(),
         user_content=content,
         output_model=GeneratedPost,
@@ -165,3 +222,10 @@ async def generate_freeform(
         tool_description=_EMIT_DESC,
         max_tokens=1500,
     )
+    # The struck phrases apply to anything the client publishes, not just the
+    # calendar — a post asked for over WhatsApp reaches the same audience.
+    if terms := banned_claims(post):
+        post = await _repair_claims(post, freeform_system(), request, terms)
+        if still := banned_claims(post):
+            log.error("post still contains forbidden claims after rewrite", extra={"terms": still})
+    return post
