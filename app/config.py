@@ -92,6 +92,32 @@ class Settings(BaseSettings):
     draft_hour: int = 7  # local hour (timezone above) the daily draft job runs
     publish_hour: int = 9  # local hour an approved post goes live on its date
 
+    # --- Internal test run ---
+    # Walks the approved calendar in order, dropping one post every
+    # `test_interval_hours` instead of on its real date, so the team can see the
+    # whole flow — draft, approve, edit, publish — in an afternoon rather than a
+    # year. The approval gate is untouched: nothing publishes without a yes.
+    # Turn OFF before the client cadence starts.
+    test_mode: bool = False
+    test_interval_hours: float = 2.0
+    # Who receives approval previews. Empty = the first authorised number, which
+    # is the production behaviour. During the test run both testers are listed so
+    # either can approve.
+    approval_recipients: str = ""
+
+    @property
+    def approval_recipients_list(self) -> list[str]:
+        """Everyone who gets a preview. Falls back to the first authorised number."""
+        explicit = [
+            n.strip().lower().replace(" ", "")
+            for n in self.approval_recipients.split(",")
+            if n.strip()
+        ]
+        if explicit:
+            return explicit
+        allowed = self.authorized_numbers_list
+        return allowed[:1]
+
     @property
     def authorized_numbers_list(self) -> list[str]:
         """Normalised allowlist of WhatsApp senders (lowercased, no spaces)."""

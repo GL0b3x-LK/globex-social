@@ -1,164 +1,1387 @@
 {
- "assets": [
-  {
-   "file": "pack-chicken-breast.jpg",
-   "tags": [
-    "packaging",
-    "chicken",
-    "breast",
-    "poultry"
-   ]
-  },
-  {
-   "file": "pack-chicken-drumstick.jpg",
-   "tags": [
-    "packaging",
-    "chicken",
-    "drumstick",
-    "poultry"
-   ]
-  },
-  {
-   "file": "pack-chicken-carton.jpg",
-   "tags": [
-    "packaging",
-    "chicken",
-    "carton",
-    "poultry"
-   ]
-  },
-  {
-   "file": "pack-duck-carton.jpg",
-   "tags": [
-    "packaging",
-    "duck",
-    "carton"
-   ]
-  },
-  {
-   "file": "pack-duck-retail.jpg",
-   "tags": [
-    "packaging",
-    "duck",
-    "retail",
-    "gift"
-   ]
-  },
-  {
-   "file": "prod-chicken-breast.jpg",
-   "tags": [
-    "product",
-    "chicken",
-    "breast",
-    "poultry"
-   ]
-  },
-  {
-   "file": "prod-chicken-chest.jpg",
-   "tags": [
-    "product",
-    "chicken",
-    "poultry"
-   ]
-  },
-  {
-   "file": "prod-chicken-gizzard.jpg",
-   "tags": [
-    "product",
-    "chicken",
-    "gizzard",
-    "specialty",
-    "offal"
-   ]
-  },
-  {
-   "file": "prod-chicken-leg.jpg",
-   "tags": [
-    "product",
-    "chicken",
-    "leg",
-    "quarter",
-    "poultry"
-   ]
-  },
-  {
-   "file": "prod-whole-bird.jpg",
-   "tags": [
-    "product",
-    "chicken",
-    "whole",
-    "bird",
-    "griller",
-    "poultry"
-   ]
-  },
-  {
-   "file": "prod-chicken-frame.jpg",
-   "tags": [
-    "product",
-    "chicken",
-    "frame",
-    "specialty",
-    "poultry"
-   ]
-  },
-  {
-   "file": "brand-box.jpg",
-   "tags": [
-    "packaging",
-    "brand",
-    "box",
-    "logistics"
-   ]
-  },
-  {
-   "file": "brand-package.jpg",
-   "tags": [
-    "packaging",
-    "brand",
-    "box"
-   ]
-  },
-  {
-   "file": "brand-boxes-closeup.jpg",
-   "tags": [
-    "brand",
-    "box",
-    "packaging",
-    "warehouse"
-   ]
-  },
-  {
-   "file": "brand-port-ship.jpg",
-   "tags": [
-    "brand",
-    "port",
-    "ship",
-    "container",
-    "logistics",
-    "stats",
-    "tradeshow",
-    "special",
-    "holiday"
-   ]
-  },
-  {
-   "file": "brand-quality-control.jpg",
-   "tags": [
-    "brand",
-    "quality",
-    "control",
-    "hands",
-    "inspection",
-    "product"
-   ]
-  },
-  {
-   "file": "placeholder-portrait.jpg",
-   "tags": [
-    "milestone",
-    "placeholder"
-   ]
-  }
- ]
+  "assets": [
+    {
+      "file": "brand-box.jpg",
+      "tags": [
+        "packaging",
+        "brand",
+        "box",
+        "logistics"
+      ]
+    },
+    {
+      "file": "brand-boxes-closeup.jpg",
+      "tags": [
+        "brand",
+        "box",
+        "packaging",
+        "warehouse"
+      ]
+    },
+    {
+      "file": "brand-package.jpg",
+      "tags": [
+        "packaging",
+        "brand",
+        "box"
+      ]
+    },
+    {
+      "file": "brand-port-ship.jpg",
+      "tags": [
+        "brand",
+        "port",
+        "ship",
+        "container",
+        "logistics",
+        "stats",
+        "tradeshow",
+        "special",
+        "holiday"
+      ]
+    },
+    {
+      "file": "brand-quality-control.jpg",
+      "tags": [
+        "brand",
+        "quality",
+        "control",
+        "hands",
+        "inspection",
+        "product"
+      ]
+    },
+    {
+      "file": "pack-chicken-breast-cold-store.jpg",
+      "tags": [
+        "boneless",
+        "breast",
+        "breasts",
+        "carton",
+        "chicken",
+        "cold",
+        "fillet",
+        "packaging",
+        "pallet",
+        "poultry",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-breast.jpg",
+      "tags": [
+        "packaging",
+        "chicken",
+        "breast",
+        "poultry"
+      ]
+    },
+    {
+      "file": "pack-chicken-carton-export-cold-store.jpg",
+      "tags": [
+        "box",
+        "carton",
+        "chicken",
+        "cold",
+        "export",
+        "packaging",
+        "pallet",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-carton-export-hero-packed.jpg",
+      "tags": [
+        "box",
+        "carton",
+        "chicken",
+        "export",
+        "hero",
+        "pack",
+        "packaging",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-carton-export-qc-hands-packed.jpg",
+      "tags": [
+        "box",
+        "carton",
+        "chicken",
+        "control",
+        "export",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-carton.jpg",
+      "tags": [
+        "packaging",
+        "chicken",
+        "carton",
+        "poultry"
+      ]
+    },
+    {
+      "file": "pack-chicken-drumstick-cold-store.jpg",
+      "tags": [
+        "carton",
+        "chicken",
+        "cold",
+        "drums",
+        "drumstick",
+        "drumsticks",
+        "packaging",
+        "pallet",
+        "poultry",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-drumstick-hero-packed.jpg",
+      "tags": [
+        "chicken",
+        "drums",
+        "drumstick",
+        "drumsticks",
+        "hero",
+        "pack",
+        "packaging",
+        "poultry",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-drumstick-qc-hands-packed.jpg",
+      "tags": [
+        "chicken",
+        "control",
+        "drums",
+        "drumstick",
+        "drumsticks",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "poultry",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-drumstick.jpg",
+      "tags": [
+        "packaging",
+        "chicken",
+        "drumstick",
+        "poultry"
+      ]
+    },
+    {
+      "file": "pack-chicken-frame-cold-store.jpg",
+      "tags": [
+        "backs",
+        "carcass",
+        "carton",
+        "chicken",
+        "cold",
+        "frame",
+        "frames",
+        "packaging",
+        "pallet",
+        "poultry",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-frame-hero-packed.jpg",
+      "tags": [
+        "backs",
+        "carcass",
+        "chicken",
+        "frame",
+        "frames",
+        "hero",
+        "pack",
+        "packaging",
+        "poultry",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-frame-qc-hands-packed.jpg",
+      "tags": [
+        "backs",
+        "carcass",
+        "chicken",
+        "control",
+        "frame",
+        "frames",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "poultry",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-gizzard-cold-store.jpg",
+      "tags": [
+        "carton",
+        "chicken",
+        "cold",
+        "gizzard",
+        "gizzards",
+        "offal",
+        "packaging",
+        "pallet",
+        "poultry",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-gizzard-hero-packed.jpg",
+      "tags": [
+        "chicken",
+        "gizzard",
+        "gizzards",
+        "hero",
+        "offal",
+        "pack",
+        "packaging",
+        "poultry",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-chicken-gizzard-qc-hands-packed.jpg",
+      "tags": [
+        "chicken",
+        "control",
+        "gizzard",
+        "gizzards",
+        "hands",
+        "inspection",
+        "offal",
+        "pack",
+        "packaging",
+        "poultry",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-carton-cold-store.jpg",
+      "tags": [
+        "box",
+        "carton",
+        "cartons",
+        "cold",
+        "duck",
+        "export",
+        "packaging",
+        "pallet",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-carton-hero-packed.jpg",
+      "tags": [
+        "box",
+        "carton",
+        "cartons",
+        "duck",
+        "export",
+        "hero",
+        "pack",
+        "packaging",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-carton-qc-hands-packed.jpg",
+      "tags": [
+        "box",
+        "carton",
+        "cartons",
+        "control",
+        "duck",
+        "export",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-carton.jpg",
+      "tags": [
+        "packaging",
+        "duck",
+        "carton"
+      ]
+    },
+    {
+      "file": "pack-duck-retail-cold-store.jpg",
+      "tags": [
+        "carton",
+        "cold",
+        "duck",
+        "gift",
+        "pack",
+        "packaging",
+        "pallet",
+        "retail",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-retail-hero-packed.jpg",
+      "tags": [
+        "duck",
+        "gift",
+        "hero",
+        "pack",
+        "packaging",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-retail-qc-hands-packed.jpg",
+      "tags": [
+        "control",
+        "duck",
+        "gift",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "quality",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-duck-retail.jpg",
+      "tags": [
+        "packaging",
+        "duck",
+        "retail",
+        "gift"
+      ]
+    },
+    {
+      "file": "pack-globex-brand-carton-cold-store.jpg",
+      "tags": [
+        "box",
+        "boxes",
+        "brand",
+        "branded",
+        "carton",
+        "cold",
+        "globex",
+        "our",
+        "packaging",
+        "pallet",
+        "storage",
+        "store",
+        "warehouse"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-globex-brand-carton-hero-packed.jpg",
+      "tags": [
+        "box",
+        "boxes",
+        "brand",
+        "branded",
+        "carton",
+        "globex",
+        "hero",
+        "our",
+        "pack",
+        "packaging",
+        "retail"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-globex-brand-carton-qc-hands-packed.jpg",
+      "tags": [
+        "box",
+        "boxes",
+        "brand",
+        "branded",
+        "carton",
+        "control",
+        "globex",
+        "hands",
+        "inspection",
+        "our",
+        "pack",
+        "packaging",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-whole-chicken-cold-store.jpg",
+      "tags": [
+        "bird",
+        "birds",
+        "carton",
+        "chicken",
+        "chickens",
+        "cold",
+        "griller",
+        "grillers",
+        "packaging",
+        "pallet",
+        "poultry",
+        "storage",
+        "store",
+        "warehouse",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-whole-chicken-hero-packed.jpg",
+      "tags": [
+        "bird",
+        "birds",
+        "chicken",
+        "chickens",
+        "griller",
+        "grillers",
+        "hero",
+        "pack",
+        "packaging",
+        "poultry",
+        "retail",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "pack-whole-chicken-qc-hands-packed.jpg",
+      "tags": [
+        "bird",
+        "birds",
+        "chicken",
+        "chickens",
+        "control",
+        "griller",
+        "grillers",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "poultry",
+        "quality",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "placeholder-portrait.jpg",
+      "tags": [
+        "milestone",
+        "placeholder"
+      ]
+    },
+    {
+      "file": "prod-beef-hero.jpg",
+      "tags": [
+        "beef",
+        "cuts",
+        "hero",
+        "meat",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-beef-qc-hands.jpg",
+      "tags": [
+        "beef",
+        "control",
+        "cuts",
+        "hands",
+        "inspection",
+        "meat",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-buffalo-hero.jpg",
+      "tags": [
+        "buffalo",
+        "carabeef",
+        "hero",
+        "meat",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-buffalo-qc-hands.jpg",
+      "tags": [
+        "buffalo",
+        "carabeef",
+        "control",
+        "hands",
+        "inspection",
+        "meat",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-breast-hero.jpg",
+      "tags": [
+        "boneless",
+        "breast",
+        "breasts",
+        "chicken",
+        "fillet",
+        "hero",
+        "poultry",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-breast-qc-hands.jpg",
+      "tags": [
+        "boneless",
+        "breast",
+        "breasts",
+        "chicken",
+        "control",
+        "fillet",
+        "hands",
+        "inspection",
+        "plant",
+        "poultry",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-breast.jpg",
+      "tags": [
+        "product",
+        "chicken",
+        "breast",
+        "poultry"
+      ]
+    },
+    {
+      "file": "prod-chicken-chest.jpg",
+      "tags": [
+        "product",
+        "chicken",
+        "poultry"
+      ]
+    },
+    {
+      "file": "prod-chicken-frame.jpg",
+      "tags": [
+        "product",
+        "chicken",
+        "frame",
+        "specialty",
+        "poultry"
+      ]
+    },
+    {
+      "file": "prod-chicken-gizzard.jpg",
+      "tags": [
+        "product",
+        "chicken",
+        "gizzard",
+        "specialty",
+        "offal"
+      ]
+    },
+    {
+      "file": "prod-chicken-leg-quarter-hero.jpg",
+      "tags": [
+        "chicken",
+        "hero",
+        "leg",
+        "legs",
+        "poultry",
+        "product",
+        "quarter",
+        "quarters"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-leg-quarter-qc-hands.jpg",
+      "tags": [
+        "chicken",
+        "control",
+        "hands",
+        "inspection",
+        "leg",
+        "legs",
+        "plant",
+        "poultry",
+        "quality",
+        "quarter",
+        "quarters"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-leg.jpg",
+      "tags": [
+        "product",
+        "chicken",
+        "leg",
+        "quarter",
+        "poultry"
+      ]
+    },
+    {
+      "file": "prod-chicken-paw-hero-tray.jpg",
+      "tags": [
+        "chicken",
+        "feet",
+        "pack",
+        "paw",
+        "paws",
+        "poultry",
+        "product",
+        "tray"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-paw-qc-hands-tray.jpg",
+      "tags": [
+        "chicken",
+        "control",
+        "feet",
+        "hands",
+        "inspection",
+        "paw",
+        "paws",
+        "poultry",
+        "quality",
+        "tray"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-wing-hero.jpg",
+      "tags": [
+        "chicken",
+        "hero",
+        "poultry",
+        "product",
+        "wing",
+        "wings"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-chicken-wing-qc-hands.jpg",
+      "tags": [
+        "chicken",
+        "control",
+        "hands",
+        "inspection",
+        "plant",
+        "poultry",
+        "quality",
+        "wing",
+        "wings"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-edible-oils-hero.jpg",
+      "tags": [
+        "edible",
+        "grain",
+        "hero",
+        "oil",
+        "oils",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-edible-oils-qc-hands.jpg",
+      "tags": [
+        "control",
+        "edible",
+        "grain",
+        "hands",
+        "inspection",
+        "oil",
+        "oils",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-feedstuff-hero.jpg",
+      "tags": [
+        "animal",
+        "feed",
+        "feedstuff",
+        "feedstuffs",
+        "grain",
+        "hero",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-feedstuff-qc-hands.jpg",
+      "tags": [
+        "animal",
+        "control",
+        "feed",
+        "feedstuff",
+        "feedstuffs",
+        "grain",
+        "hands",
+        "inspection",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fish-fillet-hero.jpg",
+      "tags": [
+        "fillet",
+        "fillets",
+        "fish",
+        "hero",
+        "product",
+        "seafood"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fish-fillet-qc-hands.jpg",
+      "tags": [
+        "control",
+        "fillet",
+        "fillets",
+        "fish",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "seafood"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fish-whole-round-hero.jpg",
+      "tags": [
+        "fish",
+        "hero",
+        "product",
+        "round",
+        "seafood",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fish-whole-round-qc-hands.jpg",
+      "tags": [
+        "control",
+        "fish",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "round",
+        "seafood",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fries-crinkle-cut-hero.jpg",
+      "tags": [
+        "crinkle",
+        "cut",
+        "french",
+        "fries",
+        "hero",
+        "product",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fries-crinkle-cut-qc-hands.jpg",
+      "tags": [
+        "control",
+        "crinkle",
+        "cut",
+        "french",
+        "fries",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fries-shoestring-hero.jpg",
+      "tags": [
+        "6x6",
+        "6x6mm",
+        "french",
+        "fries",
+        "hero",
+        "product",
+        "shoestring",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fries-shoestring-qc-hands.jpg",
+      "tags": [
+        "6x6",
+        "6x6mm",
+        "control",
+        "french",
+        "fries",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "shoestring",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fries-straight-cut-hero.jpg",
+      "tags": [
+        "9x9",
+        "9x9mm",
+        "cut",
+        "french",
+        "fries",
+        "hero",
+        "product",
+        "straight",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-fries-straight-cut-qc-hands.jpg",
+      "tags": [
+        "9x9",
+        "9x9mm",
+        "control",
+        "cut",
+        "french",
+        "fries",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "straight",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-frozen-vegetables-hero.jpg",
+      "tags": [
+        "frozen",
+        "hero",
+        "product",
+        "veg",
+        "vegetable",
+        "vegetables"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-frozen-vegetables-qc-hands.jpg",
+      "tags": [
+        "control",
+        "frozen",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "veg",
+        "vegetable",
+        "vegetables"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-grains-cereals-hero.jpg",
+      "tags": [
+        "cereal",
+        "cereals",
+        "crops",
+        "grain",
+        "grains",
+        "hero",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-grains-cereals-qc-hands.jpg",
+      "tags": [
+        "cereal",
+        "cereals",
+        "control",
+        "crops",
+        "grain",
+        "grains",
+        "hands",
+        "inspection",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-henfowl-hero.jpg",
+      "tags": [
+        "fowl",
+        "hen",
+        "henfowl",
+        "hero",
+        "poultry",
+        "product",
+        "spent"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-henfowl-qc-hands.jpg",
+      "tags": [
+        "control",
+        "fowl",
+        "hands",
+        "hen",
+        "henfowl",
+        "inspection",
+        "plant",
+        "poultry",
+        "quality",
+        "spent"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-lamb-hero.jpg",
+      "tags": [
+        "hero",
+        "lamb",
+        "meat",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-lamb-qc-hands.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "inspection",
+        "lamb",
+        "meat",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-mutton-hero.jpg",
+      "tags": [
+        "hero",
+        "meat",
+        "mutton",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-mutton-qc-hands.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "inspection",
+        "meat",
+        "mutton",
+        "plant",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-oil-seeds-hero.jpg",
+      "tags": [
+        "grain",
+        "hero",
+        "oil",
+        "oilseed",
+        "oilseeds",
+        "product",
+        "seed",
+        "seeds"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-oil-seeds-qc-hands.jpg",
+      "tags": [
+        "control",
+        "grain",
+        "hands",
+        "inspection",
+        "oil",
+        "oilseed",
+        "oilseeds",
+        "plant",
+        "quality",
+        "seed",
+        "seeds"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pork-offal-hero-tray.jpg",
+      "tags": [
+        "offal",
+        "offals",
+        "pack",
+        "pork",
+        "product",
+        "tray"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pork-offal-qc-hands-tray.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "inspection",
+        "offal",
+        "offals",
+        "pork",
+        "quality",
+        "tray"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pork-primal-hero.jpg",
+      "tags": [
+        "cuts",
+        "hero",
+        "pork",
+        "primal",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pork-primal-qc-hands.jpg",
+      "tags": [
+        "control",
+        "cuts",
+        "hands",
+        "inspection",
+        "plant",
+        "pork",
+        "primal",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pork-processed-hero.jpg",
+      "tags": [
+        "hero",
+        "pork",
+        "processed",
+        "product"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pork-processed-qc-hands.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "inspection",
+        "plant",
+        "pork",
+        "processed",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-potato-croquettes-hero.jpg",
+      "tags": [
+        "croquette",
+        "croquettes",
+        "hero",
+        "potato",
+        "product",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-potato-croquettes-qc-hands.jpg",
+      "tags": [
+        "control",
+        "croquette",
+        "croquettes",
+        "hands",
+        "inspection",
+        "plant",
+        "potato",
+        "quality",
+        "vegetable"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-potato-wedges-hero.jpg",
+      "tags": [
+        "hero",
+        "potato",
+        "product",
+        "vegetable",
+        "wedge",
+        "wedges"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-potato-wedges-qc-hands.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "inspection",
+        "plant",
+        "potato",
+        "quality",
+        "vegetable",
+        "wedge",
+        "wedges"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-poultry-offal-hero-tray.jpg",
+      "tags": [
+        "hearts",
+        "liver",
+        "offal",
+        "offals",
+        "pack",
+        "poultry",
+        "product",
+        "tray"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-poultry-offal-qc-hands-tray.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "hearts",
+        "inspection",
+        "liver",
+        "offal",
+        "offals",
+        "poultry",
+        "quality",
+        "tray"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pulses-hero.jpg",
+      "tags": [
+        "chickpeas",
+        "grain",
+        "hero",
+        "lentils",
+        "product",
+        "pulse",
+        "pulses"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-pulses-qc-hands.jpg",
+      "tags": [
+        "chickpeas",
+        "control",
+        "grain",
+        "hands",
+        "inspection",
+        "lentils",
+        "plant",
+        "pulse",
+        "pulses",
+        "quality"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-seafood-value-added-hero.jpg",
+      "tags": [
+        "added",
+        "hero",
+        "product",
+        "seafood",
+        "shellfish",
+        "value"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-seafood-value-added-qc-hands.jpg",
+      "tags": [
+        "added",
+        "control",
+        "hands",
+        "inspection",
+        "plant",
+        "quality",
+        "seafood",
+        "shellfish",
+        "value"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-turkey-hero.jpg",
+      "tags": [
+        "cuts",
+        "hero",
+        "poultry",
+        "product",
+        "turkey",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-turkey-qc-hands.jpg",
+      "tags": [
+        "control",
+        "cuts",
+        "hands",
+        "inspection",
+        "plant",
+        "poultry",
+        "quality",
+        "turkey",
+        "whole"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-veal-hero.jpg",
+      "tags": [
+        "hero",
+        "meat",
+        "product",
+        "veal"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-veal-qc-hands.jpg",
+      "tags": [
+        "control",
+        "hands",
+        "inspection",
+        "meat",
+        "plant",
+        "quality",
+        "veal"
+      ],
+      "generated": true
+    },
+    {
+      "file": "prod-whole-bird.jpg",
+      "tags": [
+        "product",
+        "chicken",
+        "whole",
+        "bird",
+        "griller",
+        "poultry"
+      ]
+    }
+  ]
 }

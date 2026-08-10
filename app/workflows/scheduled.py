@@ -35,6 +35,13 @@ log = get_logger("app.workflows.scheduled")
 
 _POOL_DIR = Path(__file__).parent.parent / "data" / "asset_pool"
 
+
+@lru_cache(maxsize=1)
+def total_planned() -> int:
+    """How many posts the approved calendar holds — numbers the test previews."""
+    return len(calendar_source.load_calendar())
+
+
 # Calendar category -> content-generation prompt family.
 _CATEGORY_PROMPTS: dict[str, ContentCategory] = {
     "product": ContentCategory.product_spotlight,
@@ -50,6 +57,15 @@ _CATEGORY_PROMPTS: dict[str, ContentCategory] = {
 def approver_phone() -> str:
     """The approval recipient — first entry of the allowlist (Karen in production)."""
     return get_settings().authorized_numbers_list[0]
+
+
+def approver_phones() -> list[str]:
+    """Everyone who should see a scheduled draft.
+
+    One name in production, both testers during the internal run — either can
+    answer, because they are looking at the same post.
+    """
+    return get_settings().approval_recipients_list or [approver_phone()]
 
 
 @lru_cache(maxsize=1)
@@ -102,10 +118,16 @@ def _entry_brief(entry: CalendarEntry) -> str:
     )
 
 
-async def draft_calendar_entry(entry: CalendarEntry) -> None:
+async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = False) -> None:
+    """Draft one calendar entry and send it for approval.
+
+    ``publish_today`` is the internal test run: the post carries today's date, so
+    approving it publishes straight away instead of parking it until its real
+    calendar date months from now. The approval gate itself is unchanged.
+    """
     from app.workflows.on_demand import _finalize_preview  # local import: avoid cycle
 
-    when = entry.post_date or entry.planned_date
+    when = date.today() if publish_today else (entry.post_date or entry.planned_date)
     category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
     generated = await generator.generate_post(
         category,
@@ -120,10 +142,16 @@ async def draft_calendar_entry(entry: CalendarEntry) -> None:
     generated.template_variant = CALENDAR_TEMPLATE_ALIASES.get(entry.template, entry.template)
 
     photo = pick_photo(entry)
-    prefix = (
-        f"🗓 Scheduled post — goes out {when.strftime('%a %d %b')} once you approve\n"
-        f"({entry.title})\n\n"
-    )
+    if publish_today:
+        prefix = (
+            f"🧪 *Test post {entry.seq + 1}/{total_planned()}* — publishes as soon as "
+            f"you approve\n({entry.title} · week {entry.week} · {entry.category})\n\n"
+        )
+    else:
+        prefix = (
+            f"🗓 Scheduled post — goes out {when.strftime('%a %d %b')} once you approve\n"
+            f"({entry.title})\n\n"
+        )
     if photo.name.startswith("placeholder"):
         prefix += "📷 Placeholder image — reply with the employee's photo to swap it in.\n\n"
     await _finalize_preview(
@@ -144,11 +172,33 @@ async def draft_calendar_entry(entry: CalendarEntry) -> None:
             },
         },
         caption_prefix=prefix,
+        recipients=approver_phones(),
     )
     log.info(
         "calendar draft sent",
         extra={"event_id": entry.event_id, "title": entry.title, "date": str(when)},
     )
+
+
+async def draft_next_for_test() -> bool:
+    """Draft the single next un-drafted calendar post, for the internal test run.
+
+    Walks the client-approved order rather than the calendar's dates, so the team
+    sees the real sequence of posts without waiting a year for it. Returns False
+    when the calendar is exhausted, which stops the run rather than looping.
+    """
+    entries = sorted(calendar_source.load_calendar(), key=lambda e: e.seq)
+    fresh = await asyncio.to_thread(calendar_source.undrafted, list(entries))
+    if not fresh:
+        log.info("test run: calendar exhausted, nothing left to draft")
+        return False
+    entry = fresh[0]
+    await draft_calendar_entry(entry, publish_today=True)
+    log.info(
+        "test draft sent",
+        extra={"seq": entry.seq, "title": entry.title, "remaining": len(fresh) - 1},
+    )
+    return True
 
 
 async def draft_due_posts(today: date | None = None) -> int:

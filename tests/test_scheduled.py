@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import date, timedelta
 
 from app.ai.generator import GeneratedPost
@@ -208,3 +209,165 @@ def test_entry_brief_carries_gist_and_purpose() -> None:
     entry = calendar_source.load_calendar()[0]
     brief = scheduled._entry_brief(entry)
     assert entry.gist in brief and entry.purpose in brief
+
+
+# --------------------------------------------------------------------------- #
+# the internal test run — every 2 hours, both testers, publish on approval
+# --------------------------------------------------------------------------- #
+
+
+def test_test_mode_previews_go_to_every_recipient(monkeypatch) -> None:
+    """Abdul and Mike both need to see the post, or only one of them can answer."""
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+    monkeypatch.setenv("APPROVAL_RECIPIENTS", "whatsapp:+111,whatsapp:+222")
+    try:
+        assert scheduled.approver_phones() == ["whatsapp:+111", "whatsapp:+222"]
+    finally:
+        get_settings.cache_clear()
+
+
+def test_recipients_default_to_the_single_approver(monkeypatch) -> None:
+    """Unset means production behaviour: one name, not the whole allowlist —
+    dev/test numbers live in AUTHORIZED_NUMBERS and must not be sent client posts."""
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+    monkeypatch.setenv("APPROVAL_RECIPIENTS", "")
+    monkeypatch.setenv("AUTHORIZED_NUMBERS", "whatsapp:+111,whatsapp:+999")
+    try:
+        assert scheduled.approver_phones() == ["whatsapp:+111"]
+    finally:
+        get_settings.cache_clear()
+
+
+def test_a_test_post_carries_todays_date_so_approval_publishes_now(monkeypatch) -> None:
+    """A calendar post normally holds until its date. Approving a test post has to
+    publish there and then, or nothing goes out for months."""
+    captured: dict = {}
+
+    async def fake_finalize(*_a, **kw):
+        captured.update(kw)
+
+    async def fake_generate(*_a, **_kw):
+        return GeneratedPost(
+            caption="c",
+            hashtags=["#x"],
+            template_variant="TS-p3-editorial_4x5",
+            headline="h",
+            rationale="r",
+        )
+
+    import app.workflows.on_demand as on_demand
+
+    monkeypatch.setattr(on_demand, "_finalize_preview", fake_finalize)
+    monkeypatch.setattr(scheduled.generator, "generate_post", fake_generate)
+
+    entry = calendar_source.load_calendar()[0]
+    asyncio.run(scheduled.draft_calendar_entry(entry, publish_today=True))
+
+    assert captured["extra_render_meta"]["publish_on"] == date.today().isoformat()
+    assert "Test post" in captured["caption_prefix"]
+
+
+def test_a_normal_calendar_post_still_holds_for_its_date(monkeypatch) -> None:
+    captured: dict = {}
+
+    async def fake_finalize(*_a, **kw):
+        captured.update(kw)
+
+    async def fake_generate(*_a, **_kw):
+        return GeneratedPost(
+            caption="c",
+            hashtags=["#x"],
+            template_variant="TS-p3-editorial_4x5",
+            headline="h",
+            rationale="r",
+        )
+
+    import app.workflows.on_demand as on_demand
+
+    monkeypatch.setattr(on_demand, "_finalize_preview", fake_finalize)
+    monkeypatch.setattr(scheduled.generator, "generate_post", fake_generate)
+
+    entry = calendar_source.load_calendar()[0]
+    asyncio.run(scheduled.draft_calendar_entry(entry))
+
+    assert captured["extra_render_meta"]["publish_on"] == entry.planned_date.isoformat()
+    assert "Test post" not in captured["caption_prefix"]
+
+
+def test_the_test_run_walks_the_approved_order(monkeypatch) -> None:
+    """One post per interval, in the order the client signed off, skipping any
+    already drafted — so a restart never re-sends what was already reviewed."""
+    drafted: list[int] = []
+
+    async def fake_draft(entry, *, publish_today=False):
+        drafted.append(entry.seq)
+
+    already = {calendar_source.load_calendar()[0].event_id}
+    monkeypatch.setattr(scheduled, "draft_calendar_entry", fake_draft)
+    monkeypatch.setattr(
+        calendar_source.posts_db,
+        "find_for_event",
+        lambda event_id, event_type: {"id": "x"} if event_id in already else None,
+    )
+
+    assert asyncio.run(scheduled.draft_next_for_test()) is True
+    assert drafted == [1]  # seq 0 was already drafted
+
+
+def test_the_test_run_reports_when_the_calendar_is_exhausted(monkeypatch) -> None:
+    """Returning False is what removes the job — otherwise it fires forever."""
+    monkeypatch.setattr(
+        calendar_source.posts_db, "find_for_event", lambda event_id, event_type: {"id": "x"}
+    )
+    assert asyncio.run(scheduled.draft_next_for_test()) is False
+
+
+def test_one_unreachable_recipient_does_not_cost_the_others_their_preview(monkeypatch) -> None:
+    """Mike's number fails until he joins the Twilio sandbox. That must not stop
+    the post reaching Abdul — nor abort the drafting job that made it."""
+    import app.workflows.on_demand as on_demand
+
+    sent: list[str] = []
+
+    async def flaky_send_media(to, _caption, _url, **_kw):
+        if to == "whatsapp:+bad":
+            raise RuntimeError("63015 not a sandbox participant")
+        sent.append(to)
+        return "SM1"
+
+    async def noop(*_a, **_kw):
+        return None
+
+    monkeypatch.setattr(on_demand.twilio_client, "send_media", flaky_send_media)
+    monkeypatch.setattr(on_demand.conversation, "transition", noop)
+    monkeypatch.setattr(on_demand, "_apply_target", noop)
+    monkeypatch.setattr(on_demand.approvals, "record", lambda *a, **kw: None)
+    monkeypatch.setattr(on_demand.posts, "create", lambda **kw: {"id": "p1"})
+    monkeypatch.setattr(on_demand.posts, "set_image_url", lambda *a, **kw: None)
+    monkeypatch.setattr(on_demand.posts, "set_render_meta", lambda *a, **kw: None)
+
+    async def fake_render(*_a, **_kw):
+        return "https://example.test/i.png"
+
+    monkeypatch.setattr(on_demand.render_pipeline, "render_and_store", fake_render)
+
+    generated = GeneratedPost(
+        caption="c",
+        hashtags=["#x"],
+        template_variant="TS-p3-editorial_4x5",
+        headline="h",
+        rationale="r",
+    )
+    asyncio.run(
+        on_demand._finalize_preview(
+            "whatsapp:+good",
+            "brief",
+            generated,
+            recipients=["whatsapp:+bad", "whatsapp:+good"],
+        )
+    )
+    assert sent == ["whatsapp:+good"]

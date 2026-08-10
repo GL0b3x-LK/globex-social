@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import get_settings
 from app.logging_config import get_logger
@@ -33,6 +34,18 @@ async def _publish_job() -> None:
     log.info("publish job done", extra={"published": count})
 
 
+async def _test_job() -> None:
+    """Internal test run: one calendar post per interval, in approved order.
+
+    Stops itself when the calendar is exhausted so a forgotten test run cannot
+    keep firing against an empty calendar.
+    """
+    more = await scheduled.draft_next_for_test()
+    if not more and _scheduler is not None:
+        _scheduler.remove_job("calendar_test")
+        log.info("test run finished; job removed")
+
+
 def start() -> AsyncIOScheduler | None:
     """Start the scheduler if enabled; returns it (or None when disabled)."""
     global _scheduler
@@ -44,6 +57,31 @@ def start() -> AsyncIOScheduler | None:
         return _scheduler
 
     sched = AsyncIOScheduler(timezone=settings.timezone)
+
+    if settings.test_mode:
+        # The internal run replaces the calendar jobs rather than joining them:
+        # test posts already carry today's date, so the daily publish sweep would
+        # have nothing to do, and the daily draft would post on real dates too.
+        sched.add_job(
+            _test_job,
+            IntervalTrigger(hours=settings.test_interval_hours, timezone=settings.timezone),
+            id="calendar_test",
+            coalesce=True,
+            max_instances=1,  # a slow draft must not overlap the next interval
+            misfire_grace_time=int(settings.test_interval_hours * 3600),
+        )
+        sched.start()
+        _scheduler = sched
+        log.warning(
+            "TEST MODE scheduler started — one calendar post per interval",
+            extra={
+                "every_hours": settings.test_interval_hours,
+                "recipients": len(settings.approval_recipients_list),
+                "tz": settings.timezone,
+            },
+        )
+        return sched
+
     sched.add_job(
         _draft_job,
         CronTrigger(hour=settings.draft_hour, minute=0, timezone=settings.timezone),

@@ -517,6 +517,7 @@ async def _finalize_preview(
     event: tuple[str, str] | None = None,  # (event_type, event_id) — scheduler idempotency
     extra_render_meta: dict[str, Any] | None = None,  # e.g. {"publish_on": "2026-08-17"}
     caption_prefix: str = "",  # prepended to the preview caption ("Scheduled for Mon 17 Aug…")
+    recipients: list[str] | None = None,  # everyone who should see it; default just the sender
 ) -> None:
     """Create the post, render (with overlay if an image is present), store, and preview."""
     post = await asyncio.to_thread(
@@ -564,19 +565,39 @@ async def _finalize_preview(
         context_patch["raw_image_url"] = raw_image_url
     await _apply_target(post_id, target_platforms, context_patch)
 
-    await conversation.transition(
-        from_phone,
-        state=ConversationState.AWAITING_APPROVAL,
-        current_post_id=post_id,
-        context_patch=context_patch,
-    )
     caption = (
         caption_prefix
         + messages.preview_caption(generated)
         + messages.target_note(target_platforms)
     )
-    await twilio_client.send_media(from_phone, caption, image_url)
+    # Every recipient is put in front of the SAME post, so whoever answers first
+    # approves or edits it — there is no second copy to get out of step. One
+    # unreachable number must not cost everyone else their preview, so a failed
+    # send is logged and the fan-out continues.
+    delivered = 0
+    for phone in recipients or [from_phone]:
+        try:
+            await conversation.transition(
+                phone,
+                state=ConversationState.AWAITING_APPROVAL,
+                current_post_id=post_id,
+                context_patch=context_patch,
+            )
+            await twilio_client.send_media(phone, caption, image_url)
+            delivered += 1
+        except Exception as exc:  # noqa: BLE001 — one bad number is not a failed post
+            log.error(
+                "preview delivery failed",
+                extra={"post_id": post_id, "to": phone, "error": str(exc)[:200]},
+            )
+    if not delivered:
+        log.error("preview reached nobody", extra={"post_id": post_id})
     log.info(
         "preview sent",
-        extra={"post_id": post_id, "variant": generated.template_variant, "treatment": treatment},
+        extra={
+            "post_id": post_id,
+            "variant": generated.template_variant,
+            "treatment": treatment,
+            "recipients": len(recipients or [from_phone]),
+        },
     )
