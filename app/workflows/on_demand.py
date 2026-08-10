@@ -538,9 +538,18 @@ async def _finalize_preview(
     if raw_image_bytes is not None:
         raw_image_url = await storage.upload_png(post_id, raw_image_bytes, suffix="-raw")
 
-    image_url = await render_pipeline.render_and_store(
-        post_id, generated, photo_bytes=image_bytes, photo_media_type=image_media_type
-    )
+    try:
+        image_url = await render_pipeline.render_and_store(
+            post_id, generated, photo_bytes=image_bytes, photo_media_type=image_media_type
+        )
+    except Exception:
+        # The row exists from here on, and for a calendar draft its mere existence
+        # is what marks the entry as done. Leaving a half-built post behind would
+        # retire that entry for good — nobody saw it, and nothing would draft it
+        # again. Release it instead, so the next run picks it up.
+        await asyncio.to_thread(posts.delete, post_id)
+        log.exception("render failed; post discarded so the entry can be redrafted")
+        raise
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
 
     # Persist full render inputs so the post can be re-opened/edited later (swipe-reply).

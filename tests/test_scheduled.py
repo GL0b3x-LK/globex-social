@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 from datetime import date, timedelta
 
+import pytest
+
 from app.ai.generator import GeneratedPost
 from app.db import calendar_source
 from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES, TEMPLATES
@@ -371,3 +373,32 @@ def test_one_unreachable_recipient_does_not_cost_the_others_their_preview(monkey
         )
     )
     assert sent == ["whatsapp:+good"]
+
+
+def test_a_failed_render_releases_the_calendar_entry(monkeypatch) -> None:
+    """A calendar entry counts as drafted the moment its post row exists. If the
+    render then fails, leaving the row behind retires that entry for good —
+    nobody saw it and nothing would ever draft it again."""
+    import app.workflows.on_demand as on_demand
+
+    deleted: list[str] = []
+
+    async def boom(*_a, **_kw):
+        raise RuntimeError("renderer not started")
+
+    monkeypatch.setattr(on_demand.posts, "create", lambda **kw: {"id": "p1"})
+    monkeypatch.setattr(on_demand.posts, "delete", lambda pid: deleted.append(pid))
+    monkeypatch.setattr(on_demand.approvals, "record", lambda *a, **kw: None)
+    monkeypatch.setattr(on_demand.render_pipeline, "render_and_store", boom)
+
+    generated = GeneratedPost(
+        caption="c",
+        hashtags=["#x"],
+        template_variant="TS-p3-editorial_4x5",
+        headline="h",
+        rationale="r",
+    )
+    with pytest.raises(RuntimeError):
+        asyncio.run(on_demand._finalize_preview("whatsapp:+1", "brief", generated))
+
+    assert deleted == ["p1"]
