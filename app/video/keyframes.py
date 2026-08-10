@@ -96,11 +96,20 @@ def build_prompt(
             "The person in the first reference image may appear, seen at work rather "
             "than addressing the camera. Keep their face and clothing as referenced."
         )
-    if product:
+    if product and product.hero_files:
         who.append(
             "The product packaging shown in the other reference photograph must appear "
             "exactly as photographed — same carton, same label, same colours. Never "
             "redesign it or add text to it."
+        )
+    elif product:
+        # No photograph of this line's packaging exists, so the sentence above
+        # would be pointing at nothing — which is an invitation to invent a
+        # Globex carton. Most of the catalogue is in this state.
+        who.append(
+            "We hold NO photograph of this product's packaging, so no Globex packaging "
+            "may appear. Show the product bare, or in plain unbranded packaging with "
+            "nothing printed on it. Never invent a Globex logo, label, carton or text."
         )
     return "\n".join(
         [

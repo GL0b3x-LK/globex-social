@@ -151,15 +151,18 @@ def test_product_bans_stack_on_the_global_list() -> None:
 
 
 def test_never_raw_hero_products_only_front_packaging() -> None:
-    """Len rejected graphic carcass imagery — no raw shot may lead these posts."""
+    """Len rejected graphic carcass imagery — no raw shot may lead these posts.
+
+    Asserted as a property rather than a fixed list of slugs: the catalogue grows
+    (offals and paws joined the flagged set when the full range was added from
+    globexusa.com) and the rule has to hold for whatever is flagged today.
+    """
     flagged = [p for p in library.load_products() if p.visual_rules.get("never_raw_hero")]
-    assert {p.slug for p in flagged} == {"whole-chicken", "chicken-gizzard", "chicken-frame"}
+    assert {"whole-chicken", "chicken-gizzard", "chicken-frame"} <= {p.slug for p in flagged}
     for p in flagged:
-        assert p.product_shot_files, f"{p.slug} has a raw shot on file..."
         assert not set(p.hero_files) & set(p.product_shot_files), (
-            f"...but {p.slug} must never front a video with it"
+            f"{p.slug} must never front a video with its raw shot"
         )
-        assert p.hero_files, f"{p.slug} still needs a packaged image to lead with"
 
 
 def test_duck_prefers_an_asian_presenter() -> None:
@@ -176,11 +179,29 @@ def test_every_referenced_asset_file_exists() -> None:
             assert path.exists(), f"{p.slug} -> {path.name}"
 
 
-def test_products_cover_what_we_actually_have_photos_for() -> None:
+def test_products_cover_the_whole_traded_range() -> None:
+    """Every category globexusa.com trades has entries, not just the poultry we hold photos of."""
     products = library.load_products()
-    assert len(products) >= 10
-    assert {p.category for p in products} >= {"poultry", "duck", "packaging"}
-    assert all(p.hero_files for p in products), "every product needs at least one usable image"
+    assert len(products) >= 37
+    assert {p.category for p in products} >= {
+        "poultry",
+        "duck",
+        "packaging",
+        "pork",
+        "meat",
+        "seafood",
+        "grain",
+        "vegetable",
+    }
+
+
+def test_a_product_without_a_photo_says_so() -> None:
+    """Most of the catalogue has no pack shot. That is fine, but it must be
+    declared, because a silently photo-less product is how invented Globex
+    packaging gets into a keyframe."""
+    for p in library.load_products():
+        if not p.hero_files:
+            assert p.asset_note, f"{p.slug} has no photograph and no note explaining it"
 
 
 def test_wardrobe_and_generation_rules_are_available_to_prompts() -> None:

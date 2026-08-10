@@ -156,6 +156,9 @@ class Product:
     markets: tuple[str, ...] = ()
     presenter_preference: tuple[str, ...] = ()
     status: str = "active"
+    # Why this line has no photograph, when it has none. Most of the catalogue
+    # was added from the website ahead of any pack shots existing.
+    asset_note: str = ""
 
     @property
     def handles(self) -> tuple[str, ...]:
@@ -240,6 +243,7 @@ def load_products() -> tuple[Product, ...]:
             markets=_tuple(p.get("markets")),
             presenter_preference=_tuple(p.get("presenter_preference")),
             status=p.get("status", "active"),
+            asset_note=str(p.get("asset_note") or ""),
         )
         for p in _products_doc()["products"]
     )

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "purpose": "The video engine's product library — and, in the absence of any master Globex product list, the working master list.",
-    "coverage_note": "SKELETON ONLY (2026-08-09). Seeded from the 17-image app/data/asset_pool we actually hold, which is poultry and duck. Globex also trades pork, beef, seafood and grains — those products are added later once Ilan supplies the SKU list and pack shots. Adding a product = one entry here (plus pack-shot files); no code change.",
+    "coverage_note": "Full category coverage as of 2026-08-10: every product named on the globexusa.com product pages is now an entry. The original 10 poultry/duck entries carry real photographs from app/data/asset_pool; the 27 added on 2026-08-10 have NO photograph on file (see each entry's asset_note), so generated stills for them are bare product only — nothing may show Globex packaging until a real pack shot exists.",
     "global_claims_forbidden": [
       "Halal",
       "90+ countries",
@@ -14,7 +14,8 @@
       "no_graphic_carcass": true,
       "prefer_packaged": true,
       "packaging_must_be_real": "Reference the actual pack shot; never let a model invent Globex packaging or labels."
-    }
+    },
+    "source_of_truth": "globexusa.com/products/{poultry,pork,meats,seafood,grains,vegetables}, read 2026-08-10"
   },
   "products": [
     {
@@ -87,7 +88,8 @@
       ],
       "claims_forbidden": [],
       "visual_rules": {
-        "prefer_packaged": true
+        "prefer_packaged": true,
+        "bulk": true
       },
       "markets": [
         "africa",
@@ -438,6 +440,986 @@
         "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/products/globex-brand-carton/brand-boxes-closeup.jpg"
       ],
       "product_shot_urls": []
+    },
+    {
+      "slug": "turkey",
+      "name": "Turkey",
+      "aliases": [
+        "turkey",
+        "whole turkey",
+        "turkey cuts"
+      ],
+      "category": "poultry",
+      "description": "Frozen turkey — whole birds and cuts.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Part of the poultry range alongside chicken, duck and henfowl",
+        "Sourced from certified global producers"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "henfowl",
+      "name": "Henfowl",
+      "aliases": [
+        "hen",
+        "henfowl",
+        "fowl",
+        "spent hen"
+      ],
+      "category": "poultry",
+      "description": "Frozen henfowl, a staple line for stewing and soup markets.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "A value line with steady demand in specific markets",
+        "Sourced from certified global producers"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "chicken-wing",
+      "name": "Chicken Wings",
+      "aliases": [
+        "wing",
+        "wings",
+        "chicken wings"
+      ],
+      "category": "poultry",
+      "description": "Frozen chicken wings for retail and food service.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Strong food-service and retail demand",
+        "Consistent sizing pack to pack"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "chicken-paw",
+      "name": "Chicken Paws",
+      "aliases": [
+        "paw",
+        "paws",
+        "chicken feet",
+        "feet"
+      ],
+      "category": "poultry_specialty",
+      "description": "Frozen chicken paws — a specialty export line.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Specialty line with concentrated demand in Asian markets"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "never_raw_hero": true,
+        "note": "Offal/by-product line — packaged or tray presentation only.",
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "poultry-offal",
+      "name": "Poultry Offals",
+      "aliases": [
+        "poultry offal",
+        "poultry offals",
+        "liver",
+        "hearts"
+      ],
+      "category": "poultry_specialty",
+      "description": "Frozen poultry offals — livers, hearts and related by-products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Specialty cuts serving markets where offal is a staple",
+        "Cleaned, graded and frozen to the same standard as primal cuts"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "never_raw_hero": true,
+        "note": "Offal/by-product line — packaged or tray presentation only.",
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "pork-primal",
+      "name": "Pork Primal Cuts",
+      "aliases": [
+        "pork",
+        "pork cuts",
+        "primal cuts",
+        "pork primal"
+      ],
+      "category": "pork",
+      "description": "Frozen pork primal cuts.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across North America, South America and Europe"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "pork-offal",
+      "name": "Pork Offals",
+      "aliases": [
+        "pork offal",
+        "pork offals"
+      ],
+      "category": "pork",
+      "description": "Frozen pork offals.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across North America, South America and Europe"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "never_raw_hero": true,
+        "note": "Offal/by-product line — packaged or tray presentation only.",
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "pork-processed",
+      "name": "Processed Pork",
+      "aliases": [
+        "processed pork",
+        "pork processed"
+      ],
+      "category": "pork",
+      "description": "Processed pork products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from certified producers worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "beef",
+      "name": "Beef",
+      "aliases": [
+        "beef",
+        "beef cuts"
+      ],
+      "category": "meat",
+      "description": "Fresh and frozen beef products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across the Americas, Europe and Oceania"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "buffalo",
+      "name": "Buffalo",
+      "aliases": [
+        "buffalo",
+        "buffalo meat",
+        "carabeef"
+      ],
+      "category": "meat",
+      "description": "Fresh and frozen buffalo products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across the Americas, Europe and Oceania"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "veal",
+      "name": "Veal",
+      "aliases": [
+        "veal"
+      ],
+      "category": "meat",
+      "description": "Fresh and frozen veal products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across the Americas, Europe and Oceania"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "lamb",
+      "name": "Lamb",
+      "aliases": [
+        "lamb"
+      ],
+      "category": "meat",
+      "description": "Fresh and frozen lamb products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across the Americas, Europe and Oceania"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "mutton",
+      "name": "Mutton",
+      "aliases": [
+        "mutton"
+      ],
+      "category": "meat",
+      "description": "Fresh and frozen mutton products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from producers across the Americas, Europe and Oceania"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "fish-whole-round",
+      "name": "Whole-Round Fish",
+      "aliases": [
+        "whole round fish",
+        "whole fish",
+        "round fish"
+      ],
+      "category": "seafood",
+      "description": "Wild-caught and farm-raised whole-round fish, fresh and frozen.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Wild-caught and farm-raised, sourced globally"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "fish-fillet",
+      "name": "Fish Fillets",
+      "aliases": [
+        "fillet",
+        "fillets",
+        "fish fillet",
+        "fish fillets"
+      ],
+      "category": "seafood",
+      "description": "Fish fillets, fresh and frozen.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Wild-caught and farm-raised, sourced globally"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "seafood-value-added",
+      "name": "Value-Added Seafood",
+      "aliases": [
+        "value added seafood",
+        "shellfish",
+        "seafood"
+      ],
+      "category": "seafood",
+      "description": "Value-added seafood and shellfish products.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Wild-caught and farm-raised, sourced globally"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "grains-cereals",
+      "name": "Grains & Cereal Crops",
+      "aliases": [
+        "grain",
+        "grains",
+        "cereal",
+        "cereals",
+        "cereal crops"
+      ],
+      "category": "grain",
+      "description": "Grains and cereal crops from key agricultural markets.",
+      "formats": [
+        "bulk bag",
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from key agricultural markets"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "ambient",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "pulses",
+      "name": "Pulses",
+      "aliases": [
+        "pulse",
+        "pulses",
+        "lentils",
+        "chickpeas"
+      ],
+      "category": "grain",
+      "description": "Pulses from key agricultural markets.",
+      "formats": [
+        "bulk bag",
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from key agricultural markets"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "ambient",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "oil-seeds",
+      "name": "Oil Seeds",
+      "aliases": [
+        "oil seed",
+        "oil seeds",
+        "oilseed",
+        "oilseeds"
+      ],
+      "category": "grain",
+      "description": "Oil seeds from key agricultural markets.",
+      "formats": [
+        "bulk bag",
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from key agricultural markets"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "ambient",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "edible-oils",
+      "name": "Edible Oils",
+      "aliases": [
+        "oil",
+        "oils",
+        "edible oil",
+        "edible oils"
+      ],
+      "category": "grain",
+      "description": "Edible oils and derivatives.",
+      "formats": [
+        "bulk bag",
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from key agricultural markets"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "liquid": true
+      },
+      "storage": "ambient",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "feedstuff",
+      "name": "Feedstuff",
+      "aliases": [
+        "feed",
+        "feedstuff",
+        "feedstuffs",
+        "animal feed"
+      ],
+      "category": "grain",
+      "description": "Feedstuff and derivatives.",
+      "formats": [
+        "bulk bag",
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Sourced from key agricultural markets"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "ambient",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "fries-straight-cut",
+      "name": "French Fries, Straight Cut 9x9mm",
+      "aliases": [
+        "straight cut fries",
+        "9x9 fries",
+        "straight cut"
+      ],
+      "category": "vegetable",
+      "description": "Frozen French fries, straight cut 9x9 mm.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Supplied to retail, food service and restaurant chains worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "fries-shoestring",
+      "name": "French Fries, Shoestring 6x6mm",
+      "aliases": [
+        "shoestring fries",
+        "6x6 fries",
+        "shoestring"
+      ],
+      "category": "vegetable",
+      "description": "Frozen French fries, shoestring 6x6 mm.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Supplied to retail, food service and restaurant chains worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "fries-crinkle-cut",
+      "name": "French Fries, Crinkle Cut",
+      "aliases": [
+        "crinkle cut fries",
+        "crinkle cut",
+        "crinkle fries"
+      ],
+      "category": "vegetable",
+      "description": "Frozen French fries, crinkle cut.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Supplied to retail, food service and restaurant chains worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "potato-wedges",
+      "name": "Potato Wedges",
+      "aliases": [
+        "wedge",
+        "wedges",
+        "potato wedges"
+      ],
+      "category": "vegetable",
+      "description": "Frozen potato wedges.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Supplied to retail, food service and restaurant chains worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "potato-croquettes",
+      "name": "Potato Croquettes",
+      "aliases": [
+        "croquette",
+        "croquettes",
+        "potato croquettes"
+      ],
+      "category": "vegetable",
+      "description": "Frozen potato croquettes.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Supplied to retail, food service and restaurant chains worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
+    },
+    {
+      "slug": "frozen-vegetables",
+      "name": "Frozen Vegetables",
+      "aliases": [
+        "vegetable",
+        "vegetables",
+        "frozen vegetables",
+        "veg"
+      ],
+      "category": "vegetable",
+      "description": "Frozen vegetables for retail and food service.",
+      "formats": [
+        "bulk carton"
+      ],
+      "pack_shot_files": [],
+      "product_shot_files": [],
+      "asset_note": "NO PHOTOGRAPH ON FILE — added from globexusa.com 2026-08-10. Generated stills are bare product only; nothing may show Globex packaging until a real pack shot exists.",
+      "talking_points": [
+        "Supplied to retail, food service and restaurant chains worldwide"
+      ],
+      "claims_forbidden": [],
+      "visual_rules": {
+        "prefer_packaged": true,
+        "bulk": true
+      },
+      "storage": "frozen",
+      "markets": [
+        "usa",
+        "africa",
+        "latam",
+        "asia",
+        "middle_east",
+        "europe"
+      ],
+      "status": "active",
+      "source": "globexusa.com product pages, read 2026-08-10"
     }
   ]
 }

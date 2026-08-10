@@ -38,16 +38,12 @@ log = get_logger("product_assets")
 
 OUT_DIR = Path.home() / "Downloads" / "globex-product-assets"
 
-# Two models, chosen by what the shot has to protect.
-#
-# GPT Image renders loose product beautifully, but it REDRAWS packaging: asked
-# for the duck retail pack it invented "GLOBEX FREE RANGE" on one run and
-# "GLOBEX FOODS / Product of South Africa" on the next, when the real pack says
-# "PREMIUM DUCK / FROZEN WHOLE DUCK" in four languages. The client called out
-# invented packaging by name, so any shot with a label in it goes to
-# nano-banana, which holds the reference artwork instead of reinterpreting it.
-RAW_MODEL = "gpt-image-2-image-to-image"
-LABEL_MODEL = "nano-banana-2"
+# One model for everything. GPT Image was tried and REDRAWS branding: asked for
+# the duck retail pack it invented "GLOBEX FREE RANGE" on one run and "GLOBEX
+# FOODS / Product of South Africa" on the next, and given loose chicken breasts
+# it added an entire Globex retail pack that does not exist. nano-banana holds a
+# reference instead of reinterpreting it, which is the whole requirement here.
+MODEL = "nano-banana-2"
 # 4:5 was the brief, but kie currently refuses it: "generation for 4:5 and 5:4
 # aspect ratios is temporarily unavailable". 3:4 is the nearest portrait it will
 # take, and crops to 4:5 without losing the subject.
@@ -84,6 +80,12 @@ reference photograph — same colours, same layout, same lettering, same languag
 Do not redraw, restyle, re-letter, translate, simplify or invent any label,
 wordmark, logo, badge, seal or text."""
 
+_PLAIN_TRAY = """The product is presented in a plain, completely UNBRANDED food-grade tray or
+clear film — clean stainless or plain white, nothing printed on it. Do not add a
+logo, label, badge, seal, wordmark or ANY text. This is deliberately generic
+packaging, not Globex packaging: inventing Globex branding is the single worst
+thing you can do here."""
+
 _NO_PACKAGING = """There is NO packaging anywhere in this image. The product is bare. Do not add a
 bag, tray, film, box, sticker, label, badge, seal, logo or ANY printed text — not
 on the product, not on the surface, not in the background. Inventing Globex
@@ -103,8 +105,12 @@ not in the reference. Aspect ratio {ASPECT}."""
 class Shot:
     key: str
     prefers: str  # "product" (loose product) or "pack" (packaging) reference
-    packaged: bool  # True when the product must appear sealed/packaged
+    presentation: str  # "bare" | "packed" (real Globex pack) | "tray" (unbranded)
     body: str
+
+    @property
+    def packaged(self) -> bool:
+        return self.presentation != "bare"
 
 
 # The two looks the client already approved, plus the cold-store establisher.
@@ -114,7 +120,7 @@ SHOTS: list[Shot] = [
     Shot(
         key="hero",
         prefers="product",
-        packaged=False,
+        presentation="bare",
         body=(
             "Using the attached image as the exact reference for the product's shape, "
             "colour, texture and proportions, create a premium commercial food "
@@ -131,7 +137,7 @@ SHOTS: list[Shot] = [
     Shot(
         key="hero-packed",
         prefers="pack",
-        packaged=True,
+        presentation="packed",
         body=(
             "Using the attached image as the exact reference for the packaging, its "
             "label artwork and its proportions, create a premium commercial product "
@@ -149,7 +155,7 @@ SHOTS: list[Shot] = [
     Shot(
         key="qc-hands",
         prefers="product",
-        packaged=False,
+        presentation="bare",
         body=(
             "Using the attached image as the exact reference for the product, create a "
             "premium commercial photograph of a food-quality inspector's blue-gloved "
@@ -166,7 +172,7 @@ SHOTS: list[Shot] = [
     Shot(
         key="qc-hands-packed",
         prefers="pack",
-        packaged=True,
+        presentation="packed",
         body=(
             "Using the attached image as the exact reference for the packaging and its "
             "label artwork, create a premium commercial photograph of a food-quality "
@@ -182,7 +188,7 @@ SHOTS: list[Shot] = [
     Shot(
         key="cold-store",
         prefers="pack",
-        packaged=True,
+        presentation="packed",
         body=(
             "Using the attached image as the exact reference for the carton and its "
             "printed artwork, create a premium commercial photograph of those cartons "
@@ -194,40 +200,77 @@ SHOTS: list[Shot] = [
             "substantial. Industrial but premium — the cold chain, handled well."
         ),
     ),
+    Shot(
+        key="hero-tray",
+        prefers="product",
+        presentation="tray",
+        body=(
+            "Create a premium commercial food photograph of this product presented in a "
+            "plain unbranded food-grade tray under clear film, as a high-end advertising "
+            "hero shot. The tray rests on a clean brushed-stainless surface against a "
+            f"smooth, seamless deep-blue gradient background ({NAVY} navy falling away "
+            f"to a lighter {CYAN} glow). Cinematic studio lighting, soft key from the "
+            "upper left, crisp rim light. Clean, orderly and appetizing, handled with "
+            "care. The air is completely clear. Shallow depth of field, 85mm lens look, "
+            "slight three-quarter front angle."
+        ),
+    ),
+    Shot(
+        key="qc-hands-tray",
+        prefers="product",
+        presentation="tray",
+        body=(
+            "Create a premium commercial photograph of a food-quality inspector's "
+            "blue-gloved hands holding a plain unbranded food-grade tray of this product "
+            "and presenting it to camera. Setting: a spotless modern food-processing "
+            "facility, softly blurred stainless steel and cool blue tones behind "
+            f"(bokeh). The nitrile gloves are clean Globex blue ({CYAN}). Soft, "
+            "flattering commercial lighting that conveys care, hygiene and Quality "
+            "Control. Shallow depth of field, 50mm lens, eye level, hands and product "
+            "in sharp focus."
+        ),
+    ),
 ]
 
 SHOTS_BY_KEY = {s.key: s for s in SHOTS}
 
-# Every product gets three shots: a hero, a pair of hands, and an establisher.
-# Which variant depends on whether the product may be shown unpackaged.
-RAW_SET = ["hero", "qc-hands", "cold-store"]
 PACKED_SET = ["hero-packed", "qc-hands-packed", "cold-store"]
+TRAY_SET = ["hero-tray", "qc-hands-tray"]
+BARE_SET = ["hero", "qc-hands"]
 
 
 def shots_for(product: library.Product) -> list[Shot]:
-    """The three shots this product may legitimately have.
+    """The shots this product may legitimately have, given what we photograph of it.
 
-    A product the client will not allow unpackaged gets the packaged variant of
-    the same look rather than being skipped — the library still ends up complete.
+    Three cases, and which one applies is decided by the assets on file rather
+    than by taste:
+
+    * we hold its real packaging  -> show the pack, held to the reference;
+    * we do not, and the client will not have it shown bare (offal, paws, whole
+      carcasses) -> a plain UNBRANDED tray, because the alternative is either a
+      rejected carcass shot or invented Globex packaging;
+    * otherwise -> bare product, which has no branding to get wrong.
+
+    The cold-store establisher is only offered to lines with their own carton.
+    Everything else would render the same generic Globex box over and over, and
+    that image already exists under globex-brand-carton.
     """
     rules = product.visual_rules or {}
-    packed = (
-        bool(rules.get("never_raw_hero"))  # Len rejected graphic carcass imagery
-        or bool(rules.get("packaging_required"))  # duck must be in its real livery
-        or product.category == "packaging"  # the carton IS the product
-        or not product.product_shot_files  # nothing loose to photograph
-    )
-    return [SHOTS_BY_KEY[k] for k in (PACKED_SET if packed else RAW_SET)]
+    never_bare = bool(rules.get("never_raw_hero") or rules.get("packaging_required"))
+    has_pack = bool(product.pack_shot_files)
+    has_loose = bool(product.product_shot_files)
+
+    if has_pack and (never_bare or not has_loose):
+        return [SHOTS_BY_KEY[k] for k in PACKED_SET]
+    if never_bare:
+        return [SHOTS_BY_KEY[k] for k in TRAY_SET]
+    keys = [*BARE_SET, "cold-store"] if has_pack else list(BARE_SET)
+    return [SHOTS_BY_KEY[k] for k in keys]
 
 
 def model_for(shot: Shot) -> str:
-    """Which generator this shot needs.
-
-    Anything with Globex packaging in frame must hold its label artwork, so it
-    goes to the reference-preserving model; loose product has no label to
-    protect and renders better on GPT Image.
-    """
-    return LABEL_MODEL if shot.packaged else RAW_MODEL
+    """Which generator this shot needs. One model, kept as a seam for the next one."""
+    return MODEL
 
 
 def reference_for(product: library.Product, shot: Shot) -> str | None:
@@ -256,14 +299,30 @@ def build_prompt(product: library.Product, shot: Shot) -> str:
     invented branding on one side, unpackaged carcass on the other.
     """
     subject = f"The product is {product.name}: {product.description}"
-    if shot.packaged:
+    rules = product.visual_rules or {}
+    if rules.get("bulk"):
+        # Sold by the carton, not the piece. Without this the model renders ONE
+        # unit at hero scale — a single chickpea a foot tall, one lonely fry.
+        subject += (
+            " Show a GENEROUS PORTION of many pieces together — a full heap, pile or "
+            "scoop that fills the frame naturally. Never a single piece."
+        )
+    if rules.get("liquid"):
+        subject += (
+            " Show it in a plain UNBRANDED clear glass bottle and decanter, nothing "
+            "printed on them, with the oil's own colour doing the work."
+        )
+    if shot.presentation == "packed":
         subject += (
             " It must appear sealed in its real packaging exactly as photographed — "
             "never loose, never in invented packaging."
         )
         rule = _PACKAGING_FIDELITY
+    elif shot.presentation == "tray":
+        subject += " It is shown in plain unbranded packaging."
+        rule = _PLAIN_TRAY
     else:
-        subject += " It is shown bare, exactly as in the reference photograph."
+        subject += " It is shown bare."
         rule = _NO_PACKAGING
     return "\n\n".join([_STYLE, subject, shot.body, rule, _TECH])
 
@@ -287,19 +346,28 @@ async def one(
     if existing and not force:
         return label, True, "skipped (already there)"
 
+    # Most products are composited from a photograph we hold. The lines added
+    # from the website have none, so those are generated from the description —
+    # which is only safe because their shots carry no Globex branding to get
+    # wrong. Never do this for a shot that shows packaging.
     reference = reference_for(product, shot)
-    if reference is None:
-        return label, False, "no reference photograph on file"
-
     chosen = model or model_for(shot)
+    prompt = build_prompt(product, shot)
     async with sem:
-        result = await image_gen.edit_multi(
-            [reference],
-            build_prompt(product, shot),
-            aspect_ratio=ASPECT,
-            model=chosen,
-            resolution=RESOLUTION,
-        )
+        if reference:
+            result = await image_gen.edit_multi(
+                [reference],
+                prompt,
+                aspect_ratio=ASPECT,
+                model=chosen,
+                resolution=RESOLUTION,
+            )
+        elif shot.presentation == "packed":
+            return label, False, "shows packaging but no pack shot on file"
+        else:
+            result = await image_gen.generate(
+                prompt, aspect_ratio=ASPECT, model=chosen, resolution=RESOLUTION
+            )
     if not result.ok or not result.image_bytes:
         return label, False, result.error or "no image returned"
 
