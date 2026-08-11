@@ -22,9 +22,17 @@ BUCKET = "post-images"
 _UPLOAD_RETRIES = 3
 
 
-def _upload_sync(path: str, data: bytes, content_type: str = "image/png") -> str:
+def _upload_sync(
+    path: str, data: bytes, content_type: str = "image/png", *, cache_seconds: int = 3600
+) -> str:
     """Upload with retries — a dropped connection mid-transfer is common for
-    multi-megabyte video and should not lose an expensive generated asset."""
+    multi-megabyte video and should not lose an expensive generated asset.
+
+    ``cache_seconds`` is the CDN cache the object is served with. Media that
+    never changes keeps the default; anything overwritten in place and read
+    back (the learned-rules store) must use 0, or every update is invisible
+    behind the CDN for up to an hour.
+    """
     sb = get_supabase()
     last: Exception | None = None
     for attempt in range(_UPLOAD_RETRIES):
@@ -32,7 +40,11 @@ def _upload_sync(path: str, data: bytes, content_type: str = "image/png") -> str
             sb.storage.from_(BUCKET).upload(
                 path,
                 data,
-                {"content-type": content_type, "cache-control": "3600", "upsert": "true"},
+                {
+                    "content-type": content_type,
+                    "cache-control": str(cache_seconds),
+                    "upsert": "true",
+                },
             )
             return str(sb.storage.from_(BUCKET).get_public_url(path))
         except Exception as exc:  # noqa: BLE001 — retried below, re-raised if terminal
@@ -75,14 +87,30 @@ def public_url(path: str) -> str:
     return str(get_supabase().storage.from_(BUCKET).get_public_url(path))
 
 
-def upload_bytes(path: str, data: bytes, content_type: str) -> str:
+def upload_bytes(path: str, data: bytes, content_type: str, *, cache_seconds: int = 3600) -> str:
     """Host arbitrary bytes at `path`; return the public URL. Overwrites."""
-    return _upload_sync(path, data, content_type)
+    return _upload_sync(path, data, content_type, cache_seconds=cache_seconds)
 
 
-def read_bytes(path: str) -> bytes | None:
-    """The object at `path`, or None if it does not exist (or cannot be read)."""
+def read_bytes(path: str, *, fresh: bool = False) -> bytes | None:
+    """The object at `path`, or None if it does not exist (or cannot be read).
+
+    ``fresh=True`` bypasses the CDN with a cache-busting public GET — required
+    for any object that is overwritten in place and read back (the learned-rules
+    store), where the plain read served an hour-stale version and a
+    read-modify-write on that stale base would silently drop new entries.
+    """
     try:
+        if fresh:
+            from uuid import uuid4
+
+            import httpx
+
+            url = f"{public_url(path)}?fresh={uuid4().hex[:8]}"
+            resp = httpx.get(url, timeout=30.0)
+            if resp.status_code == 200:
+                return resp.content
+            return None
         return bytes(get_supabase().storage.from_(BUCKET).download(path))
     except Exception:  # noqa: BLE001 — absence and failure both mean "no data"
         return None

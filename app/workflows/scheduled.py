@@ -27,8 +27,9 @@ from app.db import calendar_source, posts
 from app.db.calendar_source import EVENT_TYPE, CalendarEntry
 from app.logging_config import get_logger
 from app.messaging import twilio_client
-from app.publishing import publisher
+from app.publishing import calendar_sheet, publisher
 from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES
+from app.video import library
 from app.workflows import messages
 
 log = get_logger("app.workflows.scheduled")
@@ -141,6 +142,25 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
     # The calendar's template column is authoritative — never the model's choice.
     generated.template_variant = CALENDAR_TEMPLATE_ALIASES.get(entry.template, entry.template)
 
+    # The sheet's "Exact Caption" column outranks the model: anything the client
+    # wrote there IS the caption, posted verbatim. Hashtags are cleared so the
+    # publish-time join cannot append anything to their words.
+    sheet_note = ""
+    sheet_caption = await calendar_sheet.exact_caption(entry.title)
+    caption_locked = sheet_caption is not None
+    if sheet_caption is not None:
+        generated.caption = sheet_caption
+        generated.hashtags = []
+        sheet_note = "📋 Caption supplied in the calendar sheet — posting it exactly as written.\n"
+        struck = library.banned_terms_in(sheet_caption)
+        if struck:
+            # Verbatim means verbatim, but the approver decides with eyes open.
+            sheet_note += (
+                f"⚠️ It contains {', '.join(repr(t) for t in struck)} — on the struck "
+                "list, but posting as instructed if you approve.\n"
+            )
+        sheet_note += "\n"
+
     photo = pick_photo(entry)
     if publish_today:
         prefix = (
@@ -152,6 +172,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
             f"🗓 Scheduled post — goes out {when.strftime('%a %d %b')} once you approve\n"
             f"({entry.title})\n\n"
         )
+    prefix += sheet_note
     if photo.name.startswith("placeholder"):
         prefix += "📷 Placeholder image — reply with the employee's photo to swap it in.\n\n"
     await _finalize_preview(
@@ -164,6 +185,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         event=(EVENT_TYPE, entry.event_id),
         extra_render_meta={
             "publish_on": when.isoformat(),
+            "caption_locked": caption_locked,
             "calendar": {
                 "week": entry.week,
                 "title": entry.title,

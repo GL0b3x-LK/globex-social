@@ -84,7 +84,7 @@ For standing and unsure, restate the preference as ONE durable imperative senten
 
 def load_rules() -> list[Rule]:
     """Every learned rule, oldest first. Missing or unreadable store = no rules."""
-    raw = storage.read_bytes(RULES_PATH)
+    raw = storage.read_bytes(RULES_PATH, fresh=True)
     if not raw:
         return []
     try:
@@ -99,7 +99,10 @@ def _write(rules: list[Rule]) -> None:
     payload = json.dumps(
         {"rules": [r.model_dump() for r in rules]}, indent=2, ensure_ascii=False
     ).encode("utf-8")
-    storage.upload_bytes(RULES_PATH, payload, "application/json")
+    # cache_seconds=0: this object is overwritten in place and read straight
+    # back — any CDN cache here makes saves invisible and, worse, lets the next
+    # read-modify-write drop them.
+    storage.upload_bytes(RULES_PATH, payload, "application/json", cache_seconds=0)
 
 
 def _normalize(text: str) -> str:

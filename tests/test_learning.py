@@ -22,10 +22,10 @@ def store(monkeypatch) -> dict[str, bytes]:
     """An in-memory stand-in for the Supabase Storage object."""
     blobs: dict[str, bytes] = {}
 
-    def fake_read(path: str) -> bytes | None:
+    def fake_read(path: str, **_kw) -> bytes | None:
         return blobs.get(path)
 
-    def fake_upload(path: str, data: bytes, content_type: str) -> str:
+    def fake_upload(path: str, data: bytes, content_type: str, **_kw) -> str:
         blobs[path] = data
         return f"https://cdn.test/{path}"
 

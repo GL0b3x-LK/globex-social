@@ -92,6 +92,13 @@ class Settings(BaseSettings):
     draft_hour: int = 7  # local hour (timezone above) the daily draft job runs
     publish_hour: int = 9  # local hour an approved post goes live on its date
 
+    # --- Calendar sheet bridge (Apps Script web app on the client's Sheet) ---
+    # Both set = the "Exact Caption" column becomes live: client-authored
+    # captions post verbatim, and published captions are written back.
+    # Unset = the calendar behaves exactly as before.
+    sheet_webapp_url: str | None = None
+    sheet_webapp_secret: str | None = None
+
     # --- Internal test run ---
     # Walks the approved calendar in order, dropping one post every
     # `test_interval_hours` instead of on its real date, so the team can see the

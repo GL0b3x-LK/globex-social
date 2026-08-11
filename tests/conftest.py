@@ -22,7 +22,7 @@ def _no_learned_rules_over_the_network(monkeypatch):
     per-test, and their later patch wins."""
     from app.db import storage
 
-    monkeypatch.setattr(storage, "read_bytes", lambda path: None)
+    monkeypatch.setattr(storage, "read_bytes", lambda path, **kw: None)
     yield
 
 
