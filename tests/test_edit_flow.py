@@ -276,3 +276,51 @@ async def test_a_failed_photo_edit_leaves_the_post_reviewable(
 
     assert wired.render_kwargs == {}  # nothing re-rendered
     assert len(texts) == 2  # "regenerating…" then the failure notice
+
+
+# --------------------------------------------------------------------------- #
+# a message that cannot be delivered must not cancel the work
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_a_failed_status_message_does_not_abandon_the_edit(
+    wired: _Captures, monkeypatch
+) -> None:
+    """The real incident: WhatsApp hit its daily cap, the "Updating the image…"
+    line raised, and the edit it was announcing never ran. That line goes out
+    before the work starts, so its delivery must not be load-bearing."""
+    from app.ai.image_gen import ImageResult
+
+    seen: dict[str, str] = {}
+
+    async def classify_visual(feedback):
+        return "visual"
+
+    async def fake_img_edit(url, feedback, **kw):
+        seen["feedback"] = feedback
+        return ImageResult(ok=True, image_bytes=b"new-png")
+
+    async def dead_line(*_a, **_kw):
+        raise RuntimeError("HTTP 429 error: exceeded the 50 daily messages limit")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", fake_img_edit)
+    monkeypatch.setattr(approval.twilio_client, "send_text", dead_line)
+    monkeypatch.setattr(approval.twilio_client, "send_media", dead_line)
+    monkeypatch.setattr(
+        approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
+    )
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request("whatsapp:+1", convo, "make the photo lighter")
+
+    # The picture was regenerated and stored even though nothing could be sent —
+    # so it is waiting to be re-sent, not lost.
+    assert seen["feedback"] == "make the photo lighter"
+    assert wired.render_kwargs.get("photo_bytes") == b"new-png"
+    assert wired.saved_meta is not None
+    assert wired.saved_meta["publish_on"] == "2026-08-11"  # identity still intact

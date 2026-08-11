@@ -56,3 +56,30 @@ async def send_media(to: str, body: str, media_url: str, *, post_id: str | None 
         to, body=body, twilio_sid=sid, kind="preview", post_id=post_id, media_url=media_url
     )
     return sid
+
+
+async def try_send_text(to: str, body: str, *, post_id: str | None = None) -> str | None:
+    """Send, but never let a failed message abort the work that produced it.
+
+    A courtesy line ("Updating the image… one sec") raising took an edit down
+    with it: the acknowledgement is sent before the work starts, so an undelivered
+    *status* message meant the requested change never happened at all. Delivery
+    and work are separate concerns — the work finishes and is stored either way,
+    and an undelivered preview can be re-sent from storage afterwards.
+    """
+    try:
+        return await send_text(to, body, post_id=post_id)
+    except Exception as exc:  # noqa: BLE001 — delivery is not the caller's job
+        log.error("text delivery failed", extra={"to": to, "error": str(exc)[:200]})
+        return None
+
+
+async def try_send_media(
+    to: str, body: str, media_url: str, *, post_id: str | None = None
+) -> str | None:
+    """``send_media`` that reports failure instead of raising. See ``try_send_text``."""
+    try:
+        return await send_media(to, body, media_url, post_id=post_id)
+    except Exception as exc:  # noqa: BLE001 — delivery is not the caller's job
+        log.error("media delivery failed", extra={"to": to, "error": str(exc)[:200]})
+        return None
