@@ -123,6 +123,15 @@ async def handle_edit_request(
         return
 
     await conversation.transition(phone, state=ConversationState.EDITING)
+
+    # A post that carries a photograph can take PICTURE feedback too: the photo
+    # is transformed by the image model (nano-banana img2img), the words stay.
+    stored_meta = ((await asyncio.to_thread(posts.get, post_id)) or {}).get("render_meta") or {}
+    photo_url = str(context.get("photo_url") or stored_meta.get("photo_url") or "")
+    if photo_url and await editor.classify_edit_kind(feedback) == "visual":
+        await _edit_post_photo(phone, post_id, current, feedback, photo_url)
+        return
+
     revised = await editor.apply_edit(
         current, feedback, context={"request": context.get("request")}
     )
@@ -136,9 +145,8 @@ async def handle_edit_request(
     )
     await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
 
-    # Re-render WITH the photograph the draft was built on — an edit changes the
-    # words, never the picture.
-    stored_meta = ((await asyncio.to_thread(posts.get, post_id)) or {}).get("render_meta") or {}
+    # Re-render WITH the photograph the draft was built on — a copy edit changes
+    # the words, never the picture.
     photo_bytes, photo_media_type = await _stored_photo(context, stored_meta)
     image_url = await render_pipeline.render_and_store(
         post_id, revised, photo_bytes=photo_bytes, photo_media_type=photo_media_type
@@ -154,6 +162,47 @@ async def handle_edit_request(
         phone, messages.preview_caption(revised), image_url, post_id=post_id
     )
     log.info("edit applied", extra={"post_id": post_id, "with_photo": photo_bytes is not None})
+
+
+async def _edit_post_photo(
+    phone: str, post_id: str, current: GeneratedPost, feedback: str, photo_url: str
+) -> None:
+    """Transform a photo post's picture with the image model; the copy is untouched.
+
+    The result becomes the post's stored photograph under a NEW name — the old
+    object stays put, because overwriting a public URL fights CDN caching and
+    destroys the ability to walk an edit back.
+    """
+    from uuid import uuid4
+
+    await twilio_client.send_text(phone, messages.REGENERATING_IMAGE)
+    result = await image_gen.edit(photo_url, feedback, aspect_ratio="3:4")
+    if not result.ok or not result.image_bytes:
+        await twilio_client.send_text(phone, messages.IMAGE_EDIT_FAILED)
+        await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
+        return
+
+    new_url = await asyncio.to_thread(
+        storage.upload_bytes,
+        f"{post_id}-photo-{uuid4().hex[:6]}.png",
+        result.image_bytes,
+        "image/png",
+    )
+    await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
+    image_url = await render_pipeline.render_and_store(
+        post_id, current, photo_bytes=result.image_bytes, photo_media_type="image/png"
+    )
+    await asyncio.to_thread(posts.set_image_url, post_id, image_url)
+    await _merge_render_meta(post_id, photo_url=new_url, photo_media_type="image/png")
+    await conversation.transition(
+        phone,
+        state=ConversationState.AWAITING_APPROVAL,
+        context_patch={"photo_url": new_url, "photo_media_type": "image/png"},
+    )
+    await twilio_client.send_media(
+        phone, messages.preview_caption(current), image_url, post_id=post_id
+    )
+    log.info("photo edit applied", extra={"post_id": post_id})
 
 
 async def _edit_generated_image(

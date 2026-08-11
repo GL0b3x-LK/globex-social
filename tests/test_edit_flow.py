@@ -115,6 +115,9 @@ def wired(monkeypatch) -> _Captures:
     async def fake_apply_edit(current, feedback, **_kw):
         return _post(caption="EDITED CAPTION")
 
+    async def fake_classify(feedback):
+        return "textual"
+
     async def fake_render(post_id, post, **kw):
         cap.render_kwargs = kw
         return "https://cdn.test/p1.png"
@@ -130,6 +133,7 @@ def wired(monkeypatch) -> _Captures:
         return {}
 
     monkeypatch.setattr(approval.editor, "apply_edit", fake_apply_edit)
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", fake_classify)
     monkeypatch.setattr(approval.render_pipeline, "render_and_store", fake_render)
     monkeypatch.setattr(approval.image_gen, "download", fake_download)
     monkeypatch.setattr(approval.twilio_client, "send_media", fake_send_media)
@@ -198,3 +202,77 @@ async def test_a_lost_photo_degrades_to_a_render_not_a_crash(wired: _Captures, m
     await approval.handle_edit_request("whatsapp:+1", convo, "tighten the caption")
     assert wired.render_kwargs.get("photo_bytes") is None  # rendered anyway
     assert wired.sent  # and the operator still got a preview
+
+
+@pytest.mark.asyncio
+async def test_picture_feedback_on_a_photo_post_goes_to_the_image_model(
+    wired: _Captures, monkeypatch
+) -> None:
+    """'Images via nano-banana': a visual instruction transforms the stored photo
+    (img2img) and re-renders — the copy is not regenerated at all."""
+    from app.ai.image_gen import ImageResult
+
+    async def classify_visual(feedback):
+        return "visual"
+
+    async def fake_img_edit(url, feedback, **kw):
+        assert url == "https://cdn.test/p1-photo.jpg"
+        return ImageResult(ok=True, image_bytes=b"new-png")
+
+    async def fail_apply_edit(*a, **kw):  # the copy editor must NOT run
+        raise AssertionError("visual edit must not rewrite the copy")
+
+    async def fake_send_text(phone, body, **kw):
+        return "SM0"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.editor, "apply_edit", fail_apply_edit)
+    monkeypatch.setattr(approval.image_gen, "edit", fake_img_edit)
+    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+    monkeypatch.setattr(
+        approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
+    )
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request("whatsapp:+1", convo, "use a cold store photo instead")
+
+    assert wired.render_kwargs.get("photo_bytes") == b"new-png"
+    assert wired.saved_meta is not None
+    assert wired.saved_meta["photo_url"].startswith("https://cdn.test/p1-photo-")
+    assert wired.saved_meta["publish_on"] == "2026-08-11"  # identity still intact
+    assert wired.sent and wired.sent[0]["post_id"] == "p1"
+
+
+@pytest.mark.asyncio
+async def test_a_failed_photo_edit_leaves_the_post_reviewable(
+    wired: _Captures, monkeypatch
+) -> None:
+    from app.ai.image_gen import ImageResult
+
+    async def classify_visual(feedback):
+        return "visual"
+
+    async def failing_img_edit(url, feedback, **kw):
+        return ImageResult(ok=False, error="filter refused")
+
+    texts: list[str] = []
+
+    async def fake_send_text(phone, body, **kw):
+        texts.append(body)
+        return "SM0"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", failing_img_edit)
+    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request("whatsapp:+1", convo, "make the photo a sunset")
+
+    assert wired.render_kwargs == {}  # nothing re-rendered
+    assert len(texts) == 2  # "regenerating…" then the failure notice
