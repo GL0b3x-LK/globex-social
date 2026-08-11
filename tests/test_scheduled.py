@@ -402,3 +402,37 @@ def test_a_failed_render_releases_the_calendar_entry(monkeypatch) -> None:
         asyncio.run(on_demand._finalize_preview("whatsapp:+1", "brief", generated))
 
     assert deleted == ["p1"]
+
+
+# --------------------------------------------------------------------------- #
+# the test-run interval must survive a restart
+# --------------------------------------------------------------------------- #
+
+
+def test_the_test_grid_is_anchored_not_relative_to_boot() -> None:
+    """A redeploy must not push the next post a whole interval into the future.
+
+    This is the bug that silently swallowed two internal-test slots: an
+    unanchored IntervalTrigger restarts its clock on every process start, so a
+    day of deploys can skip posts with nothing in the logs. The anchored trigger
+    lands on the same wall-clock grid no matter when the process booted.
+    """
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    from app.scheduler.automation import _test_grid
+
+    tz = ZoneInfo("America/New_York")
+    trigger = _test_grid(2.0, "America/New_York")
+
+    # Booting at 08:26 must schedule 10:00 — not 10:26.
+    booted = datetime(2026, 8, 11, 8, 26, tzinfo=tz)
+    first = trigger.get_next_fire_time(None, booted)
+    assert (first.hour, first.minute) == (10, 0)
+
+    # And a boot ten minutes later lands on exactly the same slot.
+    later = trigger.get_next_fire_time(None, booted + timedelta(minutes=10))
+    assert later == first
+
+    # Slots stay on even hours as the run continues.
+    assert trigger.get_next_fire_time(first, first) == first + timedelta(hours=2)

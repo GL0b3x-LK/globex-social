@@ -16,6 +16,29 @@ from app.db.client import ping
 
 
 @pytest.fixture(autouse=True)
+def _no_real_whatsapp_sends(monkeypatch):
+    """No test may reach api.twilio.com.
+
+    Workflow tests stub the sends they assert on, but any *other* send on the
+    path — the learning layer's follow-up question, a status line — ran for
+    real: billed messages to the placeholder number tests use, which Twilio
+    rejected as invalid (error 21211). Patching the two synchronous SDK calls
+    closes every route out, including ones a future test forgets, while leaving
+    ``send_text``/``send_media`` themselves real so their logging and history
+    recording still get exercised.
+    """
+    from app.messaging import history, twilio_client
+
+    async def _no_history(*_a, **_kw):
+        return None
+
+    monkeypatch.setattr(twilio_client, "_send_text_sync", lambda to, body: "SMtest")
+    monkeypatch.setattr(twilio_client, "_send_media_sync", lambda to, body, media_url: "MMtest")
+    monkeypatch.setattr(history, "record_outbound", _no_history)
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _no_learned_rules_over_the_network(monkeypatch):
     """Generation now reads the learned-rules store; unit tests must not reach
     Supabase for it. Tests OF the store (test_learning) re-patch these

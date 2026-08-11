@@ -11,6 +11,9 @@ Gated by settings.scheduler_enabled so dev servers and tests never fire drafts.
 
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -22,6 +25,20 @@ from app.workflows import scheduled
 log = get_logger("app.scheduler")
 
 _scheduler: AsyncIOScheduler | None = None
+
+
+def _test_grid(interval_hours: float, tz_name: str) -> IntervalTrigger:
+    """The test-run interval, anchored to local midnight.
+
+    An unanchored IntervalTrigger counts from the moment the scheduler starts, so
+    every deploy pushed the next test post a full interval into the future — a
+    day with three deploys silently skipped slots, and nothing in the logs said
+    so. Anchoring to midnight fixes the grid (…, 08:00, 10:00, 12:00, …), so a
+    restart resumes the schedule instead of restarting it.
+    """
+    tz = ZoneInfo(tz_name)
+    midnight = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+    return IntervalTrigger(hours=interval_hours, start_date=midnight, timezone=tz_name)
 
 
 async def _draft_job() -> None:
@@ -62,9 +79,10 @@ def start() -> AsyncIOScheduler | None:
         # The internal run replaces the calendar jobs rather than joining them:
         # test posts already carry today's date, so the daily publish sweep would
         # have nothing to do, and the daily draft would post on real dates too.
+        trigger = _test_grid(settings.test_interval_hours, settings.timezone)
         sched.add_job(
             _test_job,
-            IntervalTrigger(hours=settings.test_interval_hours, timezone=settings.timezone),
+            trigger,
             id="calendar_test",
             coalesce=True,
             max_instances=1,  # a slow draft must not overlap the next interval
@@ -78,6 +96,10 @@ def start() -> AsyncIOScheduler | None:
                 "every_hours": settings.test_interval_hours,
                 "recipients": len(settings.approval_recipients_list),
                 "tz": settings.timezone,
+                # Logged so a deploy always says, on the spot, when the next post
+                # is due — the failure it replaces was invisible until someone
+                # noticed a post had not arrived.
+                "next_post": str(sched.get_job("calendar_test").next_run_time),
             },
         )
         return sched
