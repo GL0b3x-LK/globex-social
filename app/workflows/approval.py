@@ -24,20 +24,40 @@ log = get_logger("app.workflows.approval")
 Row = dict[str, Any]
 
 
-def _render_meta(
-    generated: GeneratedPost,
-    *,
-    treatment: str,
-    image_prompt: str | None = None,
-    raw_image_url: str | None = None,
-) -> dict[str, Any]:
-    """Keep posts.render_meta in sync after an edit, so a re-opened post stays editable."""
-    meta: dict[str, Any] = {"generated": generated.model_dump(), "treatment": treatment}
-    if image_prompt:
-        meta["image_prompt"] = image_prompt
-    if raw_image_url:
-        meta["raw_image_url"] = raw_image_url
+async def _merge_render_meta(post_id: str, **changes: Any) -> dict[str, Any]:
+    """Update render_meta by MERGING into what is already stored.
+
+    Replacing it wholesale is how an edit silently destroyed a post's identity:
+    a scheduled post's ``publish_on`` and ``calendar`` block vanished on the
+    first edit, turning a calendar post into an on-demand one and — in
+    production — making approval publish it immediately instead of holding for
+    its date. Everything not being changed right now is kept.
+    """
+    post = await asyncio.to_thread(posts.get, post_id)
+    meta = dict((post or {}).get("render_meta") or {})
+    meta.update({k: v for k, v in changes.items() if v is not None})
+    await asyncio.to_thread(posts.set_render_meta, post_id, meta)
     return meta
+
+
+async def _stored_photo(context: Row, meta: dict[str, Any]) -> tuple[bytes | None, str]:
+    """The photograph this post was rendered with, refetched for a re-render.
+
+    Draft time uploads it next to the post (``photo_url``); without it every
+    edit re-rendered the template with no photo — the operator watched their
+    duck-carton post turn into a flat navy graphic.
+    """
+    url = str(context.get("photo_url") or meta.get("photo_url") or "")
+    media_type = str(
+        context.get("photo_media_type") or meta.get("photo_media_type") or "image/jpeg"
+    )
+    if not url:
+        return None, media_type
+    try:
+        return await image_gen.download(url), media_type
+    except Exception as exc:  # noqa: BLE001 — a lost photo must not block the edit
+        log.error("could not refetch stored photo", extra={"url": url, "error": str(exc)[:120]})
+        return None, media_type
 
 
 async def handle_approval(
@@ -115,23 +135,25 @@ async def handle_edit_request(
         template_type=revised.template_variant,
     )
     await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
-    # NOTE: for a user-attached photo this re-render does not re-apply it (not persisted);
-    # copy/layout edits are the common case. Generated-image posts DO keep their image
-    # (handled in _edit_generated_image).
-    image_url = await render_pipeline.render_and_store(post_id, revised)
-    await asyncio.to_thread(posts.set_image_url, post_id, image_url)
-    await asyncio.to_thread(
-        posts.set_render_meta,
-        post_id,
-        _render_meta(revised, treatment=context.get("treatment") or "typographic"),
+
+    # Re-render WITH the photograph the draft was built on — an edit changes the
+    # words, never the picture.
+    stored_meta = ((await asyncio.to_thread(posts.get, post_id)) or {}).get("render_meta") or {}
+    photo_bytes, photo_media_type = await _stored_photo(context, stored_meta)
+    image_url = await render_pipeline.render_and_store(
+        post_id, revised, photo_bytes=photo_bytes, photo_media_type=photo_media_type
     )
+    await asyncio.to_thread(posts.set_image_url, post_id, image_url)
+    await _merge_render_meta(post_id, generated=revised.model_dump())
     await conversation.transition(
         phone,
         state=ConversationState.AWAITING_APPROVAL,
         context_patch={"generated": revised.model_dump()},
     )
-    await twilio_client.send_media(phone, messages.preview_caption(revised), image_url)
-    log.info("edit applied", extra={"post_id": post_id})
+    await twilio_client.send_media(
+        phone, messages.preview_caption(revised), image_url, post_id=post_id
+    )
+    log.info("edit applied", extra={"post_id": post_id, "with_photo": photo_bytes is not None})
 
 
 async def _edit_generated_image(
@@ -156,22 +178,15 @@ async def _edit_generated_image(
             post_id, current, photo_bytes=result.image_bytes, photo_media_type="image/png"
         )
         await asyncio.to_thread(posts.set_image_url, post_id, image_url)
-        await asyncio.to_thread(
-            posts.set_render_meta,
-            post_id,
-            _render_meta(
-                current,
-                treatment="generated_image",
-                image_prompt=context.get("image_prompt"),
-                raw_image_url=new_raw_url,
-            ),
-        )
+        await _merge_render_meta(post_id, generated=current.model_dump(), raw_image_url=new_raw_url)
         await conversation.transition(
             phone,
             state=ConversationState.AWAITING_APPROVAL,
             context_patch={"raw_image_url": new_raw_url},
         )
-        await twilio_client.send_media(phone, messages.preview_caption(current), image_url)
+        await twilio_client.send_media(
+            phone, messages.preview_caption(current), image_url, post_id=post_id
+        )
         log.info("image edit applied", extra={"post_id": post_id})
         return
 
@@ -198,22 +213,15 @@ async def _edit_generated_image(
         post_id, revised, photo_bytes=photo_bytes, photo_media_type="image/png"
     )
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
-    await asyncio.to_thread(
-        posts.set_render_meta,
-        post_id,
-        _render_meta(
-            revised,
-            treatment="generated_image",
-            image_prompt=context.get("image_prompt"),
-            raw_image_url=raw_url,
-        ),
-    )
+    await _merge_render_meta(post_id, generated=revised.model_dump())
     await conversation.transition(
         phone,
         state=ConversationState.AWAITING_APPROVAL,
         context_patch={"generated": revised.model_dump()},
     )
-    await twilio_client.send_media(phone, messages.preview_caption(revised), image_url)
+    await twilio_client.send_media(
+        phone, messages.preview_caption(revised), image_url, post_id=post_id
+    )
     log.info("text edit applied to generated-image post", extra={"post_id": post_id})
 
 
@@ -234,11 +242,7 @@ async def _edit_vhs_caption(
         template_type="vhs",
     )
     await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
-    await asyncio.to_thread(
-        posts.set_render_meta,
-        post_id,
-        {**_render_meta(revised, treatment="vhs_video"), "media_url": media_url},
-    )
+    await _merge_render_meta(post_id, generated=revised.model_dump(), media_url=media_url or None)
     await conversation.transition(
         phone,
         state=ConversationState.AWAITING_APPROVAL,

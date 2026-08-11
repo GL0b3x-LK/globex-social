@@ -232,6 +232,9 @@ async def _reopen_replied_post(from_phone: str, post_id: str) -> bool:
         context_patch["image_prompt"] = meta["image_prompt"]
     if meta.get("raw_image_url"):
         context_patch["raw_image_url"] = meta["raw_image_url"]
+    if meta.get("photo_url"):
+        context_patch["photo_url"] = meta["photo_url"]
+        context_patch["photo_media_type"] = meta.get("photo_media_type") or "image/jpeg"
     await conversation.transition(
         from_phone,
         state=ConversationState.AWAITING_APPROVAL,
@@ -538,6 +541,16 @@ async def _finalize_preview(
     if raw_image_bytes is not None:
         raw_image_url = await storage.upload_png(post_id, raw_image_bytes, suffix="-raw")
 
+    # Persist the source photograph too. Edits re-render the template, and
+    # without the original photo to re-render WITH, the first edit to any
+    # photo post silently turned it into a text-only graphic.
+    photo_url: str | None = None
+    if image_bytes is not None:
+        ext = "png" if image_media_type == "image/png" else "jpg"
+        photo_url = await asyncio.to_thread(
+            storage.upload_bytes, f"{post_id}-photo.{ext}", image_bytes, image_media_type
+        )
+
     try:
         image_url = await render_pipeline.render_and_store(
             post_id, generated, photo_bytes=image_bytes, photo_media_type=image_media_type
@@ -558,6 +571,9 @@ async def _finalize_preview(
         render_meta["image_prompt"] = image_prompt
     if raw_image_url is not None:
         render_meta["raw_image_url"] = raw_image_url
+    if photo_url is not None:
+        render_meta["photo_url"] = photo_url
+        render_meta["photo_media_type"] = image_media_type
     if extra_render_meta:
         render_meta.update(extra_render_meta)
     await asyncio.to_thread(posts.set_render_meta, post_id, render_meta)
@@ -572,6 +588,9 @@ async def _finalize_preview(
         context_patch["image_prompt"] = image_prompt
     if raw_image_url is not None:
         context_patch["raw_image_url"] = raw_image_url
+    if photo_url is not None:
+        context_patch["photo_url"] = photo_url
+        context_patch["photo_media_type"] = image_media_type
     await _apply_target(post_id, target_platforms, context_patch)
 
     caption = (
@@ -592,7 +611,9 @@ async def _finalize_preview(
                 current_post_id=post_id,
                 context_patch=context_patch,
             )
-            await twilio_client.send_media(phone, caption, image_url)
+            # post_id rides along so the transcript row links message -> post;
+            # that link is what swipe-replying to THIS preview resolves through.
+            await twilio_client.send_media(phone, caption, image_url, post_id=post_id)
             delivered += 1
         except Exception as exc:  # noqa: BLE001 — one bad number is not a failed post
             log.error(

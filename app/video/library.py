@@ -352,6 +352,11 @@ def get_product(slug_or_name: str) -> Product | None:
 # --------------------------------------------------------------------------- #
 
 
+def banned_terms(product: Product | None = None) -> list[str]:
+    """The forbidden-claims list itself, for prompts that state the rule up front."""
+    return [*global_claims_forbidden(), *(product.claims_forbidden if product else ())]
+
+
 def banned_terms_in(text: str, product: Product | None = None) -> list[str]:
     """Forbidden claims present in a script or caption.
 
