@@ -19,21 +19,25 @@
     border-radius: 70px 70px 0 0;
     z-index: 1;
   }
+  /* Right bounds keep long lines wrapping INSIDE the panel instead of at the
+     canvas edge (see ts_p2 — same fault class, caught by the client's designer). */
   .txt { position: absolute; z-index: 2; line-height: 1; }
   h1.txt {
-    left: 64px; top: 1177px;
+    left: 64px; top: 1177px; right: 64px;
     font-family: 'Comfortaa', sans-serif;
     font-weight: 700;
     font-size: 21.5px;
     letter-spacing: 6.3px;
+    line-height: 1.25;
     text-transform: uppercase;
     color: var(--white);
   }
   .subline {
-    left: 64px; top: 1215px;
+    left: 64px; top: 1215px; right: 64px;
     font-family: 'Comfortaa', sans-serif;
     font-weight: 500;
     font-size: 25px;
+    line-height: 1.35;
     color: var(--white);
   }
   .pill {

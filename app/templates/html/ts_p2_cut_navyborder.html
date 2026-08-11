@@ -17,17 +17,23 @@
     height: 7px;
     background: var(--cyan);
   }
+  /* Text blocks carry a RIGHT bound as well as a left one. Absolutely
+     positioned text with only a left offset wraps at the canvas edge — a long
+     dateline ran "…buyers ordering" flush against the right margin before
+     anyone saw it (caught by the client's designer on the duck-carton post). */
   .txt { position: absolute; line-height: 1; font-family: 'Inter', sans-serif; }
   h1.txt {
-    left: 60px; top: 1147px;
+    left: 60px; top: 1147px; right: 60px;
     font-weight: 700;
     font-size: 49px;
+    line-height: 1.12;
     color: var(--white);
   }
   .subline {
-    left: 59px; top: 1218px;
+    left: 59px; top: 1218px; right: 60px;
     font-weight: 500;
     font-size: 27px;
+    line-height: 1.35;
   }
   .subline .strong { color: var(--white); }
   .subline .soft { color: var(--w85); }
