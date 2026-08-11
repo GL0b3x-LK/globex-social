@@ -10,7 +10,7 @@ import asyncio
 from datetime import date as _date
 from typing import Any
 
-from app.ai import editor, image_gen
+from app.ai import editor, image_gen, learning
 from app.ai.generator import GeneratedPost
 from app.db import approvals, posts, storage
 from app.logging_config import get_logger
@@ -95,6 +95,41 @@ async def handle_approval(
     log.info("post approved", extra={"post_id": post_id})
 
 
+async def _maybe_learn(phone: str, feedback: str) -> None:
+    """Decide whether this correction should outlive its post.
+
+    Runs AFTER the preview is already on its way — learning must never delay or
+    break the edit itself. A standing preference is saved and announced (with an
+    undo path); an ambiguous one becomes a question whose answer is the next
+    message; a one-off is left alone.
+    """
+    try:
+        decision = await learning.consider(feedback)
+        log.info(
+            "correction classified",
+            extra={"scope": decision.scope, "reason": decision.reason[:120]},
+        )
+        if decision.scope == "standing" and decision.rule:
+            rule = await asyncio.to_thread(
+                learning.save_rule, decision.rule, source_feedback=feedback, source=phone
+            )
+            await twilio_client.send_text(
+                phone,
+                f"📌 Noted for every future post: {rule.rule}\n"
+                "Reply *forget that* if it was just for this one, "
+                "or *rules* to see everything I've learned.",
+            )
+        elif decision.scope == "unsure" and decision.rule:
+            await conversation.transition(phone, context_patch={"pending_rule": decision.rule})
+            await twilio_client.send_text(
+                phone,
+                f"Should I do this on every post from now on — “{decision.rule}”?\n"
+                "Reply *always* if so; otherwise it's just this once.",
+            )
+    except Exception as exc:  # noqa: BLE001 — learning is a bonus, never a failure mode
+        log.error("learning pass failed", extra={"error": str(exc)[:200]})
+
+
 async def handle_edit_request(
     phone: str,
     convo: Row,
@@ -162,6 +197,7 @@ async def handle_edit_request(
         phone, messages.preview_caption(revised), image_url, post_id=post_id
     )
     log.info("edit applied", extra={"post_id": post_id, "with_photo": photo_bytes is not None})
+    await _maybe_learn(phone, feedback)
 
 
 async def _edit_post_photo(
@@ -203,6 +239,7 @@ async def _edit_post_photo(
         phone, messages.preview_caption(current), image_url, post_id=post_id
     )
     log.info("photo edit applied", extra={"post_id": post_id})
+    await _maybe_learn(phone, feedback)
 
 
 async def _edit_generated_image(
@@ -237,6 +274,7 @@ async def _edit_generated_image(
             phone, messages.preview_caption(current), image_url, post_id=post_id
         )
         log.info("image edit applied", extra={"post_id": post_id})
+        await _maybe_learn(phone, feedback)
         return
 
     # Textual edit (or visual with no raw image to transform): re-apply the copy and
@@ -272,6 +310,7 @@ async def _edit_generated_image(
         phone, messages.preview_caption(revised), image_url, post_id=post_id
     )
     log.info("text edit applied to generated-image post", extra={"post_id": post_id})
+    await _maybe_learn(phone, feedback)
 
 
 async def _edit_vhs_caption(
@@ -304,6 +343,7 @@ async def _edit_vhs_caption(
     else:  # shouldn't happen — fall back to text so Karen still sees the revised copy
         await twilio_client.send_text(phone, messages.preview_caption(revised))
     log.info("vhs caption edit applied", extra={"post_id": post_id})
+    await _maybe_learn(phone, feedback)
 
 
 async def handle_cancellation(phone: str, convo: Row) -> None:

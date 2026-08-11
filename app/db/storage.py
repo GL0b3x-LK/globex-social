@@ -80,6 +80,14 @@ def upload_bytes(path: str, data: bytes, content_type: str) -> str:
     return _upload_sync(path, data, content_type)
 
 
+def read_bytes(path: str) -> bytes | None:
+    """The object at `path`, or None if it does not exist (or cannot be read)."""
+    try:
+        return bytes(get_supabase().storage.from_(BUCKET).download(path))
+    except Exception:  # noqa: BLE001 — absence and failure both mean "no data"
+        return None
+
+
 def upload_video_asset(video_id: str, name: str, data: bytes, content_type: str) -> str:
     """Host one artifact of a video under ``videos/{video_id}/{name}``.
 

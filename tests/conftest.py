@@ -15,6 +15,17 @@ from app.config import get_settings
 from app.db.client import ping
 
 
+@pytest.fixture(autouse=True)
+def _no_learned_rules_over_the_network(monkeypatch):
+    """Generation now reads the learned-rules store; unit tests must not reach
+    Supabase for it. Tests OF the store (test_learning) re-patch these
+    per-test, and their later patch wins."""
+    from app.db import storage
+
+    monkeypatch.setattr(storage, "read_bytes", lambda path: None)
+    yield
+
+
 @pytest.fixture(scope="session")
 def supabase_ready() -> bool:
     try:

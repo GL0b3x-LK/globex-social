@@ -170,7 +170,9 @@ async def generate_post(
     image_bytes: bytes | None = None,
     image_media_type: str = "image/jpeg",
 ) -> GeneratedPost:
-    system = system_for(category)
+    from app.ai import learning  # local import: avoid a cycle at module load
+
+    system = system_for(category) + await learning.rules_block_async()
     user_content = _user_content(context, user_message, image_bytes, image_media_type)
     post = await generate_structured(
         system=system,
@@ -213,9 +215,12 @@ async def generate_freeform(
     memory: str | None = None,
 ) -> GeneratedPost:
     """On-demand path: the model selects the template_variant itself, then writes the post."""
+    from app.ai import learning  # local import: avoid a cycle at module load
+
+    system = freeform_system() + await learning.rules_block_async()
     content = _with_memory(_user_content(None, request, image_bytes, image_media_type), memory)
     post = await generate_structured(
-        system=freeform_system(),
+        system=system,
         user_content=content,
         output_model=GeneratedPost,
         tool_name="emit_post",
@@ -225,7 +230,7 @@ async def generate_freeform(
     # The struck phrases apply to anything the client publishes, not just the
     # calendar — a post asked for over WhatsApp reaches the same audience.
     if terms := banned_claims(post):
-        post = await _repair_claims(post, freeform_system(), request, terms)
+        post = await _repair_claims(post, system, request, terms)
         if still := banned_claims(post):
             log.error("post still contains forbidden claims after rewrite", extra={"terms": still})
     return post

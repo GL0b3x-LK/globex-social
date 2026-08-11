@@ -7,6 +7,7 @@ take its time generating + rendering before sending the preview.
 from __future__ import annotations
 
 import asyncio
+import re
 from typing import Any
 
 from app.ai import generator, image_gen, qa, visual_planner
@@ -109,6 +110,13 @@ async def handle_incoming_message(
         await _update_summary(from_phone)
         return
 
+    # A pending "apply this to every post?" question is settled by THIS message;
+    # explicit rule commands ("rules", "forget rule 2") never reach the router.
+    if await _handle_rule_answer(from_phone, convo, body):
+        return
+    if await _handle_rule_commands(from_phone, body):
+        return
+
     memory = await ai_memory.build_context(from_phone, (convo.get("context") or {}).get("summary"))
 
     intent = await ai_intent.classify_intent(body, state.value, memory)
@@ -188,6 +196,72 @@ async def handle_incoming_message(
         await twilio_client.send_text(from_phone, messages.CLARIFY)
 
     await _update_summary(from_phone)
+
+
+_ALWAYS_PHRASES = ("always", "every post", "every time", "all posts", "bake it in", "going forward")
+_ONCE_PHRASES = ("just this once", "just once", "one time", "only this", "just this one")
+_ONCE_EXACT = ("no", "nope", "nah", "one-off")
+_FORGET_RULE = re.compile(r"^forget\s+rule\s+(\d+)$", re.IGNORECASE)
+
+
+async def _handle_rule_answer(from_phone: str, convo: dict[str, Any], body: str) -> bool:
+    """Settle a pending "apply this to every post?" question.
+
+    Only an explicit answer consumes the message — anything else clears the
+    question and flows on as normal, so an ignored question never traps the
+    conversation or steals an approval.
+    """
+    from app.ai import learning
+
+    pending = (convo.get("context") or {}).get("pending_rule")
+    if not pending:
+        return False
+    await conversation.transition(from_phone, context_patch={"pending_rule": None})
+
+    normalized = body.strip().lower()
+    # "approve" is about the POST, never about the rule — let it through untouched.
+    if "approve" in normalized:
+        return False
+    if any(w in normalized for w in _ALWAYS_PHRASES):
+        rule = await asyncio.to_thread(learning.save_rule, str(pending), source=from_phone)
+        await twilio_client.send_text(
+            from_phone,
+            f"📌 Done — every future post follows: {rule.rule}\n"
+            "Reply *rules* anytime to see everything I've learned.",
+        )
+        return True
+    if normalized in _ONCE_EXACT or any(w in normalized for w in _ONCE_PHRASES):
+        await twilio_client.send_text(from_phone, "👍 Just this once then.")
+        return True
+    return False  # not an answer — the question dies quietly, the message flows on
+
+
+async def _handle_rule_commands(from_phone: str, body: str) -> bool:
+    """The operator's window into what has been learned: list, forget N, forget latest."""
+    from app.ai import learning
+
+    normalized = body.strip().lower()
+    if normalized in ("rules", "show rules", "what have you learned", "what have you learned?"):
+        await twilio_client.send_text(
+            from_phone, await asyncio.to_thread(learning.format_rules_list)
+        )
+        return True
+    match = _FORGET_RULE.match(body.strip())
+    if match:
+        removed = await asyncio.to_thread(learning.remove_rule, int(match.group(1)))
+        await twilio_client.send_text(
+            from_phone,
+            f"🗑 Forgotten: {removed.rule}" if removed else "There's no rule with that number.",
+        )
+        return True
+    if normalized == "forget that":
+        removed = await asyncio.to_thread(learning.remove_rule, None)
+        await twilio_client.send_text(
+            from_phone,
+            f"🗑 Forgotten: {removed.rule}" if removed else "Nothing learned recently to forget.",
+        )
+        return True
+    return False
 
 
 async def _update_summary(from_phone: str) -> None:

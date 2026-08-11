@@ -80,6 +80,15 @@ def _edit_system() -> str:
     )
 
 
+async def _edit_system_with_learned() -> str:
+    """The edit prompt plus standing preferences. Rule order stays: no-say list,
+    then TODAY'S instruction, then learned defaults — an operator asking for the
+    opposite of an old rule is the operator updating it, not violating it."""
+    from app.ai import learning  # local import: avoid a cycle at module load
+
+    return _edit_system() + await learning.rules_block_async()
+
+
 # Matches a hashtag token: '#' + letters/digits/underscore (WhatsApp-typical).
 _HASHTAG = re.compile(r"#[A-Za-z0-9_]+")
 
@@ -155,8 +164,9 @@ async def apply_edit(
         f"Original context:\n{format_context(context)}\n\n"
         "Apply the instruction exactly and emit the full revised post."
     )
+    system = await _edit_system_with_learned()
     revised = await generate_structured(
-        system=_edit_system(),
+        system=system,
         user_content=user_content,
         output_model=GeneratedPost,
         tool_name="emit_post",
@@ -170,7 +180,7 @@ async def apply_edit(
     if terms := banned_claims(revised):
         log.warning("edit produced forbidden claims; rewriting", extra={"terms": terms})
         revised = await generate_structured(
-            system=_edit_system(),
+            system=system,
             user_content=(
                 user_content
                 + "\n\nYour previous revision used these forbidden phrases: "
