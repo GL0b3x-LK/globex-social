@@ -19,8 +19,8 @@
   }
   .badge {
     position: absolute;
-    top: 75px; right: 30px;
-    width: 180px; height: 180px;
+    top: 51.5px; right: 52.5px;
+    width: 158px; height: 158px;
     border-radius: 50%;
     background: var(--cyan);
     color: var(--navy);
@@ -31,9 +31,11 @@
     font-family: 'Inter', sans-serif;
     z-index: 2;
   }
-  .badge .num { font-weight: 800; font-size: 56px; line-height: 1; }
+  /* the seal number is Archivo Black — the one place MS-3 leaves Inter */
+  .badge .num { font-family: 'Archivo Black', sans-serif; font-weight: 400;
+                font-size: 58.85px; letter-spacing: -2.5px; line-height: 1; }
   .badge .yrs {
-    font-weight: 600; font-size: 17.5px; letter-spacing: 3px;
+    font-weight: 600; font-size: 18.17px; letter-spacing: 2.6px;
     margin-top: 11px; text-transform: uppercase;
   }
   .txt { position: absolute; line-height: 1; font-family: 'Inter', sans-serif; }
@@ -46,9 +48,10 @@
     text-transform: uppercase;
   }
   .name {
-    left: 59px; top: 981px; right: 60px;
+    left: 59px; top: 978px; right: 60px;
     font-weight: 700;
     font-size: 67px;
+    letter-spacing: -1.28px;
     line-height: 1.1;
     color: var(--white);
   }

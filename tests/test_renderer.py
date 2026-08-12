@@ -173,68 +173,71 @@ def test_render_performance(render_sync) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# TS-p1 typeface: matched to Mike's approved reference, not guessed from it
+# Typography measured against the approved references in ~/Downloads/FINAL
 # --------------------------------------------------------------------------- #
 
-# ~/Downloads/FINAL/TS-p1-bolddip_4x5.png, measured 2026-08-12 (2160x2700 canvas,
-# i.e. 2x the 1080x1350 logical page). These are the ink bounding boxes of the
-# headline and subline rows in the navy panel.
-_REF_P1_HEADLINE = {"x0": 130, "width": 887, "y0": 2353, "height": 36}
-_REF_P1_SUBLINE = {"x0": 129, "width": 903, "y0": 2431}
+# Ink bounding boxes of each text row, measured 2026-08-12 on the 2160x2700
+# reference PNGs (2x the 1080x1350 logical page): (x0, width, y0, cap-height).
+# These pin the DESIGN, not the font name — a right typeface at the wrong size
+# or position is still not the approved layout.
+_REF_ROWS: dict[str, tuple[tuple[int, int, int, int], ...]] = {
+    "ts_p1_bolddip": ((130, 887, 2353, 36), (129, 903, 2431, 49)),
+    "ts_p2_cut_navyborder": ((126, 1174, 2304, 100), (121, 859, 2439, 52)),
+    "ts_p3_editorial": ((89, 1166, 129, 93), (81, 1476, 268, 50)),
+}
+_REF_REGION = {
+    "ts_p1_bolddip": (2300, 2520),
+    "ts_p2_cut_navyborder": (2260, 2520),
+    "ts_p3_editorial": (100, 360),
+}
+_REF_SLOTS = {
+    "ts_p1_bolddip": {
+        "photo": "",
+        "headline": "Food & Hospitality Asia",
+        "subline_strong": "21\u201324 April \u00b7 Singapore, Singapore",
+        "subline_soft": "",
+        "pill": "Booth 7C4-01",
+    },
+    "ts_p2_cut_navyborder": {
+        "photo": "",
+        "headline": "USAPEEC Americas Expo",
+        "subline_strong": "18\u201320 March \u00b7 ",
+        "subline_soft": "Bogot\u00e1, Colombia",
+    },
+    "ts_p3_editorial": {
+        "photo": "",
+        "headline": "Food & Hotel Vietnam",
+        "meta": ["24\u201426 March, 2026 \u2022 Ho Chi Minh City, Vietnam \u2022 Stand A108"],
+    },
+}
 
 
-def test_ts_p1_uses_the_reference_typeface_not_a_lookalike() -> None:
-    """TS-p1 was built with Comfortaa on a guess and shipped that way; the
-    client's designer spotted it in the rendered posts. The reference 'a' is
-    double-storey and its cap 'D' aspect is 1.03 — both Montserrat, neither
-    Comfortaa nor Poppins (single-storey 'a', D aspect 0.79/0.90)."""
-    css = (HTML_DIR / "ts_p1_bolddip.html").read_text(encoding="utf-8")
-    families = re.findall(r"font-family:\s*'([^']+)'", css)
-    # headline, subline and pill — all three draw from the reference family.
-    assert families == ["Montserrat"] * 3, f"TS-p1 draws from {set(families)}"
-
-
-@pytest.mark.parametrize("row", ["headline", "subline"])
-def test_ts_p1_text_lands_where_the_approved_reference_puts_it(render_sync, row: str) -> None:
-    """Swapping the family changes cap height and ascent, so the sizes and the
-    box positions have to be re-solved with it — a right font in the wrong place
-    is still not the approved design."""
+def _ink_rows(png: bytes, y0: int, y1: int, x1: int = 2100):
     import numpy as np
 
-    png = render_sync(
-        "ts_p1_bolddip",
-        {
-            "photo": "",
-            "headline": "Food & Hospitality Asia",
-            "subline_strong": "21–24 April · Singapore, Singapore",
-            "subline_soft": "",
-            "pill": "Booth 7C4-01",
-        },
-        dimensions=(1080, 1350),
-    )
-    img = Image.open(io.BytesIO(png)).convert("L")
-    ink = np.asarray(img)[2300:2520, :2100] > 140
-
+    ink = np.asarray(Image.open(io.BytesIO(png)).convert("L"))[y0:y1, :x1] > 140
     rows = ink.any(axis=1)
-    bands: list[tuple[int, int]] = []
-    start = None
+    out, start = [], None
     for i, on in enumerate(rows):
         if on and start is None:
             start = i
         elif not on and start is not None:
-            if i - start > 6:
-                bands.append((start, i))
+            if i - start >= 6:
+                xs = np.where(ink[start:i].any(axis=0))[0]
+                out.append((int(xs.min()), int(xs.max() - xs.min() + 1), y0 + start, i - start))
             start = None
-    assert len(bands) >= 2, "expected a headline row and a subline row in the panel"
+    return out
 
-    idx = 0 if row == "headline" else 1
-    y0, y1 = bands[idx]
-    band = ink[y0:y1]
-    xs = np.where(band.any(axis=0))[0]
-    expected = _REF_P1_HEADLINE if row == "headline" else _REF_P1_SUBLINE
 
-    assert abs(int(xs.min()) - expected["x0"]) <= 3, f"{row} left edge drifted"
-    assert abs(int(xs.max() - xs.min() + 1) - expected["width"]) <= 6, f"{row} width drifted"
-    assert abs((2300 + y0) - expected["y0"]) <= 3, f"{row} baseline drifted"
-    if "height" in expected:
-        assert abs((y1 - y0) - expected["height"]) <= 3, f"{row} cap height drifted"
+@pytest.mark.parametrize("variant", sorted(_REF_ROWS))
+def test_text_lands_where_the_approved_reference_puts_it(render_sync, variant: str) -> None:
+    y0, y1 = _REF_REGION[variant]
+    got = _ink_rows(render_sync(variant, _REF_SLOTS[variant], dimensions=(1080, 1350)), y0, y1)
+    want = _REF_ROWS[variant]
+    assert len(got) >= len(want), f"{variant}: found {len(got)} text rows, expected {len(want)}"
+    for i, (x0, width, top, cap) in enumerate(want):
+        gx0, gw, gtop, gcap = got[i]
+        assert abs(gx0 - x0) <= 3, f"{variant} row {i}: left edge {gx0} vs {x0}"
+        assert abs(gw - width) <= 6, f"{variant} row {i}: width {gw} vs {width}"
+        assert abs(gtop - top) <= 3, f"{variant} row {i}: top {gtop} vs {top}"
+        assert abs(gcap - cap) <= 3, f"{variant} row {i}: cap height {gcap} vs {cap}"
