@@ -107,6 +107,12 @@ class Settings(BaseSettings):
     # Turn OFF before the client cadence starts.
     test_mode: bool = False
     test_interval_hours: float = 2.0
+    # Local-time anchor for the test grid ("2026-08-12T12:00"), instead of the
+    # default local midnight. Set it when the run must begin at a particular
+    # moment — the Twilio trial cap frees capacity on a rolling window, and a
+    # grid anchored to midnight would fire into a closed window and draft posts
+    # nobody can receive. Slots before the anchor are simply never scheduled.
+    test_start_at: str | None = None
     # Who receives approval previews. Empty = the first authorised number, which
     # is the production behaviour. During the test run both testers are listed so
     # either can approve.

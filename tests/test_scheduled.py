@@ -439,3 +439,43 @@ def test_the_test_grid_is_anchored_not_relative_to_boot() -> None:
 
     # Slots stay on even hours as the run continues.
     assert trigger.get_next_fire_time(first, first) == first + timedelta(hours=2)
+
+
+def test_an_explicit_start_suppresses_every_earlier_slot() -> None:
+    """TEST_START_AT lines the run up with the moment Twilio's cap frees capacity.
+
+    Anchored to midnight instead, an hourly grid fires into the closed window and
+    drafts posts nobody can receive — the waste this setting exists to avoid.
+    """
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    from app.scheduler.automation import _test_grid
+
+    tz = ZoneInfo("America/New_York")
+    trigger = _test_grid(1.0, "America/New_York", "2026-08-12T12:00")
+
+    # 10:47, well before the anchor: the next slot is the anchor itself, not 11:00.
+    booted = datetime(2026, 8, 12, 10, 47, tzinfo=tz)
+    first = trigger.get_next_fire_time(None, booted)
+    assert first == datetime(2026, 8, 12, 12, 0, tzinfo=tz)
+
+    # Hourly from there on.
+    assert trigger.get_next_fire_time(first, first) == first + timedelta(hours=1)
+
+
+def test_an_unparseable_start_falls_back_to_midnight_rather_than_stopping() -> None:
+    """A typo in an env var must not take the whole run down — a scheduler that
+    never fires is a worse failure than one that fires an hour early."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app.scheduler.automation import _test_grid
+
+    tz = ZoneInfo("America/New_York")
+    trigger = _test_grid(1.0, "America/New_York", "noon-ish")
+
+    today = datetime.now(tz).date()
+    booted = datetime(today.year, today.month, today.day, 10, 47, tzinfo=tz)
+    first = trigger.get_next_fire_time(None, booted)
+    assert (first.hour, first.minute) == (11, 0)

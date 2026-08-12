@@ -32,18 +32,33 @@ _scheduler: AsyncIOScheduler | None = None
 _REDELIVERY_MINUTES = 20
 
 
-def _test_grid(interval_hours: float, tz_name: str) -> IntervalTrigger:
-    """The test-run interval, anchored to local midnight.
+def _test_grid(interval_hours: float, tz_name: str, start_at: str | None = None) -> IntervalTrigger:
+    """The test-run interval, anchored to local midnight (or to ``start_at``).
 
     An unanchored IntervalTrigger counts from the moment the scheduler starts, so
     every deploy pushed the next test post a full interval into the future — a
     day with three deploys silently skipped slots, and nothing in the logs said
-    so. Anchoring to midnight fixes the grid (…, 08:00, 10:00, 12:00, …), so a
-    restart resumes the schedule instead of restarting it.
+    so. Anchoring fixes the grid (…, 08:00, 10:00, 12:00, …), so a restart
+    resumes the schedule instead of restarting it.
+
+    ``start_at`` moves the anchor off midnight and suppresses every slot before
+    it — used to line the run up with the moment Twilio's message cap frees
+    capacity, so the first post of the day is one somebody can actually receive.
+    An unparseable value falls back to midnight rather than stopping the run;
+    a stopped scheduler is a far worse failure than a mistimed one.
     """
     tz = ZoneInfo(tz_name)
-    midnight = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
-    return IntervalTrigger(hours=interval_hours, start_date=midnight, timezone=tz_name)
+    anchor = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+    if start_at:
+        try:
+            parsed = datetime.fromisoformat(start_at)
+            anchor = parsed if parsed.tzinfo else parsed.replace(tzinfo=tz)
+        except ValueError:
+            log.error(
+                "TEST_START_AT is not an ISO datetime; anchoring to midnight",
+                extra={"value": start_at},
+            )
+    return IntervalTrigger(hours=interval_hours, start_date=anchor, timezone=tz_name)
 
 
 async def _draft_job() -> None:
@@ -105,7 +120,9 @@ def start() -> AsyncIOScheduler | None:
         # The internal run replaces the calendar jobs rather than joining them:
         # test posts already carry today's date, so the daily publish sweep would
         # have nothing to do, and the daily draft would post on real dates too.
-        trigger = _test_grid(settings.test_interval_hours, settings.timezone)
+        trigger = _test_grid(
+            settings.test_interval_hours, settings.timezone, settings.test_start_at
+        )
         sched.add_job(
             _test_job,
             trigger,
