@@ -170,3 +170,71 @@ def test_render_performance(render_sync) -> None:
     times.sort()
     median = times[len(times) // 2]
     assert median < 1500, f"median warm render {median:.0f}ms; all={[round(t) for t in times]}"
+
+
+# --------------------------------------------------------------------------- #
+# TS-p1 typeface: matched to Mike's approved reference, not guessed from it
+# --------------------------------------------------------------------------- #
+
+# ~/Downloads/FINAL/TS-p1-bolddip_4x5.png, measured 2026-08-12 (2160x2700 canvas,
+# i.e. 2x the 1080x1350 logical page). These are the ink bounding boxes of the
+# headline and subline rows in the navy panel.
+_REF_P1_HEADLINE = {"x0": 130, "width": 887, "y0": 2353, "height": 36}
+_REF_P1_SUBLINE = {"x0": 129, "width": 903, "y0": 2431}
+
+
+def test_ts_p1_uses_the_reference_typeface_not_a_lookalike() -> None:
+    """TS-p1 was built with Comfortaa on a guess and shipped that way; the
+    client's designer spotted it in the rendered posts. The reference 'a' is
+    double-storey and its cap 'D' aspect is 1.03 — both Montserrat, neither
+    Comfortaa nor Poppins (single-storey 'a', D aspect 0.79/0.90)."""
+    css = (HTML_DIR / "ts_p1_bolddip.html").read_text(encoding="utf-8")
+    families = re.findall(r"font-family:\s*'([^']+)'", css)
+    # headline, subline and pill — all three draw from the reference family.
+    assert families == ["Montserrat"] * 3, f"TS-p1 draws from {set(families)}"
+
+
+@pytest.mark.parametrize("row", ["headline", "subline"])
+def test_ts_p1_text_lands_where_the_approved_reference_puts_it(render_sync, row: str) -> None:
+    """Swapping the family changes cap height and ascent, so the sizes and the
+    box positions have to be re-solved with it — a right font in the wrong place
+    is still not the approved design."""
+    import numpy as np
+
+    png = render_sync(
+        "ts_p1_bolddip",
+        {
+            "photo": "",
+            "headline": "Food & Hospitality Asia",
+            "subline_strong": "21–24 April · Singapore, Singapore",
+            "subline_soft": "",
+            "pill": "Booth 7C4-01",
+        },
+        dimensions=(1080, 1350),
+    )
+    img = Image.open(io.BytesIO(png)).convert("L")
+    ink = np.asarray(img)[2300:2520, :2100] > 140
+
+    rows = ink.any(axis=1)
+    bands: list[tuple[int, int]] = []
+    start = None
+    for i, on in enumerate(rows):
+        if on and start is None:
+            start = i
+        elif not on and start is not None:
+            if i - start > 6:
+                bands.append((start, i))
+            start = None
+    assert len(bands) >= 2, "expected a headline row and a subline row in the panel"
+
+    idx = 0 if row == "headline" else 1
+    y0, y1 = bands[idx]
+    band = ink[y0:y1]
+    xs = np.where(band.any(axis=0))[0]
+    expected = _REF_P1_HEADLINE if row == "headline" else _REF_P1_SUBLINE
+
+    assert abs(int(xs.min()) - expected["x0"]) <= 3, f"{row} left edge drifted"
+    assert abs(int(xs.max() - xs.min() + 1) - expected["width"]) <= 6, f"{row} width drifted"
+    assert abs((2300 + y0) - expected["y0"]) <= 3, f"{row} baseline drifted"
+    if "height" in expected:
+        assert abs((y1 - y0) - expected["height"]) <= 3, f"{row} cap height drifted"

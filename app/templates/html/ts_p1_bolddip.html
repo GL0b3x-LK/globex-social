@@ -1,9 +1,20 @@
 {% extends "_final.html" %}
 {# TS-p1 "bold dip" — photo behind a full-width navy panel whose rounded top
-   corners (the "dip") notch into the photo. Comfortaa; ALL-CAPS airy headline;
+   corners (the "dip") notch into the photo. Montserrat; ALL-CAPS airy headline;
    optional cyan booth pill; logo bottom-right.
    Slots: photo (data URI), headline, subline_strong, subline_soft, pill.
-   Geometry calibrated against the approved reference PNG (probe 2026-08-08). #}
+   Geometry calibrated against the approved reference PNG (probe 2026-08-08).
+
+   TYPEFACE, re-measured 2026-08-12: this template was built with Comfortaa on a
+   guess from the flattened reference, and the guess was wrong — the client's
+   designer spotted it in the rendered posts. Re-derived from scale-invariant
+   glyph metrics against ~/Downloads/FINAL/TS-p1-bolddip_4x5.png: the reference
+   'a' is DOUBLE-storey (Comfortaa and Poppins are both single-storey, so both
+   are excluded), and the cap 'D' aspect is 1.029 vs Montserrat's 1.038 —
+   Poppins 0.896, Inter 0.864, Comfortaa 0.788. It is Montserrat.
+   Sizes/tracking below re-solved so each ink box matches the reference to <1px:
+     headline  cap 18.0px, width 443.5px   subline  cap 20.0px, width 451.5px
+     pill text cap 17.0px, width 199.5px #}
 {% block style %}
 <style>
   .photo {
@@ -23,20 +34,23 @@
      canvas edge (see ts_p2 — same fault class, caught by the client's designer). */
   .txt { position: absolute; z-index: 2; line-height: 1; }
   h1.txt {
-    left: 64px; top: 1177px; right: 64px;
-    font-family: 'Comfortaa', sans-serif;
-    font-weight: 700;
-    font-size: 21.5px;
-    letter-spacing: 6.3px;
+    /* top is the BOX; Montserrat's ascent sits the ink 7.5px lower than
+       Comfortaa's did, so the box moves up to keep the ink on the reference. */
+    left: 64px; top: 1169.5px; right: 64px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 25.4px;
+    letter-spacing: 3.65px;
     line-height: 1.25;
     text-transform: uppercase;
     color: var(--white);
   }
   .subline {
-    left: 64px; top: 1215px; right: 64px;
-    font-family: 'Comfortaa', sans-serif;
-    font-weight: 500;
-    font-size: 25px;
+    left: 64px; top: 1209.5px; right: 64px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 26.9px;
+    letter-spacing: -0.38px;
     line-height: 1.35;
     color: var(--white);
   }
@@ -45,14 +59,14 @@
     height: 54px;
     display: inline-flex;
     align-items: center;
-    padding: 0 36px;
+    padding: 0 27px;
     border-radius: 999px;
     background: var(--cyan);
     color: var(--navy);
-    font-family: 'Comfortaa', sans-serif;
-    font-weight: 700;
-    font-size: 22px;
-    letter-spacing: 2.5px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 23.1px;
+    letter-spacing: 2.14px;
     text-transform: uppercase;
   }
   .logo {
