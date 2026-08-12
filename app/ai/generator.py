@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.ai import style
 from app.ai.client import generate_structured
 from app.ai.prompts import (
     announcement,
@@ -189,6 +190,7 @@ async def generate_post(
             # Surfaced rather than silently shipped: the operator still approves
             # every post, and a caption they can see is one they can reject.
             log.error("post still contains forbidden claims after rewrite", extra={"terms": still})
+    style.enforce(post)
     return post
 
 
@@ -233,4 +235,5 @@ async def generate_freeform(
         post = await _repair_claims(post, system, request, terms)
         if still := banned_claims(post):
             log.error("post still contains forbidden claims after rewrite", extra={"terms": still})
+    style.enforce(post)
     return post

@@ -22,6 +22,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from app.ai import style
 from app.ai.client import generate_structured
 from app.ai.generator import GeneratedPost, banned_claims, format_context
 from app.logging_config import get_logger
@@ -151,6 +152,9 @@ def normalize(revised: GeneratedPost, current: GeneratedPost, feedback: str) -> 
     """The mechanical guarantees applied after every edit, model output or not."""
     revised.caption, revised.hashtags = split_hashtags(revised.caption, revised.hashtags)
     _pin_unrequested(revised, current, feedback)
+    # House capitalisation, but never over the operator: `enforce` reads the
+    # feedback and stands down on the headline when they spoke about case.
+    style.enforce(revised, feedback=feedback)
     return revised
 
 

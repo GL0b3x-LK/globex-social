@@ -20,7 +20,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from app.ai import generator
+from app.ai import generator, style
 from app.ai.generator import ContentCategory
 from app.config import get_settings
 from app.db import calendar_source, posts
@@ -107,12 +107,24 @@ def pick_photo(entry: CalendarEntry) -> Path:
     )
 
 
+def entry_title(entry: CalendarEntry) -> str:
+    """The entry's title in the client's capitalisation ("Thank You, SIAL Paris").
+
+    Normalised HERE rather than in calendar.json because ``event_id`` is
+    ``uuid5(seq|title)`` — rewriting the stored titles would give every entry a
+    new id and re-draft the twenty posts already sent as duplicates. The stored
+    title stays the stable key; everything a person or the model reads is
+    corrected on the way out.
+    """
+    return style.title_case(style.fix_terms(entry.title))
+
+
 def _entry_brief(entry: CalendarEntry) -> str:
     """The generation brief — the calendar row is the creative instruction."""
     when = entry.post_date or entry.planned_date
     return (
         f"Scheduled calendar post for {when.strftime('%A %d %B %Y')}.\n"
-        f"Theme: {entry.title}\n"
+        f"Theme: {entry_title(entry)}\n"
         f"What the post should say: {entry.gist}\n"
         f"Marketing purpose: {entry.purpose}\n"
         "Write the caption and on-image text to match this brief exactly."
@@ -134,7 +146,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         category,
         context={
             "post_date": when.isoformat(),
-            "calendar_title": entry.title,
+            "calendar_title": entry_title(entry),
             "marketing_purpose": entry.purpose,
         },
         user_message=_entry_brief(entry),
@@ -165,12 +177,12 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
     if publish_today:
         prefix = (
             f"🧪 *Test post {entry.seq + 1}/{total_planned()}* — publishes as soon as "
-            f"you approve\n({entry.title} · week {entry.week} · {entry.category})\n\n"
+            f"you approve\n({entry_title(entry)} · week {entry.week} · {entry.category})\n\n"
         )
     else:
         prefix = (
             f"🗓 Scheduled post — goes out {when.strftime('%a %d %b')} once you approve\n"
-            f"({entry.title})\n\n"
+            f"({entry_title(entry)})\n\n"
         )
     prefix += sheet_note
     is_placeholder = photo.name.startswith("placeholder")
@@ -193,7 +205,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
             "photo_is_placeholder": is_placeholder,
             "calendar": {
                 "week": entry.week,
-                "title": entry.title,
+                "title": entry_title(entry),
                 "category": entry.category,
                 "template": entry.template,
             },
