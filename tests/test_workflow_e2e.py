@@ -465,6 +465,36 @@ async def test_question_referencing_a_post_resends_its_image(harness, monkeypatc
     assert harness.sent_media and harness.sent_media[-1][2] == "https://img.test/gulfood-1.png"
 
 
+async def test_an_undeliverable_answer_is_not_reported_as_a_crash(harness, monkeypatch) -> None:
+    """Asking "show me the draft" while the daily message cap is spent used to
+    come back as "something went wrong on my side — nothing was changed".
+
+    Nothing had gone wrong and nothing needed changing: the answer was computed,
+    the send was refused. This was the one reply branch still on the raising
+    sender, so a delivery problem surfaced as an internal error.
+    """
+    from app.ai.qa import Answer
+
+    _seed_post(harness, "gulfood-1", caption="See us at Gulfood")
+    monkeypatch.setattr(
+        "app.ai.qa.answer_question",
+        lambda *a, **k: _async(
+            Answer(answer="Here's the Gulfood one.", referenced_post_id="gulfood-1")
+        ),
+    )
+
+    async def capped(*a, **k):
+        raise RuntimeError("HTTP 429 error: exceeded the 50 daily messages limit")
+
+    monkeypatch.setattr("app.messaging.twilio_client.send_media", capped)
+
+    await on_demand.handle_incoming_message(PHONE, "show me the gulfood one", [])
+
+    from app.workflows import messages as msgs
+
+    assert not any(msgs.UNEXPECTED_ERROR in body for _to, body in harness.sent_text)
+
+
 async def test_swipe_reply_reopens_old_post_for_edit(harness, monkeypatch) -> None:
     _seed_post(harness, "old-1")
     monkeypatch.setattr("app.messaging.history.by_sid", lambda sid: _async({"post_id": "old-1"}))

@@ -387,7 +387,15 @@ async def _reopen_replied_post(from_phone: str, post_id: str) -> bool:
 async def _answer_question(
     from_phone: str, question: str, memory: str, focus_post_id: str | None
 ) -> None:
-    """Answer an informational question from memory + the recent-posts digest."""
+    """Answer an informational question from memory + the recent-posts digest.
+
+    Both replies go out through the ``try_`` senders. Asking "show me the draft"
+    and getting "something went wrong on my side — nothing was changed" is a lie
+    twice over: the answer was computed fine and nothing needed changing. The
+    raising ``send_media`` here was the one branch that could turn a delivery
+    problem (a lapsed sandbox join, the daily message cap) into a reported
+    internal error, and it did exactly that the moment the cap was reached.
+    """
     recent_posts = await asyncio.to_thread(posts.recent, 30)
     digest = qa.posts_digest(recent_posts)
     focus = await asyncio.to_thread(posts.get, focus_post_id) if focus_post_id else None
@@ -395,7 +403,7 @@ async def _answer_question(
     show_id = result.referenced_post_id or focus_post_id
     show = await asyncio.to_thread(posts.get, show_id) if show_id else None
     if show and show.get("image_url"):
-        await twilio_client.send_media(
+        await twilio_client.try_send_media(
             from_phone, result.answer, show["image_url"], post_id=show_id
         )
     else:
@@ -631,8 +639,12 @@ async def _preview_vhs_video(
         context_patch=context_patch,
     )
     caption = messages.preview_caption(generated) + messages.target_note(target_platforms)
-    await twilio_client.send_media(from_phone, caption, media_url, post_id=post_id)
-    log.info("vhs video preview sent", extra={"post_id": post_id})
+    # Same reason as `_answer_question`: the video is built and stored by this
+    # point, so a failed send is a delivery problem to log, not a reason to tell
+    # the operator their request blew up.
+    sid = await twilio_client.try_send_media(from_phone, caption, media_url, post_id=post_id)
+    await redelivery.record(post_id, from_phone, delivered=sid is not None)
+    log.info("vhs video preview sent", extra={"post_id": post_id, "delivered": sid is not None})
 
 
 async def _apply_target(
