@@ -14,11 +14,11 @@ from app.ai import editor, image_gen, learning
 from app.ai.generator import GeneratedPost
 from app.db import approvals, posts, storage
 from app.logging_config import get_logger
-from app.messaging import conversation, twilio_client
+from app.messaging import conversation, media, twilio_client
 from app.messaging.conversation import ConversationState
 from app.publishing import platforms as plat
 from app.publishing import publisher
-from app.workflows import messages, render_pipeline
+from app.workflows import messages, redelivery, render_pipeline
 
 log = get_logger("app.workflows.approval")
 Row = dict[str, Any]
@@ -38,6 +38,27 @@ async def _merge_render_meta(post_id: str, **changes: Any) -> dict[str, Any]:
     meta.update({k: v for k, v in changes.items() if v is not None})
     await asyncio.to_thread(posts.set_render_meta, post_id, meta)
     return meta
+
+
+async def _deliver_preview(
+    phone: str, post_id: str, post: GeneratedPost, image_url: str, caption: str | None = None
+) -> bool:
+    """Send a preview and remember whether it actually got there.
+
+    A send can fail for reasons that have nothing to do with the post — a closed
+    24h window, a lapsed sandbox join, the daily message cap. The work is already
+    done and stored by this point, so a failure must not be the end of it: the
+    post is marked undelivered and ``redelivery`` re-sends it once sending works
+    again, instead of the operator silently never seeing what they asked for.
+    """
+    sid = await twilio_client.try_send_media(
+        phone,
+        caption if caption is not None else messages.preview_caption(post),
+        image_url,
+        post_id=post_id,
+    )
+    await redelivery.record(post_id, phone, delivered=sid is not None)
+    return sid is not None
 
 
 async def _stored_photo(context: Row, meta: dict[str, Any]) -> tuple[bytes | None, str]:
@@ -135,7 +156,10 @@ async def handle_edit_request(
     convo: Row,
     feedback: str,
     target_platforms: list[plat.Platform] | None = None,
+    photo: tuple[str, str] | None = None,
 ) -> None:
+    """Apply an edit. ``photo`` is an image attached to the operator's message —
+    a replacement picture for this post, not a prompt for the image model."""
     post_id = convo.get("current_post_id")
     context = convo.get("context") or {}
     stored = context.get("generated")
@@ -159,12 +183,34 @@ async def handle_edit_request(
 
     await conversation.transition(phone, state=ConversationState.EDITING)
 
+    # An attached image is a REPLACEMENT photograph for this post. It used to be
+    # discarded outright: the milestone previews invite "reply with the employee's
+    # photo to swap it in", the reply arrived, and the picture never changed.
+    replacement: tuple[bytes, str] | None = None
+    if photo is not None:
+        try:
+            replacement = await media.download_twilio_media(photo[0])
+        except Exception as exc:  # noqa: BLE001 — a bad download must not lose the edit
+            log.error("attached photo download failed", extra={"error": str(exc)[:200]})
+            await twilio_client.try_send_text(phone, messages.PHOTO_DOWNLOAD_FAILED)
+
     # A post that carries a photograph can take PICTURE feedback too: the photo
     # is transformed by the image model (nano-banana img2img), the words stay.
     stored_meta = ((await asyncio.to_thread(posts.get, post_id)) or {}).get("render_meta") or {}
     photo_url = str(context.get("photo_url") or stored_meta.get("photo_url") or "")
-    if photo_url and await editor.classify_edit_kind(feedback) == "visual":
-        await _edit_post_photo(phone, post_id, current, feedback, photo_url)
+    if photo_url or replacement is not None:
+        kind = await editor.classify_edit_kind(feedback)
+        await _edit_photo_post(
+            phone,
+            post_id,
+            current,
+            feedback,
+            photo_url,
+            kind=kind,
+            replacement=replacement,
+            is_placeholder=bool(stored_meta.get("photo_is_placeholder")),
+            context=context,
+        )
         return
 
     revised = await editor.apply_edit(
@@ -184,7 +230,7 @@ async def handle_edit_request(
     # the words, never the picture.
     photo_bytes, photo_media_type = await _stored_photo(context, stored_meta)
     image_url = await render_pipeline.render_and_store(
-        post_id, revised, photo_bytes=photo_bytes, photo_media_type=photo_media_type
+        post_id, revised, photo_bytes=photo_bytes, photo_media_type=photo_media_type, fresh=True
     )
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
     await _merge_render_meta(post_id, generated=revised.model_dump())
@@ -193,52 +239,129 @@ async def handle_edit_request(
         state=ConversationState.AWAITING_APPROVAL,
         context_patch={"generated": revised.model_dump()},
     )
-    await twilio_client.try_send_media(
-        phone, messages.preview_caption(revised), image_url, post_id=post_id
-    )
+    await _deliver_preview(phone, post_id, revised, image_url)
     log.info("edit applied", extra={"post_id": post_id, "with_photo": photo_bytes is not None})
     await _maybe_learn(phone, feedback)
 
 
-async def _edit_post_photo(
-    phone: str, post_id: str, current: GeneratedPost, feedback: str, photo_url: str
+async def _edit_photo_post(
+    phone: str,
+    post_id: str,
+    current: GeneratedPost,
+    feedback: str,
+    photo_url: str,
+    *,
+    kind: editor.EditKind,
+    replacement: tuple[bytes, str] | None = None,
+    is_placeholder: bool = False,
+    context: Row | None = None,
 ) -> None:
-    """Transform a photo post's picture with the image model; the copy is untouched.
+    """Apply an edit to a post that carries a photograph.
 
-    The result becomes the post's stored photograph under a NEW name — the old
-    object stays put, because overwriting a public URL fights CDN caching and
-    destroys the ability to walk an edit back.
+    All three halves of an edit are honoured independently, because a single
+    WhatsApp line routinely asks for more than one at once:
+
+    * an ATTACHED photo replaces the picture outright (no image model involved —
+      the operator sent the exact image they want);
+    * a VISUAL instruction transforms the stored picture through img2img;
+    * a TEXTUAL instruction rewrites the copy.
+
+    A "both" edit runs the picture and the copy changes together; previously the
+    classifier had to pick one and the loser was dropped in silence.
+
+    Pictures are stored under a NEW name every time — overwriting a public URL
+    fights CDN caching and destroys the ability to walk an edit back.
     """
     from uuid import uuid4
 
-    await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
-    result = await image_gen.edit(photo_url, feedback, aspect_ratio="3:4")
-    if not result.ok or not result.image_bytes:
-        await twilio_client.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
-        await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
-        return
+    ctx = context or {}
+    wants_picture = kind in ("visual", "both")
+    wants_words = kind in ("textual", "both")
 
-    new_url = await asyncio.to_thread(
-        storage.upload_bytes,
-        f"{post_id}-photo-{uuid4().hex[:6]}.png",
-        result.image_bytes,
-        "image/png",
-    )
+    # A placeholder is not a photograph of anyone — it is a gray card standing in
+    # until a real one arrives. Running img2img on it invents a person and puts a
+    # fabricated face on a named employee's post, one "approve" from publishing.
+    if wants_picture and replacement is None and is_placeholder:
+        await twilio_client.try_send_text(phone, messages.PLACEHOLDER_NEEDS_PHOTO)
+        if not wants_words:
+            await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
+            return
+        wants_picture = False
+
+    photo_bytes: bytes | None = None
+    media_type = "image/jpeg"
+    new_photo_url: str | None = None
+    still_placeholder = is_placeholder
+
+    if replacement is not None:
+        photo_bytes, media_type = replacement
+        still_placeholder = False
+    elif wants_picture:
+        await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
+        result = await image_gen.edit(photo_url, feedback, aspect_ratio="3:4")
+        if not result.ok or not result.image_bytes:
+            await twilio_client.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
+            if not wants_words:
+                await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
+                return
+        else:
+            photo_bytes, media_type = result.image_bytes, "image/png"
+
+    if photo_bytes is not None:
+        ext = "png" if media_type == "image/png" else "jpg"
+        new_photo_url = await asyncio.to_thread(
+            storage.upload_bytes,
+            f"{post_id}-photo-{uuid4().hex[:6]}.{ext}",
+            photo_bytes,
+            media_type,
+        )
+    else:  # copy-only edit — re-render on the picture the post already has
+        photo_bytes, media_type = await _stored_photo(ctx, {"photo_url": photo_url})
+
+    revised = current
+    if wants_words:
+        revised = await editor.apply_edit(
+            current, feedback, context={"request": ctx.get("request")}
+        )
+        await asyncio.to_thread(
+            posts.update,
+            post_id,
+            caption=revised.caption,
+            hashtags=revised.hashtags,
+            template_type=revised.template_variant,
+        )
+
     await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
     image_url = await render_pipeline.render_and_store(
-        post_id, current, photo_bytes=result.image_bytes, photo_media_type="image/png"
+        post_id, revised, photo_bytes=photo_bytes, photo_media_type=media_type, fresh=True
     )
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
-    await _merge_render_meta(post_id, photo_url=new_url, photo_media_type="image/png")
+    await _merge_render_meta(
+        post_id,
+        generated=revised.model_dump() if wants_words else None,
+        photo_url=new_photo_url,
+        photo_media_type=media_type if new_photo_url else None,
+        photo_is_placeholder=still_placeholder,
+    )
+    patch: dict[str, Any] = {}
+    if wants_words:
+        patch["generated"] = revised.model_dump()
+    if new_photo_url:
+        patch["photo_url"] = new_photo_url
+        patch["photo_media_type"] = media_type
     await conversation.transition(
-        phone,
-        state=ConversationState.AWAITING_APPROVAL,
-        context_patch={"photo_url": new_url, "photo_media_type": "image/png"},
+        phone, state=ConversationState.AWAITING_APPROVAL, context_patch=patch or None
     )
-    await twilio_client.try_send_media(
-        phone, messages.preview_caption(current), image_url, post_id=post_id
+    await _deliver_preview(phone, post_id, revised, image_url)
+    log.info(
+        "photo post edit applied",
+        extra={
+            "post_id": post_id,
+            "kind": kind,
+            "replaced_photo": replacement is not None,
+            "words_changed": wants_words,
+        },
     )
-    log.info("photo edit applied", extra={"post_id": post_id})
     await _maybe_learn(phone, feedback)
 
 
@@ -261,7 +384,11 @@ async def _edit_generated_image(
         new_raw_url = await storage.upload_png(post_id, result.image_bytes, suffix="-raw")
         await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
         image_url = await render_pipeline.render_and_store(
-            post_id, current, photo_bytes=result.image_bytes, photo_media_type="image/png"
+            post_id,
+            current,
+            photo_bytes=result.image_bytes,
+            photo_media_type="image/png",
+            fresh=True,
         )
         await asyncio.to_thread(posts.set_image_url, post_id, image_url)
         await _merge_render_meta(post_id, generated=current.model_dump(), raw_image_url=new_raw_url)
@@ -270,9 +397,7 @@ async def _edit_generated_image(
             state=ConversationState.AWAITING_APPROVAL,
             context_patch={"raw_image_url": new_raw_url},
         )
-        await twilio_client.try_send_media(
-            phone, messages.preview_caption(current), image_url, post_id=post_id
-        )
+        await _deliver_preview(phone, post_id, current, image_url)
         log.info("image edit applied", extra={"post_id": post_id})
         await _maybe_learn(phone, feedback)
         return
@@ -297,7 +422,7 @@ async def _edit_generated_image(
     )
     await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
     image_url = await render_pipeline.render_and_store(
-        post_id, revised, photo_bytes=photo_bytes, photo_media_type="image/png"
+        post_id, revised, photo_bytes=photo_bytes, photo_media_type="image/png", fresh=True
     )
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
     await _merge_render_meta(post_id, generated=revised.model_dump())
@@ -306,9 +431,7 @@ async def _edit_generated_image(
         state=ConversationState.AWAITING_APPROVAL,
         context_patch={"generated": revised.model_dump()},
     )
-    await twilio_client.try_send_media(
-        phone, messages.preview_caption(revised), image_url, post_id=post_id
-    )
+    await _deliver_preview(phone, post_id, revised, image_url)
     log.info("text edit applied to generated-image post", extra={"post_id": post_id})
     await _maybe_learn(phone, feedback)
 

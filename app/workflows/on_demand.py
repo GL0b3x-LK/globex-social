@@ -24,7 +24,7 @@ from app.messaging.state_machine import Action, route
 from app.messaging.transcription import Outcome
 from app.publishing import platforms as plat
 from app.templates import renderer as render_mod
-from app.workflows import approval, intake, messages, render_pipeline
+from app.workflows import approval, intake, messages, redelivery, render_pipeline
 from app.workflows import video as video_flow
 
 # VHS HUD overlay (transparent 9:16), composited onto Karen's video by ffmpeg.
@@ -50,6 +50,30 @@ def _is_authorized(phone: str) -> bool:
 
 
 async def handle_incoming_message(
+    from_phone: str,
+    body: str,
+    media: list[Media],
+    *,
+    message_sid: str | None = None,
+    reply_to_sid: str | None = None,
+) -> None:
+    """Handle one inbound message. Never raises — see ``_handle_incoming``.
+
+    This runs as a FastAPI background task, so an exception escaping it goes to
+    the server log and NOWHERE else: the operator sees their message delivered,
+    then silence, with no way to tell a slow reply from a dead one. Any failure
+    therefore ends in a reply saying so.
+    """
+    try:
+        await _handle_incoming(
+            from_phone, body, media, message_sid=message_sid, reply_to_sid=reply_to_sid
+        )
+    except Exception:
+        log.exception("message handling failed", extra={"from": from_phone})
+        await twilio_client.try_send_text(from_phone, messages.UNEXPECTED_ERROR)
+
+
+async def _handle_incoming(
     from_phone: str,
     body: str,
     media: list[Media],
@@ -123,9 +147,19 @@ async def handle_incoming_message(
     # An attached photo/video with no clear text is still a request to build a post
     # from it — don't let a media-only message fall through to "clarify".
     if (photo or clip) and intent.type in (IntentType.greeting, IntentType.unclear):
+        # With a draft on the table, a bare photo is a replacement picture for it,
+        # not the start of a second post competing with the one awaiting a yes.
+        fallback = (
+            IntentType.edit_request
+            if photo and state is ConversationState.AWAITING_APPROVAL
+            else IntentType.new_post_request
+        )
         intent = Intent(
-            type=IntentType.new_post_request,
+            type=fallback,
             extracted_request=body or None,
+            edit_feedback=body or "Use the photo I've attached."
+            if fallback is IntentType.edit_request
+            else None,
             confidence=intent.confidence,
         )
 
@@ -178,8 +212,15 @@ async def handle_incoming_message(
     elif action is Action.APPROVE:
         await approval.handle_approval(from_phone, convo, target_platforms=requested_platforms)
     elif action is Action.EDIT:
+        # The photo rides along: an image attached to an edit is a replacement
+        # picture for the post, and dropping it here is why "reply with the
+        # employee's photo to swap it in" quietly did nothing.
         await approval.handle_edit_request(
-            from_phone, convo, intent.edit_feedback or body, target_platforms=requested_platforms
+            from_phone,
+            convo,
+            intent.edit_feedback or body,
+            target_platforms=requested_platforms,
+            photo=photo,
         )
     elif action is Action.CANCEL:
         await approval.handle_cancellation(from_phone, convo)
@@ -202,14 +243,27 @@ _ALWAYS_PHRASES = ("always", "every post", "every time", "all posts", "bake it i
 _ONCE_PHRASES = ("just this once", "just once", "one time", "only this", "just this one")
 _ONCE_EXACT = ("no", "nope", "nah", "one-off")
 _FORGET_RULE = re.compile(r"^forget\s+rule\s+(\d+)$", re.IGNORECASE)
+# "New rule: …" is a command, not something to infer. Left to the intent
+# classifier, a rule phrased as an instruction ("when you create imagery, …")
+# read as a request for a NEW POST and went off to the generator.
+_NEW_RULE = re.compile(r"^(?:new|add)\s+rule\s*[:\-–]\s*(.+)$", re.IGNORECASE | re.DOTALL)
+
+
+# An answer is "bare" when it is only the answer. "always" settles the question
+# and nothing else; "always. But do it again, this time industrially frozen…"
+# settles it AND asks for work, and the work must survive.
+_BARE_ANSWER_WORDS = 4
 
 
 async def _handle_rule_answer(from_phone: str, convo: dict[str, Any], body: str) -> bool:
     """Settle a pending "apply this to every post?" question.
 
-    Only an explicit answer consumes the message — anything else clears the
-    question and flows on as normal, so an ignored question never traps the
-    conversation or steals an approval.
+    Returns True only when the message was NOTHING BUT the answer. A message that
+    answers and then asks for something ("always. But do it again…") records the
+    answer and returns False, so the rest still reaches the router — swallowing
+    it whole is how a requested re-do vanished behind a "📌 Done" confirmation.
+    An unrelated message just clears the question and flows on, so an ignored
+    question never traps the conversation or steals an approval.
     """
     from app.ai import learning
 
@@ -222,6 +276,7 @@ async def _handle_rule_answer(from_phone: str, convo: dict[str, Any], body: str)
     # "approve" is about the POST, never about the rule — let it through untouched.
     if "approve" in normalized:
         return False
+    bare = len(normalized.split()) <= _BARE_ANSWER_WORDS
     if any(w in normalized for w in _ALWAYS_PHRASES):
         rule = await asyncio.to_thread(learning.save_rule, str(pending), source=from_phone)
         await twilio_client.try_send_text(
@@ -229,10 +284,10 @@ async def _handle_rule_answer(from_phone: str, convo: dict[str, Any], body: str)
             f"📌 Done — every future post follows: {rule.rule}\n"
             "Reply *rules* anytime to see everything I've learned.",
         )
-        return True
+        return bare
     if normalized in _ONCE_EXACT or any(w in normalized for w in _ONCE_PHRASES):
         await twilio_client.try_send_text(from_phone, "👍 Just this once then.")
-        return True
+        return bare
     return False  # not an answer — the question dies quietly, the message flows on
 
 
@@ -244,6 +299,16 @@ async def _handle_rule_commands(from_phone: str, body: str) -> bool:
     if normalized in ("rules", "show rules", "what have you learned", "what have you learned?"):
         await twilio_client.try_send_text(
             from_phone, await asyncio.to_thread(learning.format_rules_list)
+        )
+        return True
+    if match := _NEW_RULE.match(body.strip()):
+        rule = await asyncio.to_thread(
+            learning.save_rule, match.group(1).strip(), source_feedback=body, source=from_phone
+        )
+        await twilio_client.try_send_text(
+            from_phone,
+            f"📌 Added — every future post follows: {rule.rule}\n"
+            "Reply *rules* to see them all, or *forget rule N* to drop one.",
         )
         return True
     match = _FORGET_RULE.match(body.strip())
@@ -694,6 +759,9 @@ async def _finalize_preview(
                 "preview delivery failed",
                 extra={"post_id": post_id, "to": phone, "error": str(exc)[:200]},
             )
+            # Remembered, not just logged: the retry job re-sends it once the
+            # window reopens instead of the post going unseen for good.
+            await redelivery.record(post_id, phone, delivered=False)
     if not delivered:
         log.error("preview reached nobody", extra={"post_id": post_id})
     log.info(

@@ -9,4 +9,13 @@ template_variant: "milestone"
 - Lead with the achievement: N years with Globex. Tie it to Globex's own longevity and the strength of its team.
 - Warm and genuine, but still professional and on-brand — this is a public B2B post, not an internal card.
 - Use the person's name and role as given. Do not invent personal details.
-- 3-6 hashtags including #GlobexInternational. No birthday language, no cake/party emoji."""
+- 3-6 hashtags including #GlobexInternational. No birthday language, no cake/party emoji.
+
+The on-image subtitle (the `subhead` field) is set out as three parts divided by
+pipes, and carries NO sentence punctuation — no full stops, commas or dashes:
+
+    Name | Role | short phrase about what they do
+
+e.g. "Lana Petrenko | Accounting Manager | Keeping the numbers moving". Written
+as a running sentence it reads as a caption competing with the caption; the
+divided form is the house style for milestone cards."""

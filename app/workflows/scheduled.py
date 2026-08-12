@@ -173,7 +173,8 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
             f"({entry.title})\n\n"
         )
     prefix += sheet_note
-    if photo.name.startswith("placeholder"):
+    is_placeholder = photo.name.startswith("placeholder")
+    if is_placeholder:
         prefix += "📷 Placeholder image — reply with the employee's photo to swap it in.\n\n"
     await _finalize_preview(
         approver_phone(),
@@ -186,6 +187,10 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         extra_render_meta={
             "publish_on": when.isoformat(),
             "caption_locked": caption_locked,
+            # Marked so an edit never sends this stand-in card to the image model:
+            # asked to "improve" a gray placeholder, it invents a person and the
+            # post ends up carrying a fabricated face for a named employee.
+            "photo_is_placeholder": is_placeholder,
             "calendar": {
                 "week": entry.week,
                 "title": entry.title,

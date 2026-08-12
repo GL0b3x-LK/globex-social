@@ -138,16 +138,29 @@ def wired(monkeypatch) -> _Captures:
     monkeypatch.setattr(approval.image_gen, "download", fake_download)
     monkeypatch.setattr(approval.twilio_client, "send_media", fake_send_media)
     monkeypatch.setattr(approval.conversation, "transition", fake_transition)
-    monkeypatch.setattr(approval.posts, "get", lambda pid: {"id": pid, "render_meta": stored_meta})
     monkeypatch.setattr(approval.posts, "update", lambda pid, **kw: {})
     monkeypatch.setattr(approval.posts, "set_image_url", lambda pid, url: {})
-    monkeypatch.setattr(
-        approval.posts,
-        "set_render_meta",
-        lambda pid, meta: cap.__setattr__("saved_meta", meta) or {},
-    )
+    _wire_post_row(monkeypatch, cap, stored_meta)
     monkeypatch.setattr(approval.approvals, "record", lambda *a: None)
     return cap
+
+
+def _wire_post_row(monkeypatch, cap: _Captures, stored_meta: dict[str, Any]) -> None:
+    """Make posts.get/set_render_meta behave like the real table — reads see writes.
+
+    A static ``get`` lies about anything that reads back what it just wrote (the
+    delivery bookkeeping does exactly that), and the lie shows up as a passing
+    test over broken behaviour, or the reverse.
+    """
+    row = {"id": "p1", "render_meta": stored_meta}
+
+    def _set(pid: str, meta: dict[str, Any]) -> dict[str, Any]:
+        row["render_meta"] = meta
+        cap.saved_meta = meta
+        return {}
+
+    monkeypatch.setattr(approval.posts, "get", lambda pid: dict(row))
+    monkeypatch.setattr(approval.posts, "set_render_meta", _set)
 
 
 @pytest.mark.asyncio
@@ -324,3 +337,151 @@ async def test_a_failed_status_message_does_not_abandon_the_edit(
     assert wired.render_kwargs.get("photo_bytes") == b"new-png"
     assert wired.saved_meta is not None
     assert wired.saved_meta["publish_on"] == "2026-08-11"  # identity still intact
+
+
+# --------------------------------------------------------------------------- #
+# day-two faults: attachments dropped, mixed edits halved, placeholders painted
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_an_attached_photo_replaces_the_picture_without_the_image_model(
+    wired: _Captures, monkeypatch
+) -> None:
+    """The milestone preview says "reply with the employee's photo to swap it in".
+    The reply used to be thrown away: the edit path took text only, so the photo
+    never arrived and the gray placeholder stayed."""
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("an attached photo must not be sent to the image model")
+
+    async def fake_download(url: str, **kw: Any) -> tuple[bytes, str]:
+        return b"mikes-photo", "image/jpeg"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
+    monkeypatch.setattr(approval.media, "download_twilio_media", fake_download)
+    monkeypatch.setattr(
+        approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
+    )
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request(
+        "whatsapp:+1", convo, "add her image attached", photo=("https://api.twilio/x", "image/jpeg")
+    )
+
+    assert wired.render_kwargs.get("photo_bytes") == b"mikes-photo"
+    assert wired.saved_meta is not None
+    assert wired.saved_meta["photo_url"].startswith("https://cdn.test/p1-photo-")
+    assert wired.saved_meta["publish_on"] == "2026-08-11"  # identity intact
+
+
+@pytest.mark.asyncio
+async def test_a_mixed_edit_changes_the_words_and_the_picture(
+    wired: _Captures, monkeypatch
+) -> None:
+    """ "Change the subtitle to X. Also add her image attached." is one message
+    asking for two things. Forcing it into a single bucket dropped whichever half
+    lost — the dictated subtitle went to the image model as a scene prompt."""
+
+    async def classify_both(feedback: str) -> str:
+        return "both"
+
+    async def fake_download(url: str, **kw: Any) -> tuple[bytes, str]:
+        return b"mikes-photo", "image/jpeg"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_both)
+    monkeypatch.setattr(approval.media, "download_twilio_media", fake_download)
+    monkeypatch.setattr(
+        approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
+    )
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request(
+        "whatsapp:+1",
+        convo,
+        "Change the subtitle to: Lana Petrenko | Accounting Manager. Also add her image attached.",
+        photo=("https://api.twilio/x", "image/jpeg"),
+    )
+
+    # the picture changed...
+    assert wired.render_kwargs.get("photo_bytes") == b"mikes-photo"
+    # ...AND the copy did (the fixture's apply_edit returns EDITED CAPTION)
+    assert wired.saved_meta is not None
+    assert wired.saved_meta["generated"]["caption"] == "EDITED CAPTION"
+
+
+@pytest.mark.asyncio
+async def test_a_visual_edit_on_a_placeholder_asks_for_the_real_photo(
+    wired: _Captures, monkeypatch
+) -> None:
+    """Sent to img2img, a gray placeholder comes back as an invented person —
+    a fabricated face on a named employee's post, one 'approve' from publishing."""
+    sent_texts: list[str] = []
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("a placeholder must never reach the image model")
+
+    async def fake_send_text(phone: str, body: str, **kw: Any) -> str:
+        sent_texts.append(body)
+        return "SM0"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
+    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+    _wire_post_row(
+        monkeypatch,
+        wired,
+        {
+            "generated": _post().model_dump(),
+            "treatment": "calendar",
+            "publish_on": "2026-08-11",
+            "photo_url": "https://cdn.test/p1-photo.jpg",
+            "photo_media_type": "image/jpeg",
+            "photo_is_placeholder": True,
+        },
+    )
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request("whatsapp:+1", convo, "make her look more professional")
+
+    assert any("placeholder" in t for t in sent_texts)
+
+
+@pytest.mark.asyncio
+async def test_an_undelivered_preview_is_remembered_for_re_sending(
+    wired: _Captures, monkeypatch
+) -> None:
+    """A send that fails is not the end of the story: the render exists, so the
+    post is owed to that recipient until it actually arrives."""
+
+    async def dead_send(*a: Any, **kw: Any) -> str:
+        raise RuntimeError("HTTP 429 error: exceeded the 50 daily messages limit")
+
+    monkeypatch.setattr(approval.twilio_client, "send_media", dead_send)
+
+    convo = {
+        "current_post_id": "p1",
+        "context": {"generated": _post().model_dump(), "treatment": "calendar"},
+    }
+    await approval.handle_edit_request("whatsapp:+1", convo, "tighten the caption")
+
+    assert wired.saved_meta is not None
+    assert wired.saved_meta["undelivered"] == ["whatsapp:+1"]
+    # the work still happened and is stored
+    assert wired.saved_meta["generated"]["caption"] == "EDITED CAPTION"

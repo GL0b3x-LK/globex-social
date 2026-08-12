@@ -27,8 +27,9 @@ def captured(monkeypatch):
         seen["slots"] = slots
         return b"\x89PNG\r\n\x1a\n"
 
-    async def fake_upload(post_id, png):
-        return f"https://img.test/{post_id}.png"
+    async def fake_upload(post_id, png, *, suffix=""):
+        seen["suffix"] = suffix
+        return f"https://img.test/{post_id}{suffix}.png"
 
     monkeypatch.setattr("app.workflows.render_pipeline.render_mod.renderer.render", fake_render)
     monkeypatch.setattr("app.workflows.render_pipeline.storage.upload_png", fake_upload)

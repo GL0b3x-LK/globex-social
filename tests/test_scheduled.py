@@ -425,8 +425,11 @@ def test_the_test_grid_is_anchored_not_relative_to_boot() -> None:
     tz = ZoneInfo("America/New_York")
     trigger = _test_grid(2.0, "America/New_York")
 
-    # Booting at 08:26 must schedule 10:00 — not 10:26.
-    booted = datetime(2026, 8, 11, 8, 26, tzinfo=tz)
+    # Booting at 08:26 must schedule 10:00 — not 10:26. The grid is anchored to
+    # TODAY's midnight, so the boot time has to be today's too: pinning a literal
+    # date here passes on the day it is written and fails every day after.
+    today = datetime.now(tz).date()
+    booted = datetime(today.year, today.month, today.day, 8, 26, tzinfo=tz)
     first = trigger.get_next_fire_time(None, booted)
     assert (first.hour, first.minute) == (10, 0)
 

@@ -29,24 +29,35 @@ from app.video import library
 
 log = get_logger("app.ai.editor")
 
-_EDIT_KIND_PROMPT = """Karen is reviewing a social post that has a GENERATED BACKGROUND IMAGE (a photo-style scene) with TEXT overlaid on top (headline, caption). She asked for a change. Classify it:
-- "visual" — the change is about the PICTURE/scene/background: its subject, setting, colours, lighting, composition, or what is depicted (e.g. "make it a sunset", "add shipping crates", "show a farm instead", "more blue tones").
-- "textual" — the change is about the WORDS or layout: caption, headline, wording, tone, hashtags, or length (e.g. "shorten the headline", "make the caption punchier", "add a hashtag").
-If genuinely ambiguous, prefer "textual" (cheaper and non-destructive)."""
+_EDIT_KIND_PROMPT = """An operator is reviewing a social post that has a BACKGROUND IMAGE (a photo or photo-style scene) with TEXT overlaid on top (headline, subtitle) plus a caption beside it. They asked for a change. Classify it:
+- "visual" — ONLY the PICTURE changes: its subject, setting, colours, lighting, composition, or what is depicted ("make it a sunset", "add shipping crates", "show a farm instead", "make it brighter").
+- "textual" — ONLY the WORDS change: caption, headline, subtitle, wording, tone, hashtags, or length ("shorten the headline", "make the caption punchier", "change the subtitle to X").
+- "both" — the message asks for a picture change AND a words change ("change the subtitle to X and use the photo I've attached", "make it brighter and shorten the headline").
+
+Read the WHOLE message: a request that names new wording and also says anything about the image is "both", never just one of them. If genuinely ambiguous between visual and textual, prefer "textual" (cheaper and non-destructive)."""
 
 
 class _EditKind(BaseModel):
-    kind: Literal["visual", "textual"]
+    kind: Literal["visual", "textual", "both"]
 
 
-async def classify_edit_kind(feedback: str) -> Literal["visual", "textual"]:
-    """For a generated-image post: is the edit about the picture or the words?"""
+EditKind = Literal["visual", "textual", "both"]
+
+
+async def classify_edit_kind(feedback: str) -> EditKind:
+    """For a post carrying a picture: does the edit touch the picture, the words, or both?
+
+    "both" exists because a single WhatsApp line routinely asks for both at once
+    ("change the subtitle to … Also add her image attached"). Forcing that into
+    one bucket silently dropped whichever half lost — the operator's dictated
+    subtitle went to the image model as a scene prompt and the copy never changed.
+    """
     result = await generate_structured(
         system=_EDIT_KIND_PROMPT,
-        user_content=f"Karen's requested change:\n{feedback}",
+        user_content=f"The operator's requested change:\n{feedback}",
         output_model=_EditKind,
         tool_name="classify_edit",
-        tool_description="Classify the edit as 'visual' (the picture) or 'textual' (the words/layout).",
+        tool_description="Classify the edit as 'visual', 'textual', or 'both'.",
         max_tokens=128,
     )
     return result.kind

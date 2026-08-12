@@ -9,7 +9,7 @@ new-draft, edit-re-render, and calendar-scheduler flows.
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.ai.generator import GeneratedPost
 from app.db import storage
@@ -103,7 +103,16 @@ async def render_and_store(
     context: dict[str, Any] | None = None,
     photo_bytes: bytes | None = None,
     photo_media_type: str = "image/jpeg",
+    fresh: bool = False,
 ) -> str:
+    """Render the post and store the PNG; returns its public URL.
+
+    ``fresh`` writes to a NEW object instead of overwriting ``{post_id}.png``.
+    Rendered posts are served with an hour of CDN cache, so an edit that reuses
+    the same key can hand the operator back the pre-edit image and read as "my
+    change did nothing". Every re-render therefore gets its own key, which also
+    leaves the previous version in place to walk an edit back.
+    """
     slots = build_slots(post, context)
     variant = resolve_variant(post.template_variant)
     if photo_bytes is not None:
@@ -118,4 +127,5 @@ async def render_and_store(
     _adapt_final_slots(variant, slots, post)
     dimensions = PLATFORM_DIMENSIONS[TEMPLATES[variant].canvas]
     png = await render_mod.renderer.render(variant, slots, dimensions=dimensions)
-    return await storage.upload_png(post_id, png)
+    suffix = f"-r{uuid4().hex[:6]}" if fresh else ""
+    return await storage.upload_png(post_id, png, suffix=suffix)

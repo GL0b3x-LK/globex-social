@@ -273,3 +273,78 @@ def test_saved_rules_round_trip_through_json(store) -> None:
     doc = json.loads(store[learning.RULES_PATH])
     assert doc["rules"][0]["rule"] == "Keep captions under three lines"
     assert doc["rules"][0]["source"] == "whatsapp:+1"
+
+
+# --------------------------------------------------------------------------- #
+# an answer must never swallow the work that came with it
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_always_plus_a_request_saves_the_rule_and_still_routes_the_request(
+    od_wired,
+) -> None:
+    """Mike replied "always. But do it again, this is freezing in terms of it being
+    industrially frozen on location…". The rule was saved, "📌 Done" was sent, and
+    the re-do he asked for in the same breath was dropped on the floor."""
+    handled = await on_demand._handle_rule_answer(
+        "whatsapp:+1",
+        _PENDING,
+        "always. But do it again, this is industrially frozen on location, "
+        "not a home freezer. So please do the image again.",
+    )
+    assert handled is False  # the message carries on to the router
+    assert [r.rule for r in learning.load_rules()] == ["Write titles in ALL CAPS"]
+    assert any("Done" in t for t in od_wired.texts)
+
+
+@pytest.mark.asyncio
+async def test_a_bare_always_is_still_consumed(od_wired) -> None:
+    """The plain answer has nothing else in it, so nothing else should happen."""
+    assert await on_demand._handle_rule_answer("whatsapp:+1", _PENDING, "always") is True
+
+
+@pytest.mark.asyncio
+async def test_declining_with_a_follow_up_request_also_flows_on(od_wired) -> None:
+    handled = await on_demand._handle_rule_answer(
+        "whatsapp:+1", _PENDING, "just this once — and shorten the caption while you're there"
+    )
+    assert handled is False
+    assert learning.load_rules() == []
+
+
+# --------------------------------------------------------------------------- #
+# "new rule: …" is a command, not something to infer
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_new_rule_command_saves_it_without_the_intent_classifier(od_wired) -> None:
+    """Phrased as an instruction ("when you create imagery and copy, please…"),
+    a rule read as a NEW POST request and went to the generator instead."""
+    body = (
+        "New rule: when you create imagery and copy please understand that anything "
+        'regarding "freezing" is industrial freezing on location before global shipping.'
+    )
+    assert await on_demand._handle_rule_commands("whatsapp:+1", body) is True
+    saved = [r.rule for r in learning.load_rules()]
+    assert len(saved) == 1
+    assert saved[0].startswith("when you create imagery")
+    assert "Added" in od_wired.texts[-1]
+
+
+@pytest.mark.asyncio
+async def test_add_rule_is_accepted_too(od_wired) -> None:
+    assert await on_demand._handle_rule_commands("whatsapp:+1", "Add rule: never post on Sundays")
+    assert [r.rule for r in learning.load_rules()] == ["never post on Sundays"]
+
+
+@pytest.mark.asyncio
+async def test_a_post_that_merely_mentions_rules_is_not_a_command(od_wired) -> None:
+    assert (
+        await on_demand._handle_rule_commands(
+            "whatsapp:+1", "make a post about our new rules for cold chain"
+        )
+        is False
+    )
+    assert learning.load_rules() == []

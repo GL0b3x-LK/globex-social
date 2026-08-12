@@ -52,6 +52,21 @@ IMAGE_EDIT_FAILED = (
     "🎨 I couldn't update the image just now — your current draft still stands. "
     "Want to reword the change, or reply *approve* / *cancel*?"
 )
+UNEXPECTED_ERROR = (
+    "⚠️ Something went wrong on my side handling that — nothing was changed. "
+    "Send it again and I'll have another go."
+)
+PHOTO_DOWNLOAD_FAILED = (
+    "📷 I couldn't download that photo — the rest of your change still went through. "
+    "Try sending the picture again?"
+)
+# A placeholder is a stand-in card, not a photograph of the person. Asking the
+# image model to "improve" it invents a face and attaches it to a named
+# employee, so the request stops here and asks for the real photo instead.
+PLACEHOLDER_NEEDS_PHOTO = (
+    "📷 That image is still the placeholder, so there's nothing real for me to edit — "
+    "I'd only be inventing a face. Send me the actual photo and I'll drop it straight in."
+)
 VISUAL_CLARIFY_DEFAULT = (
     "Want this as a designed graphic, or should I generate a photo-style image for it?"
 )

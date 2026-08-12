@@ -20,11 +20,16 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import get_settings
 from app.logging_config import get_logger
-from app.workflows import scheduled
+from app.workflows import redelivery, scheduled
 
 log = get_logger("app.scheduler")
 
 _scheduler: AsyncIOScheduler | None = None
+
+# How often to chase previews that never arrived. Frequent enough that a reopened
+# 24h window is used while the operator is still at their phone, sparse enough
+# that a genuinely blocked account is not retried into its own message cap.
+_REDELIVERY_MINUTES = 20
 
 
 def _test_grid(interval_hours: float, tz_name: str) -> IntervalTrigger:
@@ -51,6 +56,18 @@ async def _publish_job() -> None:
     log.info("publish job done", extra={"published": count})
 
 
+async def _redelivery_job() -> None:
+    """Re-send previews that were rendered but never reached anyone.
+
+    Runs on both the test and the client schedules: the causes (a closed 24h
+    window, a lapsed sandbox join, the daily message cap) all clear on their own
+    with time, and until this existed the post simply stayed unseen for good.
+    """
+    sent = await redelivery.retry_undelivered()
+    if sent:
+        log.info("re-delivery job done", extra={"delivered": sent})
+
+
 async def _test_job() -> None:
     """Internal test run: one calendar post per interval, in approved order.
 
@@ -74,6 +91,15 @@ def start() -> AsyncIOScheduler | None:
         return _scheduler
 
     sched = AsyncIOScheduler(timezone=settings.timezone)
+    # Owed previews are chased on every schedule — a post nobody saw is the same
+    # failure whether it came from the test run or the client calendar.
+    sched.add_job(
+        _redelivery_job,
+        IntervalTrigger(minutes=_REDELIVERY_MINUTES, timezone=settings.timezone),
+        id="redelivery",
+        coalesce=True,
+        max_instances=1,
+    )
 
     if settings.test_mode:
         # The internal run replaces the calendar jobs rather than joining them:
