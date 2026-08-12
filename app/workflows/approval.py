@@ -174,18 +174,13 @@ async def handle_edit_request(
         )
 
     current = GeneratedPost(**stored)
-    if context.get("treatment") == "generated_image":
-        await _edit_generated_image(phone, post_id, current, feedback, context)
-        return
-    if context.get("treatment") == "vhs_video":
-        await _edit_vhs_caption(phone, post_id, current, feedback, context)
-        return
-
-    await conversation.transition(phone, state=ConversationState.EDITING)
 
     # An attached image is a REPLACEMENT photograph for this post. It used to be
     # discarded outright: the milestone previews invite "reply with the employee's
     # photo to swap it in", the reply arrived, and the picture never changed.
+    # Downloaded BEFORE the treatment branch — generated-image posts take a
+    # replacement too, and taking it after the branch meant one silently landed
+    # on the floor for exactly the posts most likely to want a real photo.
     replacement: tuple[bytes, str] | None = None
     if photo is not None:
         try:
@@ -193,6 +188,17 @@ async def handle_edit_request(
         except Exception as exc:  # noqa: BLE001 — a bad download must not lose the edit
             log.error("attached photo download failed", extra={"error": str(exc)[:200]})
             await twilio_client.try_send_text(phone, messages.PHOTO_DOWNLOAD_FAILED)
+
+    if context.get("treatment") == "generated_image":
+        await _edit_generated_image(
+            phone, post_id, current, feedback, context, replacement=replacement
+        )
+        return
+    if context.get("treatment") == "vhs_video":
+        await _edit_vhs_caption(phone, post_id, current, feedback, context)
+        return
+
+    await conversation.transition(phone, state=ConversationState.EDITING)
 
     # A post that carries a photograph can take PICTURE feedback too: the photo
     # is transformed by the image model (nano-banana img2img), the words stay.
@@ -366,73 +372,119 @@ async def _edit_photo_post(
 
 
 async def _edit_generated_image(
-    phone: str, post_id: str, current: GeneratedPost, feedback: str, context: Row
+    phone: str,
+    post_id: str,
+    current: GeneratedPost,
+    feedback: str,
+    context: Row,
+    *,
+    replacement: tuple[bytes, str] | None = None,
 ) -> None:
-    """Edit a generated-image post: a visual change regenerates the picture (img2img);
-    a textual change re-renders the overlay on the SAME picture."""
+    """Apply an edit to a post built on an AI-generated picture.
+
+    The three halves of an edit are honoured independently, exactly as for photo
+    posts (`_edit_photo_post`), because one WhatsApp line routinely asks for more
+    than one at once:
+
+    * an ATTACHED photo replaces the picture outright (no image model involved);
+    * a VISUAL instruction transforms the stored picture through img2img;
+    * a TEXTUAL instruction rewrites the copy.
+
+    This branch used to test ``kind == "visual"`` alone, so a "both" edit —
+    "make it brighter and change the headline to X" — rewrote the words and left
+    the picture untouched without saying so. That is the same fault already fixed
+    on the photo path; this is the branch it was missed on.
+
+    img2img always references the RAW generated image, never the delivered
+    preview: hand the model back the flattened poster and it redraws the logo and
+    headline into the photograph.
+    """
+    from uuid import uuid4
+
     raw_url = context.get("raw_image_url")
     await conversation.transition(phone, state=ConversationState.EDITING)
     kind = await editor.classify_edit_kind(feedback)
+    wants_picture = kind in ("visual", "both")
+    wants_words = kind in ("textual", "both")
 
-    if kind == "visual" and raw_url:
+    new_raw_url: str | None = None
+    photo_bytes: bytes | None = None
+    media_type = "image/png"  # anything the image model returns; an upload may differ
+
+    if replacement is not None:
+        photo_bytes, media_type = replacement
+    elif wants_picture and raw_url:
         await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
         result = await image_gen.edit(str(raw_url), feedback)
         if not result.ok or not result.image_bytes:
             await twilio_client.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
-            await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
-            return
-        new_raw_url = await storage.upload_png(post_id, result.image_bytes, suffix="-raw")
-        await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
-        image_url = await render_pipeline.render_and_store(
-            post_id,
-            current,
-            photo_bytes=result.image_bytes,
-            photo_media_type="image/png",
-            fresh=True,
-        )
-        await asyncio.to_thread(posts.set_image_url, post_id, image_url)
-        await _merge_render_meta(post_id, generated=current.model_dump(), raw_image_url=new_raw_url)
-        await conversation.transition(
-            phone,
-            state=ConversationState.AWAITING_APPROVAL,
-            context_patch={"raw_image_url": new_raw_url},
-        )
-        await _deliver_preview(phone, post_id, current, image_url)
-        log.info("image edit applied", extra={"post_id": post_id})
-        await _maybe_learn(phone, feedback)
-        return
+            if not wants_words:
+                await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
+                return
+        else:
+            photo_bytes = result.image_bytes
 
-    # Textual edit (or visual with no raw image to transform): re-apply the copy and
-    # re-render the overlay on the SAME generated image so the picture is preserved.
-    revised = await editor.apply_edit(
-        current, feedback, context={"request": context.get("request")}
-    )
-    photo_bytes: bytes | None = None
-    if raw_url:
+    if photo_bytes is not None:
+        # Stored as the new RAW layer so the next img2img edit chains off this
+        # picture rather than the one it replaced. A NEW object every time:
+        # overwriting `{post_id}-raw.png` in place left the URL handed to the
+        # image model behind Supabase's hour-long CDN cache, so a second tweak
+        # could silently transform the PREVIOUS picture — the chaining breaks
+        # exactly where it matters most.
+        ext = "png" if media_type == "image/png" else "jpg"
+        new_raw_url = await asyncio.to_thread(
+            storage.upload_bytes,
+            f"{post_id}-raw-{uuid4().hex[:6]}.{ext}",
+            photo_bytes,
+            media_type,
+        )
+    elif raw_url:  # copy-only edit — re-render the overlay on the SAME picture
         try:
             photo_bytes = await image_gen.download(str(raw_url))
         except Exception as exc:  # noqa: BLE001 — keep the edit working even if refetch fails
             log.error("could not refetch raw image for re-overlay", extra={"error": str(exc)})
-    await asyncio.to_thread(
-        posts.update,
-        post_id,
-        caption=revised.caption,
-        hashtags=revised.hashtags,
-        template_type=revised.template_variant,
-    )
+
+    revised = current
+    if wants_words:
+        revised = await editor.apply_edit(
+            current, feedback, context={"request": context.get("request")}
+        )
+        await asyncio.to_thread(
+            posts.update,
+            post_id,
+            caption=revised.caption,
+            hashtags=revised.hashtags,
+            template_type=revised.template_variant,
+        )
+
     await asyncio.to_thread(approvals.record, post_id, "edit_requested", feedback)
     image_url = await render_pipeline.render_and_store(
-        post_id, revised, photo_bytes=photo_bytes, photo_media_type="image/png", fresh=True
+        post_id, revised, photo_bytes=photo_bytes, photo_media_type=media_type, fresh=True
     )
     await asyncio.to_thread(posts.set_image_url, post_id, image_url)
-    await _merge_render_meta(post_id, generated=revised.model_dump())
+    await _merge_render_meta(
+        post_id,
+        generated=revised.model_dump() if wants_words else None,
+        raw_image_url=new_raw_url,
+    )
+    patch: dict[str, Any] = {}
+    if wants_words:
+        patch["generated"] = revised.model_dump()
+    if new_raw_url:
+        patch["raw_image_url"] = new_raw_url
     await conversation.transition(
-        phone,
-        state=ConversationState.AWAITING_APPROVAL,
-        context_patch={"generated": revised.model_dump()},
+        phone, state=ConversationState.AWAITING_APPROVAL, context_patch=patch or None
     )
     await _deliver_preview(phone, post_id, revised, image_url)
-    log.info("text edit applied to generated-image post", extra={"post_id": post_id})
+    log.info(
+        "generated-image edit applied",
+        extra={
+            "post_id": post_id,
+            "kind": kind,
+            "replaced_photo": replacement is not None,
+            "words_changed": wants_words,
+        },
+    )
     await _maybe_learn(phone, feedback)
 
 

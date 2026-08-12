@@ -8,6 +8,7 @@ and a swipe-reply to a preview resolved to nothing.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -461,6 +462,181 @@ async def test_a_visual_edit_on_a_placeholder_asks_for_the_real_photo(
     await approval.handle_edit_request("whatsapp:+1", convo, "make her look more professional")
 
     assert any("placeholder" in t for t in sent_texts)
+
+
+# --------------------------------------------------------------------------- #
+# the same three faults on the GENERATED-IMAGE branch, which kept the old
+# binary visual/textual test long after the photo branch had been fixed
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture()
+def wired_generated(wired: _Captures, monkeypatch) -> _Captures:
+    """`wired`, re-pointed at a post whose picture came from the image model."""
+    _wire_post_row(
+        monkeypatch,
+        wired,
+        {
+            "generated": _post().model_dump(),
+            "treatment": "generated_image",
+            "raw_image_url": "https://cdn.test/p1-raw.png",
+        },
+    )
+    monkeypatch.setattr(
+        approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
+    )
+    return wired
+
+
+def _generated_convo() -> dict[str, Any]:
+    return {
+        "current_post_id": "p1",
+        "context": {
+            "generated": _post().model_dump(),
+            "treatment": "generated_image",
+            "raw_image_url": "https://cdn.test/p1-raw.png",
+        },
+    }
+
+
+@pytest.mark.asyncio
+async def test_a_mixed_edit_on_a_generated_image_changes_both(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """One message asking for a brighter picture AND new words must get both.
+    This branch tested `kind == "visual"` alone, so "both" fell through to the
+    copy-only path: the words changed, the picture silently did not."""
+
+    async def classify_both(feedback: str) -> str:
+        return "both"
+
+    async def fake_image_edit(url: str, prompt: str, **kw: Any) -> Any:
+        return SimpleNamespace(ok=True, image_bytes=b"brighter-png")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_both)
+    monkeypatch.setattr(approval.image_gen, "edit", fake_image_edit)
+
+    await approval.handle_edit_request(
+        "whatsapp:+1", _generated_convo(), "make it brighter and change the headline to READY NOW"
+    )
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"brighter-png"
+    assert wired_generated.saved_meta is not None
+    assert wired_generated.saved_meta["generated"]["caption"] == "EDITED CAPTION"
+
+
+@pytest.mark.asyncio
+async def test_an_attached_photo_replaces_a_generated_image(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """A replacement photo was downloaded only AFTER the treatment branch, so on
+    a generated-image post it was dropped without a word."""
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("an attached photo must not be sent to the image model")
+
+    async def fake_download(url: str, **kw: Any) -> tuple[bytes, str]:
+        return b"mikes-photo", "image/jpeg"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
+    monkeypatch.setattr(approval.media, "download_twilio_media", fake_download)
+
+    await approval.handle_edit_request(
+        "whatsapp:+1",
+        _generated_convo(),
+        "use this shot instead",
+        photo=("https://api.twilio/x", "image/jpeg"),
+    )
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"mikes-photo"
+    assert wired_generated.render_kwargs.get("photo_media_type") == "image/jpeg"
+
+
+@pytest.mark.asyncio
+async def test_each_image_tweak_chains_off_the_previous_picture(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """img2img references the LAST picture, and every version gets its own URL.
+
+    Overwriting `{post_id}-raw.png` in place put the reference behind Supabase's
+    hour-long CDN cache, so a second tweak could transform the picture the first
+    one had already replaced.
+    """
+    referenced: list[str] = []
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def fake_image_edit(url: str, prompt: str, **kw: Any) -> Any:
+        referenced.append(url)
+        return SimpleNamespace(ok=True, image_bytes=b"round-2-png")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", fake_image_edit)
+
+    await approval.handle_edit_request("whatsapp:+1", _generated_convo(), "warmer light")
+
+    assert referenced == ["https://cdn.test/p1-raw.png"]  # the picture it was shown
+    assert wired_generated.saved_meta is not None
+    new_url = wired_generated.saved_meta["raw_image_url"]
+    assert new_url != "https://cdn.test/p1-raw.png", "a new version needs a new URL"
+
+    # Round two reads the URL round one stored, so the chain continues.
+    convo = _generated_convo()
+    convo["context"]["raw_image_url"] = new_url
+    await approval.handle_edit_request("whatsapp:+1", convo, "warmer still")
+    assert referenced[-1] == new_url
+
+
+@pytest.mark.asyncio
+async def test_a_copy_edit_on_a_generated_image_leaves_the_picture_alone(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """Changing only words must not call the image model — a picture that drifts
+    on a copy edit is a picture nobody asked to change."""
+
+    async def classify_textual(feedback: str) -> str:
+        return "textual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("a copy-only edit must not reach the image model")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_textual)
+    monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
+
+    await approval.handle_edit_request("whatsapp:+1", _generated_convo(), "shorten the caption")
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"jpeg-bytes"  # refetched, unchanged
+    assert wired_generated.saved_meta is not None
+    assert wired_generated.saved_meta["raw_image_url"] == "https://cdn.test/p1-raw.png"
+
+
+@pytest.mark.asyncio
+async def test_a_failed_generated_image_edit_still_applies_the_words(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """The image model falling over must not also cost the operator their copy
+    change — the half that CAN be done still gets done."""
+
+    async def classify_both(feedback: str) -> str:
+        return "both"
+
+    async def failing_edit(url: str, prompt: str, **kw: Any) -> Any:
+        return SimpleNamespace(ok=False, image_bytes=None)
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_both)
+    monkeypatch.setattr(approval.image_gen, "edit", failing_edit)
+
+    await approval.handle_edit_request(
+        "whatsapp:+1", _generated_convo(), "brighter, and cut the last line"
+    )
+
+    assert wired_generated.saved_meta is not None
+    assert wired_generated.saved_meta["generated"]["caption"] == "EDITED CAPTION"
 
 
 @pytest.mark.asyncio
