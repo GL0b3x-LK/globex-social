@@ -8,6 +8,7 @@ new-draft, edit-re-render, and calendar-scheduler flows.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -16,7 +17,12 @@ from app.db import storage
 from app.logging_config import get_logger
 from app.templates import renderer as render_mod
 from app.templates.assets import image_data_uri
-from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES, PLATFORM_DIMENSIONS, TEMPLATES
+from app.templates.catalog import (
+    CALENDAR_TEMPLATE_ALIASES,
+    DEFAULT_FINAL,
+    PLATFORM_DIMENSIONS,
+    TEMPLATES,
+)
 
 log = get_logger("app.workflows.render")
 
@@ -41,7 +47,9 @@ _CONTEXT_SLOTS = (
     "years",
     "message",
 )
-_FALLBACK_VARIANT = "promotional"
+# An unknown variant used to land on `promotional` — a demo-era template in
+# Montserrat. Anything unrecognised now resolves to an approved one.
+_FALLBACK_VARIANT = DEFAULT_FINAL
 
 
 def build_slots(post: GeneratedPost, context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -105,12 +113,36 @@ def _adapt_final_slots(variant: str, slots: dict[str, Any], post: GeneratedPost)
 
 def resolve_variant(template_variant: str) -> str:
     """Guard against an unknown variant from the model — fall back, don't crash."""
-    if template_variant in TEMPLATES:
-        return template_variant
     if template_variant in CALENDAR_TEMPLATE_ALIASES:
         return CALENDAR_TEMPLATE_ALIASES[template_variant]
+    if template_variant in TEMPLATES:
+        return template_variant
     log.warning("unknown template_variant; falling back", extra={"variant": template_variant})
     return _FALLBACK_VARIANT
+
+
+async def _photo_for(post: GeneratedPost, variant: str) -> tuple[bytes, str] | None:
+    """A picture for a photo template that arrived without one.
+
+    All four approved templates are built around a photograph, so a from-scratch
+    post that reaches one with no image would render its photo panel empty. The
+    bank exists precisely so that never has to happen: a real Globex photograph
+    matched to what the post is about beats an empty frame, and beats dropping
+    back to a demo-era template in the wrong typeface.
+    """
+    from app.workflows import scheduled  # local import: scheduled reaches back here
+
+    try:
+        path = await asyncio.to_thread(
+            scheduled.pick_photo_for_text,
+            f"{post.headline} {post.subhead or ''} {post.caption}",
+            "brand",
+            exclude=await asyncio.to_thread(scheduled.recently_used),
+        )
+        return await asyncio.to_thread(path.read_bytes), "image/jpeg"
+    except Exception as exc:  # noqa: BLE001 — an empty frame is worse than a plain render
+        log.error("could not take a photo from the bank", extra={"error": str(exc)[:200]})
+        return None
 
 
 async def render_and_store(
@@ -132,15 +164,23 @@ async def render_and_store(
     """
     slots = build_slots(post, context)
     variant = resolve_variant(post.template_variant)
+    if photo_bytes is not None and not TEMPLATES[variant].needs_photo:
+        # A supplied photo must be used: if the model chose a text-only template
+        # (e.g. "stats" for "150 ships"), switch to a photo template so the image
+        # shows. That switch used to land on `custom`, a demo-era template in the
+        # wrong typeface; it lands on an approved one now.
+        log.info(
+            "photo attached; using photo template",
+            extra={"from": variant, "to": DEFAULT_FINAL},
+        )
+        variant = DEFAULT_FINAL
+    if photo_bytes is None and TEMPLATES[variant].needs_photo:
+        # The approved four are all photo templates, so a post that picked one
+        # without an image needs a picture rather than a different template.
+        if taken := await _photo_for(post, variant):
+            photo_bytes, photo_media_type = taken
     if photo_bytes is not None:
         slots["photo"] = image_data_uri(photo_bytes, photo_media_type)
-        # A supplied photo must be used: if the model chose a text-only template
-        # (e.g. "stats" for "150 ships"), switch to a photo template so the image shows.
-        if not TEMPLATES[variant].needs_photo:
-            log.info(
-                "photo attached; using photo template", extra={"from": variant, "to": "custom"}
-            )
-            variant = "custom"
     # Resolved only once the variant is final (the template supplies the default
     # label) and stamped back onto the post, so the stored record says what the
     # picture says. Edits read that value: a label the code cannot see is a label

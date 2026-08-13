@@ -238,10 +238,25 @@ TEMPLATES: dict[str, TemplateSpec] = {
     ),
 }
 
-# The calendar's Template column -> catalog variant.
+# The calendar's Template column -> catalog variant. These are also the names the
+# client uses in conversation, so they are what the free-form prompt emits and
+# what an operator can ask for by name over WhatsApp.
 CALENDAR_TEMPLATE_ALIASES: dict[str, str] = {
     "TS-p1-bolddip_4x5": "ts_p1_bolddip",
     "TS-p2-cut-navyborder_4x5": "ts_p2_cut_navyborder",
     "TS-p3-editorial_4x5": "ts_p3_editorial",
     "MS-3-anniv-photo_4x5": "ms_3_anniv_photo",
 }
+
+# The July 30 2026 sign-off: the only templates a client-facing post may use.
+# Everything else in TEMPLATES is demo-era and renders from _base.css in
+# Montserrat, which is how a from-scratch post came back in the wrong typeface.
+FINAL_VARIANTS: tuple[str, ...] = tuple(CALENDAR_TEMPLATE_ALIASES.values())
+
+# The workhorse of the four: photo-first and happy with any subject, so it is
+# what an unknown or unusable variant resolves to.
+DEFAULT_FINAL = "ts_p1_bolddip"
+
+
+def is_final(variant: str) -> bool:
+    return variant in FINAL_VARIANTS

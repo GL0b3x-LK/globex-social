@@ -6,6 +6,7 @@ from __future__ import annotations
 import pytest
 
 from app.ai.generator import GeneratedPost
+from app.templates import catalog
 from app.workflows import render_pipeline
 
 
@@ -43,12 +44,16 @@ def captured(monkeypatch):
     return seen
 
 
-async def test_attached_photo_forces_photo_template(captured) -> None:
+async def test_attached_photo_forces_an_approved_photo_template(captured) -> None:
+    """The switch used to land on `custom`, a demo-era template that renders from
+    _base.css in Montserrat — which is how a from-scratch post came back in the
+    wrong typeface."""
     url = await render_pipeline.render_and_store(
         "p1", _stats_post(), photo_bytes=b"jpeg-bytes", photo_media_type="image/jpeg"
     )
     assert url == "https://img.test/p1.png"
-    assert captured["variant"] == "custom"  # stats overridden because a photo is present
+    assert captured["variant"] == catalog.DEFAULT_FINAL
+    assert catalog.is_final(captured["variant"])
     assert "photo" in captured["slots"]
 
 
@@ -56,6 +61,58 @@ async def test_no_photo_keeps_model_variant(captured) -> None:
     await render_pipeline.render_and_store("p2", _stats_post())
     assert captured["variant"] == "stats"
     assert "photo" not in captured["slots"]
+
+
+# --------------------------------------------------------------------------- #
+# the approved four
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("alias", sorted(catalog.CALENDAR_TEMPLATE_ALIASES))
+def test_the_names_the_client_uses_resolve_to_an_approved_template(alias: str) -> None:
+    """Karen and Mike say "TS-p3-editorial_4x5", not "ts_p3_editorial". Both the
+    free-form prompt and a typed request use the client's spelling."""
+    resolved = render_pipeline.resolve_variant(alias)
+    assert catalog.is_final(resolved)
+
+
+def test_an_unrecognised_variant_falls_back_to_an_approved_template() -> None:
+    """It used to fall back to `promotional` — off the approved set and in the
+    wrong typeface, with only a log line to say so."""
+    assert render_pipeline.resolve_variant("something_invented") == catalog.DEFAULT_FINAL
+    assert catalog.is_final(render_pipeline.resolve_variant("something_invented"))
+
+
+async def test_a_photo_template_with_no_photo_takes_one_from_the_bank(
+    captured, monkeypatch
+) -> None:
+    """All four approved templates are built around a photograph, so a
+    from-scratch post landing on one with no image would render an empty frame.
+    Falling back to a non-approved template is exactly what was asked to stop."""
+    from app.workflows import scheduled
+
+    monkeypatch.setattr(
+        scheduled, "pick_photo_for_text", lambda *a, **kw: scheduled._POOL_DIR / "brand-box.jpg"
+    )
+    monkeypatch.setattr(scheduled, "recently_used", lambda *a, **kw: frozenset())
+
+    await render_pipeline.render_and_store(
+        "p9", _stats_post(template_variant="ts_p2_cut_navyborder")
+    )
+    assert captured["variant"] == "ts_p2_cut_navyborder"
+    assert captured["slots"]["photo"].startswith("data:image/jpeg;base64,")
+
+
+def test_the_free_form_prompt_only_offers_approved_templates() -> None:
+    """The prompt is the whole reason a from-scratch post could not reach an
+    approved template: the names were not on the menu. Guard against a demo-era
+    variant creeping back into it."""
+    from app.ai.prompts.freeform import FREEFORM_PROMPT
+
+    for alias in catalog.CALENDAR_TEMPLATE_ALIASES:
+        assert alias in FREEFORM_PROMPT
+    demo_only = set(catalog.TEMPLATES) - set(catalog.FINAL_VARIANTS)
+    assert not [v for v in demo_only if f'"{v}"' in FREEFORM_PROMPT]
 
 
 async def test_a_post_without_a_label_gets_the_templates_standard_one(captured) -> None:
