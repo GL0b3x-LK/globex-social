@@ -562,13 +562,48 @@ async def _preview_generated(
     rather than a new stranger holding a new cut of meat. Asking outright for
     something new ("generate a fresh one") still gets a fresh one.
     """
+    wants_new = asset_bank.wants_new_image(request_text)
     refs = asset_bank.resolve_refs(request_text)
-    from_bank = bool(refs) and not asset_bank.wants_new_image(request_text)
+    # A named PERSON is the one case that cannot be served from storage: there is
+    # no stored photograph of Priya holding the lamb, only of Priya and of the
+    # lamb, and putting them together is what the model is for. A named product
+    # on its own is not — it goes through the lookup like anything else, and only
+    # composes if no stored photograph actually answers the request.
+    compose = refs.character is not None and not wants_new
+
+    # The bank is asked FIRST, every time, and the image model only runs when the
+    # answer is no. A photograph we own is free, instant, and shows our actual
+    # product and packaging rather than a model's imitation of it — so generating
+    # while a suitable one sits in storage is waste twice over.
+    stored = None if (compose or wants_new) else await asset_bank.choose(request_text)
+    if stored is not None:
+        await twilio_client.try_send_text(from_phone, messages.swapped_from_bank(stored.label))
+        try:
+            photo = await image_gen.download(stored.url)
+        except Exception as exc:  # noqa: BLE001 — a bad fetch generates instead
+            log.error("stored photo fetch failed", extra={"error": str(exc)[:200]})
+        else:
+            generated = await generator.generate_freeform(request_text, memory=memory)
+            await _finalize_preview(
+                from_phone,
+                request_text,
+                generated,
+                image_bytes=photo,
+                image_media_type="image/jpeg",
+                treatment="user_photo",
+                target_platforms=target_platforms,
+            )
+            return
+
+    # No stored photograph fits, so something has to be made. Anchor it on the
+    # real thing wherever the request named one: a lamb on a marble table is
+    # still better built from our lamb than from the model's idea of lamb.
+    anchored = compose or (bool(refs) and not wants_new)
     await twilio_client.try_send_text(
         from_phone,
-        messages.composing_from_bank(refs.names) if from_bank else messages.GENERATING_IMAGE,
+        messages.composing_from_bank(refs.names) if anchored else messages.GENERATING_IMAGE,
     )
-    if from_bank:
+    if anchored:
         log.info("composing from the bank", extra={"refs": refs.names})
         result = await image_gen.edit_multi(
             refs.urls, asset_bank.compose_prompt(image_prompt, refs)

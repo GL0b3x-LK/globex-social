@@ -143,3 +143,129 @@ def test_a_catalogue_entry_with_no_photograph_is_skipped_not_crashed_on() -> Non
         assert all((scheduled._POOL_DIR / a["file"]).exists() for a in pool)
     finally:
         scheduled._pool.cache_clear()
+
+
+# --------------------------------------------------------------------------- #
+# the bank is asked before the image model, every time
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture()
+def image_request(monkeypatch):
+    """_preview_generated with everything around it stubbed, recording what ran."""
+    from types import SimpleNamespace
+
+    from app.ai.generator import GeneratedPost
+    from app.workflows import on_demand
+
+    seen: dict = {"generated": False, "composed": False, "finalized": None, "asked_bank": False}
+
+    async def fake_choose(request):
+        seen["asked_bank"] = True
+        return seen.get("bank_answer")
+
+    async def fake_download(url):
+        seen["downloaded"] = url
+        return b"stored-jpeg"
+
+    async def fake_generate(prompt, **kw):
+        seen["generated"] = True
+        return SimpleNamespace(ok=True, image_bytes=b"made-up-png")
+
+    async def fake_edit_multi(urls, prompt, **kw):
+        seen["composed"] = True
+        return SimpleNamespace(ok=True, image_bytes=b"composed-png")
+
+    async def fake_freeform(request, **kw):
+        return GeneratedPost(
+            caption="c",
+            hashtags=["#Globex"],
+            template_variant="ts_p1_bolddip",
+            headline="H",
+            rationale="r",
+        )
+
+    async def fake_finalize(phone, request, post, **kw):
+        seen["finalized"] = kw
+
+    async def noop(*a, **kw):
+        return "SM1"
+
+    monkeypatch.setattr(on_demand.asset_bank, "choose", fake_choose)
+    monkeypatch.setattr(on_demand.image_gen, "download", fake_download)
+    monkeypatch.setattr(on_demand.image_gen, "generate", fake_generate)
+    monkeypatch.setattr(on_demand.image_gen, "edit_multi", fake_edit_multi)
+    monkeypatch.setattr(on_demand.generator, "generate_freeform", fake_freeform)
+    monkeypatch.setattr(on_demand, "_finalize_preview", fake_finalize)
+    monkeypatch.setattr(on_demand.twilio_client, "try_send_text", noop)
+    return seen
+
+
+async def test_a_stored_photograph_is_used_instead_of_generating_one(image_request) -> None:
+    """The rule: ask the bank first, every time. A photograph we own is free,
+    instant, and shows our actual product rather than an imitation of it."""
+    from app.workflows import on_demand
+
+    image_request["bank_answer"] = asset_bank.get("brand-port-ship.jpg")
+    await on_demand._preview_generated("whatsapp:+1", "a container ship at sunrise", "a ship")
+
+    assert image_request["asked_bank"]
+    assert image_request["generated"] is False, "the image model must not run"
+    assert image_request["downloaded"].endswith("/pool/brand-port-ship.jpg")
+    assert image_request["finalized"]["image_bytes"] == b"stored-jpeg"
+
+
+async def test_nothing_suitable_in_the_bank_still_generates(image_request) -> None:
+    """A near-miss is worse than a fresh image — the bank declining must fall
+    straight through, not force a wrong photograph."""
+    from app.workflows import on_demand
+
+    image_request["bank_answer"] = None
+    await on_demand._preview_generated(
+        "whatsapp:+1", "a family sitting down to dinner", "a family at dinner"
+    )
+
+    assert image_request["asked_bank"]
+    assert image_request["generated"] is True
+
+
+async def test_a_declined_lookup_still_anchors_on_a_named_product(image_request) -> None:
+    """ "Lamb on a marble table with rosemary" has no stored photograph, but we do
+    own the lamb. Building from it beats building from the model's idea of it."""
+    from app.workflows import on_demand
+
+    image_request["bank_answer"] = None
+    await on_demand._preview_generated(
+        "whatsapp:+1", "lamb on a marble table with rosemary", "lamb on marble"
+    )
+
+    assert image_request["asked_bank"]
+    assert image_request["composed"] is True
+    assert image_request["generated"] is False
+
+
+async def test_asking_outright_for_a_new_image_skips_the_lookup(image_request) -> None:
+    from app.workflows import on_demand
+
+    image_request["bank_answer"] = asset_bank.get("brand-port-ship.jpg")
+    await on_demand._preview_generated(
+        "whatsapp:+1", "generate a brand new image of a port", "a port"
+    )
+
+    assert image_request["asked_bank"] is False
+    assert image_request["generated"] is True
+
+
+async def test_naming_a_person_composes_rather_than_looking_one_up(image_request) -> None:
+    """ "Priya holding the lamb" needs both references composed — there is no
+    single stored photograph of it, and the lookup must not pre-empt that."""
+    from app.workflows import on_demand
+
+    image_request["bank_answer"] = asset_bank.get("prod-lamb-hero.jpg")
+    await on_demand._preview_generated(
+        "whatsapp:+1", "a picture of Priya holding the lamb", "Priya with lamb"
+    )
+
+    assert image_request["asked_bank"] is False
+    assert image_request["composed"] is True
+    assert image_request["generated"] is False

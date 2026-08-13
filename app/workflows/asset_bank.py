@@ -30,6 +30,9 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 
+from pydantic import BaseModel, Field
+
+from app.ai.client import generate_structured
 from app.db import storage
 from app.logging_config import get_logger
 from app.video import library
@@ -297,6 +300,68 @@ def compose_prompt(request: str, refs: Refs) -> str:
     parts.append(_STYLE)
     parts.append(_NEGATIVES)
     return "\n\n".join(parts)
+
+
+class _BankChoice(BaseModel):
+    file: str | None = Field(
+        default=None,
+        description=(
+            "The exact filename of the stored photograph that satisfies the request, "
+            "or null if none of them does."
+        ),
+    )
+    reason: str = Field(description="One short sentence: why it fits, or what is missing.")
+
+
+_CHOOSE_PROMPT = """You are choosing whether a photograph Globex ALREADY OWNS can serve a request, or whether a new image has to be generated.
+
+Below is every photograph in the library. Each line is `filename — what it shows`.
+
+{catalogue}
+
+Answer with the filename ONLY if that photograph genuinely depicts what was asked for. A real photograph we own beats a generated one every time: it is free, instant, and it shows our actual product and packaging rather than an imitation of it.
+
+But a near-miss is worse than a fresh image. Choose null when the request names a subject, setting, action or prop the library does not have. "Chicken breasts on a barbecue with lemon" is NOT satisfied by a chicken breast pack shot in a cold store — same product, wrong picture. "A container ship at sunrise" IS satisfied by the port ship photograph.
+
+Judge the whole scene, not just the product word."""
+
+
+async def choose(request: str) -> Asset | None:
+    """The stored photograph that answers this request, or None to generate one.
+
+    Tag overlap is too blunt to make this call — "chicken breasts on a barbecue"
+    matches every chicken breast shot we own on the word "chicken" and none of
+    them on the barbecue. So the library is small enough (about a hundred short
+    labels) to simply show the model and ask, which costs one cheap call and
+    saves an image generation every time it lands.
+
+    Any failure returns None: falling through to generation is the behaviour we
+    already had, and a lookup that breaks must not take image posts down with it.
+    """
+    lines = "\n".join(
+        f"{a.file} — {a.label}" for a in assets() if not a.file.startswith("placeholder")
+    )
+    try:
+        choice = await generate_structured(
+            system=_CHOOSE_PROMPT.format(catalogue=lines),
+            user_content=f"The request:\n{request}",
+            output_model=_BankChoice,
+            tool_name="choose_stored_photo",
+            tool_description="Name the stored photograph that fits, or null if none does.",
+            max_tokens=400,
+        )
+    except Exception as exc:  # noqa: BLE001 — generation is the fallback, not an error
+        log.error("bank lookup failed; generating instead", extra={"error": str(exc)[:200]})
+        return None
+    if not choice.file:
+        log.info("nothing in the bank fits; generating", extra={"why": choice.reason[:160]})
+        return None
+    asset = get(choice.file.strip())
+    if asset is None:
+        log.warning("bank lookup named an unknown file", extra={"file": choice.file[:80]})
+        return None
+    log.info("using a stored photograph", extra={"file": asset.file, "why": choice.reason[:160]})
+    return asset
 
 
 def catalogue(subject: str = "") -> str:
