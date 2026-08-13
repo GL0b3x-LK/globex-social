@@ -5,7 +5,7 @@
 {% block content %}
   <div class="split">
     <div class="col-text">
-      <p class="eyebrow">{{ eyebrow|default("Globex packaging") }}</p>
+      {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
       <div class="accent"></div>
       <h1 class="headline headline--sm">{{ headline }}</h1>
       {% if subhead %}<p class="subhead">{{ subhead }}</p>{% endif %}

@@ -28,6 +28,13 @@ class TemplateSpec:
     needs_photo: bool = False
     description: str = ""
     canvas: str = "square"  # PLATFORM_DIMENSIONS key; finals render 4:5 portrait
+    # The small cyan label above the headline, when the operator/AI hasn't set
+    # one. It used to live as a Jinja `default(...)` inside each HTML file, where
+    # nothing in Python could read it — so the copy on the image was invisible to
+    # the code, unchangeable by an edit, and wrong whenever the template was
+    # reused (a company birthday rendered on MS-3 read "WORK ANNIVERSARY").
+    # Empty = this template has no eyebrow, or shows none unless asked.
+    eyebrow_default: str = ""
 
     def all_slots(self) -> tuple[str, ...]:
         base = ("sig",)  # every template accepts an optional footer signature
@@ -41,6 +48,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("figure",),
         optional_slots=("eyebrow", "figure_unit", "subhead", "stat_items", "sig"),
+        eyebrow_default="Globex by the numbers",
         description="Shipment volumes, market data, company impact numbers.",
     ),
     "founding_anniversary": TemplateSpec(
@@ -49,6 +57,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("figure",),
         optional_slots=("eyebrow", "figure_unit", "headline", "subhead", "sig"),
+        eyebrow_default="Celebrating",
         description="Company founding-year milestone.",
     ),
     "holiday": TemplateSpec(
@@ -57,6 +66,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "light",
         required_slots=("headline",),
         optional_slots=("eyebrow", "date_label", "subhead", "sig"),
+        eyebrow_default="Today",
         description="Date-specific holiday or observance.",
     ),
     "holiday_month_long": TemplateSpec(
@@ -65,6 +75,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "light",
         required_slots=("headline",),
         optional_slots=("eyebrow", "month_label", "subhead", "sig"),
+        eyebrow_default="All month",
         description="Month-long observance (e.g. National Seafood Month).",
     ),
     "trade_show_pre": TemplateSpec(
@@ -73,6 +84,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("headline",),
         optional_slots=("eyebrow", "meta", "booth", "subhead", "sig"),
+        eyebrow_default="Meet us at",
         description="Before a trade show — build anticipation.",
     ),
     "trade_show_during": TemplateSpec(
@@ -82,6 +94,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         required_slots=("headline",),
         optional_slots=("eyebrow", "subhead", "photo", "sig"),
         needs_photo=True,
+        eyebrow_default="Live at",
         description="Live at a trade show, usually over a photo.",
     ),
     "trade_show_post": TemplateSpec(
@@ -90,6 +103,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("headline",),
         optional_slots=("eyebrow", "subhead", "sig"),
+        eyebrow_default="Thank you",
         description="After a trade show — thank attendees/partners.",
     ),
     "milestone": TemplateSpec(
@@ -98,6 +112,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("figure", "name"),
         optional_slots=("eyebrow", "figure_unit", "role", "subhead", "sig"),
+        eyebrow_default="Celebrating",
         description="Employee anniversary (20+ years only).",
     ),
     "announcement": TemplateSpec(
@@ -106,6 +121,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("headline",),
         optional_slots=("eyebrow", "subhead", "sig"),
+        eyebrow_default="Announcement",
         description="New hires, partnerships, general company news.",
     ),
     "product_spotlight": TemplateSpec(
@@ -114,6 +130,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "light",
         required_slots=("headline",),
         optional_slots=("eyebrow", "subhead", "product_image", "sig"),
+        eyebrow_default="Product spotlight",
         description="Protein/category feature; animal illustration or product photo.",
     ),
     "promotional": TemplateSpec(
@@ -122,6 +139,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("headline",),
         optional_slots=("eyebrow", "subhead", "cta", "sig"),
+        eyebrow_default="Globex",
         description="General promotion / call to action.",
     ),
     "branded_packaging": TemplateSpec(
@@ -130,6 +148,7 @@ TEMPLATES: dict[str, TemplateSpec] = {
         "navy",
         required_slots=("headline",),
         optional_slots=("eyebrow", "subhead", "package_image", "sig"),
+        eyebrow_default="Globex packaging",
         description="Rotating packaging colorway showcase.",
     ),
     "custom": TemplateSpec(
@@ -208,6 +227,10 @@ TEMPLATES: dict[str, TemplateSpec] = {
         optional_slots=("years", "eyebrow", "message", "role"),
         needs_photo=True,
         canvas="portrait",
+        # Right for the card's own purpose, wrong the moment the layout is reused
+        # for a company milestone — which is why the label has to be editable
+        # rather than baked in.
+        eyebrow_default="Work Anniversary",
         description=(
             "FINAL. Employee-milestone card: full-bleed portrait, navy panel, cyan "
             "hairline frame and years badge (20+ year anniversaries only)."

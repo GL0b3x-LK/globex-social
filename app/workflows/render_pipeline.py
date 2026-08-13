@@ -59,6 +59,23 @@ def build_slots(post: GeneratedPost, context: dict[str, Any] | None = None) -> d
     return slots
 
 
+def resolve_eyebrow(
+    post: GeneratedPost, variant: str, context: dict[str, Any] | None = None
+) -> str:
+    """The label that will actually sit above the headline, in light blue.
+
+    Precedence: what the post carries (the AI wrote it, or an edit changed it),
+    then anything the scheduler supplied, then the template's standard label.
+    An empty string is a decision rather than an absence — it is how "drop the
+    label" is expressed — so only ``None`` falls through to the next source.
+    """
+    if post.eyebrow is not None:
+        return post.eyebrow.strip()
+    if context and context.get("eyebrow"):
+        return str(context["eyebrow"]).strip()
+    return TEMPLATES[variant].eyebrow_default
+
+
 def _adapt_final_slots(variant: str, slots: dict[str, Any], post: GeneratedPost) -> None:
     """Map generic AI fields onto the finals' slot names when context didn't."""
     spec = TEMPLATES[variant]
@@ -124,6 +141,15 @@ async def render_and_store(
                 "photo attached; using photo template", extra={"from": variant, "to": "custom"}
             )
             variant = "custom"
+    # Resolved only once the variant is final (the template supplies the default
+    # label) and stamped back onto the post, so the stored record says what the
+    # picture says. Edits read that value: a label the code cannot see is a label
+    # nobody can change, which is how a company birthday kept its "WORK
+    # ANNIVERSARY" through every correction. A template with no eyebrow slot is
+    # stamped blank rather than left carrying copy that never reaches the image.
+    spec = TEMPLATES[variant]
+    post.eyebrow = resolve_eyebrow(post, variant, context) if "eyebrow" in spec.all_slots() else ""
+    slots["eyebrow"] = post.eyebrow
     _adapt_final_slots(variant, slots, post)
     dimensions = PLATFORM_DIMENSIONS[TEMPLATES[variant].canvas]
     png = await render_mod.renderer.render(variant, slots, dimensions=dimensions)

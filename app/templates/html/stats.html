@@ -1,7 +1,7 @@
 {% extends "_canvas.html" %}
 {# stats — shipment volumes, market data, company impact numbers. Navy hero. #}
 {% block content %}
-  <p class="eyebrow">{{ eyebrow|default("Globex by the numbers") }}</p>
+  {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
   <div class="accent"></div>
   <div class="figure-wrap">
     <span class="figure{% if figure|string|length > 4 %} figure--sm{% endif %}">{{ figure }}</span>

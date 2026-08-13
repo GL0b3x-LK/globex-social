@@ -89,6 +89,48 @@ def test_an_edit_that_asks_for_a_layout_change_may_change_the_template() -> None
     assert revised.template_variant == "stats"
 
 
+def test_an_edit_that_omits_the_label_keeps_the_one_already_on_the_image() -> None:
+    """A null eyebrow means "I didn't touch it". Read as "no label", the second
+    edit to any post would quietly undo the label the first one fixed."""
+    current = _post(eyebrow="COMPANY ANNIVERSARY")
+    revised = _post(eyebrow=None, caption="New caption")
+    editor.normalize(revised, current, "make the caption shorter")
+    assert revised.eyebrow == "COMPANY ANNIVERSARY"
+
+
+async def test_the_editor_is_told_what_the_label_currently_says(monkeypatch) -> None:
+    """The model cannot change copy it has never been shown. The light-blue label
+    was absent from the edit prompt entirely, so "make it say X" had nothing to
+    act on and the wrong label survived every correction."""
+    seen: dict[str, Any] = {}
+
+    async def fake_structured(*, system: str, user_content: str, **kwargs: Any) -> GeneratedPost:
+        seen["user"] = user_content
+        seen["system"] = system
+        return _post(eyebrow="COMPANY ANNIVERSARY")
+
+    async def plain_system() -> str:
+        return editor._edit_system()
+
+    monkeypatch.setattr(editor, "generate_structured", fake_structured)
+    monkeypatch.setattr(editor, "_edit_system_with_learned", plain_system)
+
+    revised = await editor.apply_edit(
+        _post(eyebrow="WORK ANNIVERSARY"), "the light blue text should say COMPANY ANNIVERSARY"
+    )
+    assert "WORK ANNIVERSARY" in seen["user"]
+    assert "eyebrow" in seen["system"]
+    assert revised.eyebrow == "COMPANY ANNIVERSARY"
+
+
+def test_an_edit_may_still_clear_the_label_outright() -> None:
+    """Removal is the empty string, and must survive the pin above."""
+    current = _post(eyebrow="COMPANY ANNIVERSARY")
+    revised = _post(eyebrow="")
+    editor.normalize(revised, current, "take the little blue label off the top")
+    assert revised.eyebrow == ""
+
+
 # --------------------------------------------------------------------------- #
 # the edit re-render: photo kept, meta merged, message linked
 # --------------------------------------------------------------------------- #

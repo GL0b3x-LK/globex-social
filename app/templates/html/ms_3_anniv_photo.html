@@ -87,7 +87,7 @@
     <span class="yrs">Years</span>
   </div>
   {% endif %}
-  <p class="txt eyebrow">{{ eyebrow|default("Work Anniversary") }}</p>
+  {% if eyebrow %}<p class="txt eyebrow">{{ eyebrow }}</p>{% endif %}
   <h1 class="txt name">{{ name }}</h1>
   {% if message %}<p class="txt message">{{ message }}</p>{% endif %}
   {% if role %}<p class="txt role">{{ role }}</p>{% endif %}

@@ -68,6 +68,15 @@ class GeneratedPost(BaseModel):
     headline: str = Field(
         description="Short on-image headline, <= 6 words — the graphic's main line. NOT the caption."
     )
+    eyebrow: str | None = Field(
+        default=None,
+        description=(
+            "The small letterspaced label ABOVE the headline (rendered in light blue), "
+            "1-4 words, no punctuation — e.g. 'WORK ANNIVERSARY', 'MEET US AT', "
+            "'NATIONAL SEAFOOD MONTH'. It labels what kind of post this is; it never "
+            "repeats the headline. Null to keep the template's standard label."
+        ),
+    )
     subhead: str | None = Field(
         default=None,
         description="Optional one-line on-image supporting text, <= 14 words. Null if not needed.",
@@ -83,8 +92,9 @@ class GeneratedPost(BaseModel):
 
 
 _EMIT_DESC = (
-    "Emit the finished post: caption, hashtags, template_variant, the on-image headline/subhead "
-    "(plus figure/figure_unit for number-led posts), and a one-line rationale."
+    "Emit the finished post: caption, hashtags, template_variant, the on-image "
+    "eyebrow/headline/subhead (plus figure/figure_unit for number-led posts), and a "
+    "one-line rationale."
 )
 
 
@@ -132,7 +142,9 @@ def banned_claims(post: GeneratedPost) -> list[str]:
     from app.video import library  # local import: keeps the AI layer standalone
 
     visible = " ".join(
-        part for part in (post.caption, post.headline, post.subhead, *post.hashtags) if part
+        part
+        for part in (post.caption, post.eyebrow, post.headline, post.subhead, *post.hashtags)
+        if part
     )
     return library.banned_terms_in(visible)
 

@@ -1,7 +1,7 @@
 {% extends "_canvas.html" %}
 {# milestone — employee anniversary, 20+ years only. Celebratory but professional. #}
 {% block content %}
-  <p class="eyebrow">{{ eyebrow|default("Celebrating") }}</p>
+  {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
   <div class="accent"></div>
   <div class="figure-wrap">
     <span class="figure">{{ figure }}</span>

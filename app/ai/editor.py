@@ -30,9 +30,9 @@ from app.video import library
 
 log = get_logger("app.ai.editor")
 
-_EDIT_KIND_PROMPT = """An operator is reviewing a social post that has a BACKGROUND IMAGE (a photo or photo-style scene) with TEXT overlaid on top (headline, subtitle) plus a caption beside it. They asked for a change. Classify it:
+_EDIT_KIND_PROMPT = """An operator is reviewing a social post that has a BACKGROUND IMAGE (a photo or photo-style scene) with TEXT overlaid on top (a small light-blue label, a headline, a subtitle) plus a caption beside it. They asked for a change. Classify it:
 - "visual" — ONLY the PICTURE changes: its subject, setting, colours, lighting, composition, or what is depicted ("make it a sunset", "add shipping crates", "show a farm instead", "make it brighter").
-- "textual" — ONLY the WORDS change: caption, headline, subtitle, wording, tone, hashtags, or length ("shorten the headline", "make the caption punchier", "change the subtitle to X").
+- "textual" — ONLY the WORDS change: caption, label, headline, subtitle, wording, tone, hashtags, or length ("shorten the headline", "make the caption punchier", "change the subtitle to X", "the blue text should say COMPANY ANNIVERSARY"). Note that recolouring or rewording ON-IMAGE TEXT is textual, not visual — only the photograph underneath counts as the picture.
 - "both" — the message asks for a picture change AND a words change ("change the subtitle to X and use the photo I've attached", "make it brighter and shorten the headline").
 
 Read the WHOLE message: a request that names new wording and also says anything about the image is "both", never just one of them. If genuinely ambiguous between visual and textual, prefer "textual" (cheaper and non-destructive)."""
@@ -81,11 +81,15 @@ def _edit_system() -> str:
         "exactly the parts they named. If they dictate text, use their text verbatim "
         "(minus rule 1). Do not 'improve' their wording, casing or punctuation.\n"
         "3. Change ONLY what the instruction covers. Every other field — caption, "
-        "headline, subhead, figure, hashtags, template_variant — is copied through "
-        "unchanged, character for character.\n"
-        "4. On-image text means headline/subhead/figure. The caption is the text beside "
-        "the post. 'Title' or 'heading' means the headline; 'subtitle' means the "
-        "subhead. Apply instructions to the parts they name, and only those.\n\n"
+        "eyebrow, headline, subhead, figure, hashtags, template_variant — is copied "
+        "through unchanged, character for character.\n"
+        "4. On-image text means eyebrow/headline/subhead/figure. The caption is the text "
+        "beside the post. 'Title' or 'heading' means the headline; 'subtitle' means the "
+        "subhead. The EYEBROW is the small letterspaced line ABOVE the title, rendered "
+        "in light blue — operators call it the label, the kicker, the tag, the little "
+        "line on top, or 'the blue text'. To take that label off the image entirely, "
+        "set eyebrow to an empty string. Apply instructions to the parts they name, and "
+        "only those.\n\n"
         "Field notes: hashtags belong in the hashtags field only, never inside the "
         "caption text. template_variant is the layout name and stays as it is unless "
         "the operator asked to change the layout."
@@ -138,6 +142,12 @@ def split_hashtags(caption: str, existing: list[str]) -> tuple[str, list[str]]:
 
 def _pin_unrequested(revised: GeneratedPost, current: GeneratedPost, feedback: str) -> None:
     """Undo model drift on fields the operator never mentioned."""
+    # A null eyebrow from the editor means "I didn't touch it" — removing the
+    # label is the empty string. Left alone, every later edit that simply omitted
+    # the field would drop back to the template's standard label and quietly undo
+    # a correction the operator had already made.
+    if revised.eyebrow is None and current.eyebrow is not None:
+        revised.eyebrow = current.eyebrow
     if revised.template_variant != current.template_variant and not any(
         w in feedback.lower() for w in _LAYOUT_WORDS
     ):
@@ -171,6 +181,7 @@ async def apply_edit(
         f"- caption: {current_post.caption}\n"
         f"- hashtags: {' '.join(current_post.hashtags)}\n"
         f"- template_variant: {current_post.template_variant}\n"
+        f"- eyebrow (small light-blue label above the title): {current_post.eyebrow or ''}\n"
         f"- headline (on-image title): {current_post.headline}\n"
         f"- subhead (on-image subtitle): {current_post.subhead or ''}\n"
         f"- figure: {current_post.figure or ''}\n"

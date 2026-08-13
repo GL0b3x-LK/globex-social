@@ -1,7 +1,7 @@
 {% extends "_canvas.html" %}
 {# trade_show_pre — build anticipation before a show; invite partners to meet Globex. #}
 {% block content %}
-  <p class="eyebrow">{{ eyebrow|default("Meet us at") }}</p>
+  {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
   <div class="accent"></div>
   <h1 class="headline">{{ headline }}</h1>
   {% if meta %}<p class="meta">{{ meta }}</p>{% endif %}
