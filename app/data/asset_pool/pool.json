@@ -494,6 +494,146 @@
       "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-brand-carton-qc-hands-packed.jpg"
     },
     {
+      "file": "pack-globex-carton-container.jpg",
+      "tags": [
+        "box",
+        "brand",
+        "carton",
+        "container",
+        "export",
+        "globex",
+        "logistics",
+        "pack",
+        "packaging",
+        "port",
+        "shipping"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-carton-container.jpg"
+    },
+    {
+      "file": "pack-globex-carton-line.jpg",
+      "tags": [
+        "box",
+        "brand",
+        "carton",
+        "export",
+        "globex",
+        "line",
+        "pack",
+        "packaging",
+        "plant",
+        "production"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-carton-line.jpg"
+    },
+    {
+      "file": "pack-globex-carton-pallet-wrapped.jpg",
+      "tags": [
+        "box",
+        "brand",
+        "carton",
+        "export",
+        "globex",
+        "logistics",
+        "pack",
+        "packaging",
+        "pallet",
+        "storage",
+        "warehouse"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-carton-pallet-wrapped.jpg"
+    },
+    {
+      "file": "pack-globex-carton-seal.jpg",
+      "tags": [
+        "box",
+        "brand",
+        "carton",
+        "control",
+        "globex",
+        "hands",
+        "inspection",
+        "pack",
+        "packaging",
+        "plant",
+        "quality"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-carton-seal.jpg"
+    },
+    {
+      "file": "pack-globex-carton-stack-hero.jpg",
+      "tags": [
+        "box",
+        "brand",
+        "carton",
+        "export",
+        "globex",
+        "hero",
+        "pack",
+        "packaging"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-carton-stack-hero.jpg"
+    },
+    {
+      "file": "pack-globex-retail-hands.jpg",
+      "tags": [
+        "brand",
+        "breast",
+        "chicken",
+        "consumer",
+        "control",
+        "globex",
+        "hands",
+        "pack",
+        "packaging",
+        "poultry",
+        "quality",
+        "retail"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-retail-hands.jpg"
+    },
+    {
+      "file": "pack-globex-retail-shelf-chicken.jpg",
+      "tags": [
+        "brand",
+        "breast",
+        "chicken",
+        "consumer",
+        "globex",
+        "pack",
+        "packaging",
+        "poultry",
+        "retail",
+        "shelf",
+        "supermarket"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-retail-shelf-chicken.jpg"
+    },
+    {
+      "file": "pack-globex-retail-shelf-duck.jpg",
+      "tags": [
+        "brand",
+        "consumer",
+        "duck",
+        "gift",
+        "globex",
+        "pack",
+        "packaging",
+        "retail",
+        "shelf",
+        "supermarket"
+      ],
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-retail-shelf-duck.jpg"
+    },
+    {
       "file": "pack-whole-chicken-cold-store.jpg",
       "tags": [
         "bird",

@@ -12,7 +12,8 @@ consolidated request — do not dripfeed._
 ## BLOCKING — re-extracted asset ZIP (0-byte in current download)
 These block Phase 3 templates and the Phase 6 packaging rotation:
 - [ ] `Globex_Animals/` — Cow, Chicken, Pig, Fish illustrations (product spotlights, National Beef/Poultry/Pork/Seafood Month posts)
-- [ ] `Globex Packaging/` — all 5 colourways (BLACK, BLUE 288C, RED 1795C, GREEN 349C, + 5th) — the 20 rotating packaging posts
+- [ ] `Globex Packaging/` — all 5 colourways (BLACK, BLUE 288C, RED 1795C, GREEN 349C, + 5th) — the 20 rotating packaging posts.
+  **Now the top blocker.** We hold real photographs of the blue chicken and orange duck liveries only, so the calendar entries that name a colourway by title — "Beef line — black colorway", "Pork line — red colorway", "Seafood line — green colorway", "Five colorways, one family" — have no photograph that matches their own brief and fall back to a blue chicken carton. They cannot be generated: the panel colour is the least of it, the label would have to be re-lettered into English, French, Portuguese and Arabic, and re-lettering Globex packaging is the client's standing no. A flat artwork file or one photograph per colourway is enough.
 - [ ] `Globex_30 Years/` — 30-year anniversary mark (Nov 5 founding posts, milestone badges)
 - [ ] `Grains/` — grain & veggie illustrations (lower priority)
 

@@ -89,10 +89,14 @@ def test_the_compose_prompt_names_both_references_by_position() -> None:
 
 def test_every_bank_asset_carries_a_hosted_url() -> None:
     """A local path cannot be handed to an image model — the whole point of the
-    upload is that the reference is fetchable."""
-    assert len(asset_bank.assets()) == 100
-    assert all(a.url.startswith("https://") for a in asset_bank.assets())
-    assert all("/pool/" in a.url for a in asset_bank.assets())
+    upload is that the reference is fetchable. Asserted as an invariant over
+    whatever the pool holds, not against a fixed count: the pool grows every time
+    shots are added, and a test that has to be edited to stay green is a test
+    people edit without reading."""
+    pool = asset_bank.assets()
+    assert len(pool) > 90
+    assert all(a.url.startswith("https://") for a in pool)
+    assert all("/pool/" in a.url for a in pool)
 
 
 # --------------------------------------------------------------------------- #
@@ -124,3 +128,18 @@ def test_the_catalogue_lists_the_names_to_ask_for() -> None:
     assert "lamb hero" in text and "lamb qc hands" in text
     assert "Priya" in text  # the people are listed too
     assert "placeholder" not in text
+
+
+def test_a_catalogue_entry_with_no_photograph_is_skipped_not_crashed_on() -> None:
+    """The picker hands its result to read_bytes, so an entry with no file behind
+    it stops a calendar post drafting at all. One did exist: a generated shot was
+    rejected on inspection and deleted, and its entry stayed behind."""
+    from app.workflows import scheduled
+
+    scheduled._pool.cache_clear()
+    try:
+        pool = scheduled._pool()
+        assert pool, "the pool must not be empty"
+        assert all((scheduled._POOL_DIR / a["file"]).exists() for a in pool)
+    finally:
+        scheduled._pool.cache_clear()

@@ -71,8 +71,25 @@ def approver_phones() -> list[str]:
 
 @lru_cache(maxsize=1)
 def _pool() -> list[dict[str, Any]]:
+    """The catalogue, less any entry whose photograph is not actually on disk.
+
+    The picker hands its result straight to ``read_bytes``, so a catalogue entry
+    with no file behind it is a crashed draft rather than a missing picture — and
+    a post that never drafts is a calendar entry retired without anyone seeing
+    it. Orphans are real: a generated shot was rejected on inspection and deleted
+    while its entry stayed behind.
+    """
     doc = json.loads((_POOL_DIR / "pool.json").read_text(encoding="utf-8"))
-    return doc["assets"]
+    usable: list[dict[str, Any]] = []
+    orphans: list[dict[str, Any]] = []
+    for asset in doc["assets"]:
+        (usable if (_POOL_DIR / asset["file"]).exists() else orphans).append(asset)
+    if orphans:
+        log.error(
+            "pool entries have no image on disk; skipping them",
+            extra={"files": [a["file"] for a in orphans]},
+        )
+    return usable
 
 
 def recently_used(limit: int = 12) -> frozenset[str]:
