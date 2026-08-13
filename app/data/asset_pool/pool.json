@@ -7,7 +7,8 @@
         "brand",
         "box",
         "logistics"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-box.jpg"
     },
     {
       "file": "brand-boxes-closeup.jpg",
@@ -16,7 +17,8 @@
         "box",
         "packaging",
         "warehouse"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-boxes-closeup.jpg"
     },
     {
       "file": "brand-package.jpg",
@@ -24,7 +26,8 @@
         "packaging",
         "brand",
         "box"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-package.jpg"
     },
     {
       "file": "brand-port-ship.jpg",
@@ -38,7 +41,8 @@
         "tradeshow",
         "special",
         "holiday"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-port-ship.jpg"
     },
     {
       "file": "brand-quality-control.jpg",
@@ -49,7 +53,8 @@
         "hands",
         "inspection",
         "product"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-quality-control.jpg"
     },
     {
       "file": "pack-chicken-breast-cold-store.jpg",
@@ -68,7 +73,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-breast-cold-store.jpg"
     },
     {
       "file": "pack-chicken-breast.jpg",
@@ -77,7 +83,8 @@
         "chicken",
         "breast",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-breast.jpg"
     },
     {
       "file": "pack-chicken-carton-export-cold-store.jpg",
@@ -93,7 +100,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-carton-export-cold-store.jpg"
     },
     {
       "file": "pack-chicken-carton-export-hero-packed.jpg",
@@ -107,7 +115,8 @@
         "packaging",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-carton-export-hero-packed.jpg"
     },
     {
       "file": "pack-chicken-carton-export-qc-hands-packed.jpg",
@@ -123,7 +132,8 @@
         "packaging",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-carton-export-qc-hands-packed.jpg"
     },
     {
       "file": "pack-chicken-carton.jpg",
@@ -132,7 +142,8 @@
         "chicken",
         "carton",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-carton.jpg"
     },
     {
       "file": "pack-chicken-drumstick-cold-store.jpg",
@@ -150,7 +161,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-drumstick-cold-store.jpg"
     },
     {
       "file": "pack-chicken-drumstick-hero-packed.jpg",
@@ -165,7 +177,8 @@
         "poultry",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-drumstick-hero-packed.jpg"
     },
     {
       "file": "pack-chicken-drumstick-qc-hands-packed.jpg",
@@ -182,7 +195,8 @@
         "poultry",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-drumstick-qc-hands-packed.jpg"
     },
     {
       "file": "pack-chicken-drumstick.jpg",
@@ -191,7 +205,8 @@
         "chicken",
         "drumstick",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-drumstick.jpg"
     },
     {
       "file": "pack-chicken-frame-cold-store.jpg",
@@ -210,7 +225,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-frame-cold-store.jpg"
     },
     {
       "file": "pack-chicken-frame-hero-packed.jpg",
@@ -226,7 +242,8 @@
         "poultry",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-frame-hero-packed.jpg"
     },
     {
       "file": "pack-chicken-frame-qc-hands-packed.jpg",
@@ -244,7 +261,8 @@
         "poultry",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-frame-qc-hands-packed.jpg"
     },
     {
       "file": "pack-chicken-gizzard-cold-store.jpg",
@@ -262,7 +280,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-gizzard-cold-store.jpg"
     },
     {
       "file": "pack-chicken-gizzard-hero-packed.jpg",
@@ -277,7 +296,8 @@
         "poultry",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-gizzard-hero-packed.jpg"
     },
     {
       "file": "pack-chicken-gizzard-qc-hands-packed.jpg",
@@ -294,7 +314,8 @@
         "poultry",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-chicken-gizzard-qc-hands-packed.jpg"
     },
     {
       "file": "pack-duck-carton-cold-store.jpg",
@@ -311,7 +332,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-carton-cold-store.jpg"
     },
     {
       "file": "pack-duck-carton-hero-packed.jpg",
@@ -326,7 +348,8 @@
         "packaging",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-carton-hero-packed.jpg"
     },
     {
       "file": "pack-duck-carton-qc-hands-packed.jpg",
@@ -343,7 +366,8 @@
         "packaging",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-carton-qc-hands-packed.jpg"
     },
     {
       "file": "pack-duck-carton.jpg",
@@ -351,7 +375,8 @@
         "packaging",
         "duck",
         "carton"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-carton.jpg"
     },
     {
       "file": "pack-duck-retail-cold-store.jpg",
@@ -368,7 +393,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-retail-cold-store.jpg"
     },
     {
       "file": "pack-duck-retail-hero-packed.jpg",
@@ -380,7 +406,8 @@
         "packaging",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-retail-hero-packed.jpg"
     },
     {
       "file": "pack-duck-retail-qc-hands-packed.jpg",
@@ -395,7 +422,8 @@
         "quality",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-retail-qc-hands-packed.jpg"
     },
     {
       "file": "pack-duck-retail.jpg",
@@ -404,7 +432,8 @@
         "duck",
         "retail",
         "gift"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-duck-retail.jpg"
     },
     {
       "file": "pack-globex-brand-carton-cold-store.jpg",
@@ -423,7 +452,8 @@
         "store",
         "warehouse"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-brand-carton-cold-store.jpg"
     },
     {
       "file": "pack-globex-brand-carton-hero-packed.jpg",
@@ -440,7 +470,8 @@
         "packaging",
         "retail"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-brand-carton-hero-packed.jpg"
     },
     {
       "file": "pack-globex-brand-carton-qc-hands-packed.jpg",
@@ -459,7 +490,8 @@
         "packaging",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-globex-brand-carton-qc-hands-packed.jpg"
     },
     {
       "file": "pack-whole-chicken-cold-store.jpg",
@@ -480,7 +512,8 @@
         "warehouse",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-whole-chicken-cold-store.jpg"
     },
     {
       "file": "pack-whole-chicken-hero-packed.jpg",
@@ -498,7 +531,8 @@
         "retail",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-whole-chicken-hero-packed.jpg"
     },
     {
       "file": "pack-whole-chicken-qc-hands-packed.jpg",
@@ -518,14 +552,16 @@
         "quality",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/pack-whole-chicken-qc-hands-packed.jpg"
     },
     {
       "file": "placeholder-portrait.jpg",
       "tags": [
         "milestone",
         "placeholder"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/placeholder-portrait.jpg"
     },
     {
       "file": "prod-beef-hero.jpg",
@@ -536,7 +572,8 @@
         "meat",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-beef-hero.jpg"
     },
     {
       "file": "prod-beef-qc-hands.jpg",
@@ -550,7 +587,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-beef-qc-hands.jpg"
     },
     {
       "file": "prod-buffalo-hero.jpg",
@@ -561,7 +599,8 @@
         "meat",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-buffalo-hero.jpg"
     },
     {
       "file": "prod-buffalo-qc-hands.jpg",
@@ -575,7 +614,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-buffalo-qc-hands.jpg"
     },
     {
       "file": "prod-chicken-breast-hero.jpg",
@@ -589,7 +629,8 @@
         "poultry",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-breast-hero.jpg"
     },
     {
       "file": "prod-chicken-breast-qc-hands.jpg",
@@ -606,7 +647,8 @@
         "poultry",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-breast-qc-hands.jpg"
     },
     {
       "file": "prod-chicken-breast.jpg",
@@ -615,7 +657,8 @@
         "chicken",
         "breast",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-breast.jpg"
     },
     {
       "file": "prod-chicken-chest.jpg",
@@ -623,7 +666,8 @@
         "product",
         "chicken",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-chest.jpg"
     },
     {
       "file": "prod-chicken-frame.jpg",
@@ -633,7 +677,8 @@
         "frame",
         "specialty",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-frame.jpg"
     },
     {
       "file": "prod-chicken-gizzard.jpg",
@@ -643,7 +688,8 @@
         "gizzard",
         "specialty",
         "offal"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-gizzard.jpg"
     },
     {
       "file": "prod-chicken-leg-quarter-hero.jpg",
@@ -657,7 +703,8 @@
         "quarter",
         "quarters"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-leg-quarter-hero.jpg"
     },
     {
       "file": "prod-chicken-leg-quarter-qc-hands.jpg",
@@ -674,7 +721,8 @@
         "quarter",
         "quarters"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-leg-quarter-qc-hands.jpg"
     },
     {
       "file": "prod-chicken-leg.jpg",
@@ -684,7 +732,8 @@
         "leg",
         "quarter",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-leg.jpg"
     },
     {
       "file": "prod-chicken-paw-hero-tray.jpg",
@@ -698,7 +747,8 @@
         "product",
         "tray"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-paw-hero-tray.jpg"
     },
     {
       "file": "prod-chicken-paw-qc-hands-tray.jpg",
@@ -714,7 +764,8 @@
         "quality",
         "tray"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-paw-qc-hands-tray.jpg"
     },
     {
       "file": "prod-chicken-wing-hero.jpg",
@@ -726,7 +777,8 @@
         "wing",
         "wings"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-wing-hero.jpg"
     },
     {
       "file": "prod-chicken-wing-qc-hands.jpg",
@@ -741,7 +793,8 @@
         "wing",
         "wings"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-chicken-wing-qc-hands.jpg"
     },
     {
       "file": "prod-edible-oils-hero.jpg",
@@ -753,7 +806,8 @@
         "oils",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-edible-oils-hero.jpg"
     },
     {
       "file": "prod-edible-oils-qc-hands.jpg",
@@ -768,7 +822,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-edible-oils-qc-hands.jpg"
     },
     {
       "file": "prod-feedstuff-hero.jpg",
@@ -781,7 +836,8 @@
         "hero",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-feedstuff-hero.jpg"
     },
     {
       "file": "prod-feedstuff-qc-hands.jpg",
@@ -797,7 +853,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-feedstuff-qc-hands.jpg"
     },
     {
       "file": "prod-fish-fillet-hero.jpg",
@@ -809,7 +866,8 @@
         "product",
         "seafood"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fish-fillet-hero.jpg"
     },
     {
       "file": "prod-fish-fillet-qc-hands.jpg",
@@ -824,7 +882,8 @@
         "quality",
         "seafood"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fish-fillet-qc-hands.jpg"
     },
     {
       "file": "prod-fish-whole-round-hero.jpg",
@@ -836,7 +895,8 @@
         "seafood",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fish-whole-round-hero.jpg"
     },
     {
       "file": "prod-fish-whole-round-qc-hands.jpg",
@@ -851,7 +911,8 @@
         "seafood",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fish-whole-round-qc-hands.jpg"
     },
     {
       "file": "prod-fries-crinkle-cut-hero.jpg",
@@ -864,7 +925,8 @@
         "product",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fries-crinkle-cut-hero.jpg"
     },
     {
       "file": "prod-fries-crinkle-cut-qc-hands.jpg",
@@ -880,7 +942,8 @@
         "quality",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fries-crinkle-cut-qc-hands.jpg"
     },
     {
       "file": "prod-fries-shoestring-hero.jpg",
@@ -894,7 +957,8 @@
         "shoestring",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fries-shoestring-hero.jpg"
     },
     {
       "file": "prod-fries-shoestring-qc-hands.jpg",
@@ -911,7 +975,8 @@
         "shoestring",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fries-shoestring-qc-hands.jpg"
     },
     {
       "file": "prod-fries-straight-cut-hero.jpg",
@@ -926,7 +991,8 @@
         "straight",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fries-straight-cut-hero.jpg"
     },
     {
       "file": "prod-fries-straight-cut-qc-hands.jpg",
@@ -944,7 +1010,8 @@
         "straight",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-fries-straight-cut-qc-hands.jpg"
     },
     {
       "file": "prod-frozen-vegetables-hero.jpg",
@@ -956,7 +1023,8 @@
         "vegetable",
         "vegetables"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-frozen-vegetables-hero.jpg"
     },
     {
       "file": "prod-frozen-vegetables-qc-hands.jpg",
@@ -971,7 +1039,8 @@
         "vegetable",
         "vegetables"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-frozen-vegetables-qc-hands.jpg"
     },
     {
       "file": "prod-grains-cereals-hero.jpg",
@@ -984,7 +1053,8 @@
         "hero",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-grains-cereals-hero.jpg"
     },
     {
       "file": "prod-grains-cereals-qc-hands.jpg",
@@ -1000,7 +1070,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-grains-cereals-qc-hands.jpg"
     },
     {
       "file": "prod-henfowl-hero.jpg",
@@ -1013,7 +1084,8 @@
         "product",
         "spent"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-henfowl-hero.jpg"
     },
     {
       "file": "prod-henfowl-qc-hands.jpg",
@@ -1029,7 +1101,8 @@
         "quality",
         "spent"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-henfowl-qc-hands.jpg"
     },
     {
       "file": "prod-lamb-hero.jpg",
@@ -1039,7 +1112,8 @@
         "meat",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-lamb-hero.jpg"
     },
     {
       "file": "prod-lamb-qc-hands.jpg",
@@ -1052,7 +1126,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-lamb-qc-hands.jpg"
     },
     {
       "file": "prod-mutton-hero.jpg",
@@ -1062,7 +1137,8 @@
         "mutton",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-mutton-hero.jpg"
     },
     {
       "file": "prod-mutton-qc-hands.jpg",
@@ -1075,7 +1151,8 @@
         "plant",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-mutton-qc-hands.jpg"
     },
     {
       "file": "prod-oil-seeds-hero.jpg",
@@ -1089,7 +1166,8 @@
         "seed",
         "seeds"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-oil-seeds-hero.jpg"
     },
     {
       "file": "prod-oil-seeds-qc-hands.jpg",
@@ -1106,7 +1184,8 @@
         "seed",
         "seeds"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-oil-seeds-qc-hands.jpg"
     },
     {
       "file": "prod-pork-offal-hero-tray.jpg",
@@ -1118,7 +1197,8 @@
         "product",
         "tray"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pork-offal-hero-tray.jpg"
     },
     {
       "file": "prod-pork-offal-qc-hands-tray.jpg",
@@ -1132,7 +1212,8 @@
         "quality",
         "tray"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pork-offal-qc-hands-tray.jpg"
     },
     {
       "file": "prod-pork-primal-hero.jpg",
@@ -1143,7 +1224,8 @@
         "primal",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pork-primal-hero.jpg"
     },
     {
       "file": "prod-pork-primal-qc-hands.jpg",
@@ -1157,7 +1239,8 @@
         "primal",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pork-primal-qc-hands.jpg"
     },
     {
       "file": "prod-pork-processed-hero.jpg",
@@ -1167,7 +1250,8 @@
         "processed",
         "product"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pork-processed-hero.jpg"
     },
     {
       "file": "prod-pork-processed-qc-hands.jpg",
@@ -1180,7 +1264,8 @@
         "processed",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pork-processed-qc-hands.jpg"
     },
     {
       "file": "prod-potato-croquettes-hero.jpg",
@@ -1192,7 +1277,8 @@
         "product",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-potato-croquettes-hero.jpg"
     },
     {
       "file": "prod-potato-croquettes-qc-hands.jpg",
@@ -1207,7 +1293,8 @@
         "quality",
         "vegetable"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-potato-croquettes-qc-hands.jpg"
     },
     {
       "file": "prod-potato-wedges-hero.jpg",
@@ -1219,7 +1306,8 @@
         "wedge",
         "wedges"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-potato-wedges-hero.jpg"
     },
     {
       "file": "prod-potato-wedges-qc-hands.jpg",
@@ -1234,7 +1322,8 @@
         "wedge",
         "wedges"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-potato-wedges-qc-hands.jpg"
     },
     {
       "file": "prod-poultry-offal-hero-tray.jpg",
@@ -1248,7 +1337,8 @@
         "product",
         "tray"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-poultry-offal-hero-tray.jpg"
     },
     {
       "file": "prod-poultry-offal-qc-hands-tray.jpg",
@@ -1264,7 +1354,8 @@
         "quality",
         "tray"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-poultry-offal-qc-hands-tray.jpg"
     },
     {
       "file": "prod-pulses-hero.jpg",
@@ -1277,7 +1368,8 @@
         "pulse",
         "pulses"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pulses-hero.jpg"
     },
     {
       "file": "prod-pulses-qc-hands.jpg",
@@ -1293,7 +1385,8 @@
         "pulses",
         "quality"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-pulses-qc-hands.jpg"
     },
     {
       "file": "prod-seafood-value-added-hero.jpg",
@@ -1305,7 +1398,8 @@
         "shellfish",
         "value"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-seafood-value-added-hero.jpg"
     },
     {
       "file": "prod-seafood-value-added-qc-hands.jpg",
@@ -1320,7 +1414,8 @@
         "shellfish",
         "value"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-seafood-value-added-qc-hands.jpg"
     },
     {
       "file": "prod-turkey-hero.jpg",
@@ -1332,7 +1427,8 @@
         "turkey",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-turkey-hero.jpg"
     },
     {
       "file": "prod-turkey-qc-hands.jpg",
@@ -1347,7 +1443,8 @@
         "turkey",
         "whole"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-turkey-qc-hands.jpg"
     },
     {
       "file": "prod-veal-hero.jpg",
@@ -1357,7 +1454,8 @@
         "product",
         "veal"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-veal-hero.jpg"
     },
     {
       "file": "prod-veal-qc-hands.jpg",
@@ -1370,7 +1468,8 @@
         "quality",
         "veal"
       ],
-      "generated": true
+      "generated": true,
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-veal-qc-hands.jpg"
     },
     {
       "file": "prod-whole-bird.jpg",
@@ -1381,7 +1480,8 @@
         "bird",
         "griller",
         "poultry"
-      ]
+      ],
+      "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/prod-whole-bird.jpg"
     }
   ]
 }

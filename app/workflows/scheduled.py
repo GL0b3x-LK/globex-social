@@ -75,13 +75,45 @@ def _pool() -> list[dict[str, Any]]:
     return doc["assets"]
 
 
-def pick_photo_for_text(text: str, category: str = "brand", *, seed_key: str = "") -> Path:
+def recently_used(limit: int = 12) -> frozenset[str]:
+    """Pool files the last few posts already used.
+
+    The picker had no memory at all, so any two briefs that scored the same asset
+    highest got the identical photograph — the repetition the testers saw. Read
+    back off the posts themselves so the fact lives in one place (render_meta)
+    rather than a second store that can drift out of step with what was sent.
+    """
+    try:
+        rows = posts.recent(limit)
+    except Exception as exc:  # noqa: BLE001 — variety is a nicety, drafting is not
+        log.warning("could not read recent posts for variety", extra={"error": str(exc)[:120]})
+        return frozenset()
+    used: set[str] = set()
+    for row in rows:
+        meta = row.get("render_meta") or {}
+        if isinstance(meta, dict) and meta.get("pool_asset"):
+            used.add(str(meta["pool_asset"]))
+    return frozenset(used)
+
+
+def pick_photo_for_text(
+    text: str,
+    category: str = "brand",
+    *,
+    seed_key: str = "",
+    exclude: frozenset[str] = frozenset(),
+) -> Path:
     """Best-tag-match pool asset for arbitrary text; deterministic per seed_key.
 
     Branded packaging shots outrank raw-product photography — Len rejected
     graphic carcass imagery in the design rounds, so cartons/retail bags are the
     default face of product posts and raw shots only win on a strong subject
     match. The operator can always swap the image via WhatsApp before approving.
+
+    ``exclude`` skips photographs used recently. It walks DOWN the ranking rather
+    than reshuffling it, so the picture is still the best available match for the
+    brief — just not the same best match as the last one. If everything that
+    scores has been used lately, repeating beats refusing to draft.
     """
     text = f"{category} {text}".lower()
     scored: list[tuple[float, int, dict[str, Any]]] = []
@@ -97,13 +129,14 @@ def pick_photo_for_text(text: str, category: str = "brand", *, seed_key: str = "
         jitter = (seed + i) % 7  # stable variety among equal scorers
         scored.append((score, jitter, asset))
     scored.sort(key=lambda s: (-s[0], -s[1]))
-    return _POOL_DIR / scored[0][2]["file"]
+    fresh = next((s for s in scored if s[2]["file"] not in exclude), None)
+    return _POOL_DIR / (fresh or scored[0])[2]["file"]
 
 
-def pick_photo(entry: CalendarEntry) -> Path:
+def pick_photo(entry: CalendarEntry, *, exclude: frozenset[str] = frozenset()) -> Path:
     """Pool photo for a calendar entry (see pick_photo_for_text)."""
     return pick_photo_for_text(
-        f"{entry.title} {entry.gist}", entry.category, seed_key=entry.event_id
+        f"{entry.title} {entry.gist}", entry.category, seed_key=entry.event_id, exclude=exclude
     )
 
 
@@ -173,7 +206,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
             )
         sheet_note += "\n"
 
-    photo = pick_photo(entry)
+    photo = pick_photo(entry, exclude=await asyncio.to_thread(recently_used))
     if publish_today:
         prefix = (
             f"🧪 *Test post {entry.seq + 1}/{total_planned()}* — publishes as soon as "
@@ -199,6 +232,9 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         extra_render_meta={
             "publish_on": when.isoformat(),
             "caption_locked": caption_locked,
+            # Which pool shot fronted this post, so the next draft can pick a
+            # different one (see recently_used).
+            "pool_asset": photo.name,
             # Marked so an edit never sends this stand-in card to the image model:
             # asked to "improve" a gray placeholder, it invents a person and the
             # post ends up carrying a fabricated face for a named employee.

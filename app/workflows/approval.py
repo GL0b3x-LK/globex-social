@@ -18,7 +18,7 @@ from app.messaging import conversation, media, twilio_client
 from app.messaging.conversation import ConversationState
 from app.publishing import platforms as plat
 from app.publishing import publisher
-from app.workflows import messages, redelivery, render_pipeline
+from app.workflows import asset_bank, messages, redelivery, render_pipeline
 
 log = get_logger("app.workflows.approval")
 Row = dict[str, Any]
@@ -59,6 +59,58 @@ async def _deliver_preview(
     )
     await redelivery.record(post_id, phone, delivered=sid is not None)
     return sid is not None
+
+
+async def _picture_from_bank(
+    phone: str, feedback: str, *, aspect_ratio: str = "1:1"
+) -> tuple[bytes, str] | None:
+    """The picture the operator named, when they named one we already own.
+
+    Until this existed the bank was reachable only at draft time, so "use the
+    hero lamb shot" could only be honoured by asking an image model to redraw
+    the current picture into something lamb-like — an invention, when the actual
+    photograph was sitting in storage.
+
+    Two shapes, both truer than redrawing:
+
+    * a shot on its own is fetched and used as-is — no model, no cost, no drift
+      away from the photograph they asked for by name;
+    * a person plus a shot goes to the multi-reference model together, which is
+      the only way "Priya holding the lamb" comes back as our Priya holding our
+      lamb rather than a stranger holding a stock cut.
+
+    Returns None when nothing is named, when the operator explicitly asked for
+    something new, or when the fetch fails — every one of which means "fall
+    through and redraw", never "give up on the edit".
+    """
+    if asset_bank.wants_new_image(feedback):
+        return None
+    refs = asset_bank.resolve_refs(feedback)
+    if not refs:
+        return None
+
+    if refs.character is None and refs.asset is not None:
+        try:
+            data = await image_gen.download(refs.asset.url)
+        except Exception as exc:  # noqa: BLE001 — a bad fetch falls back, never fails the edit
+            log.error(
+                "bank asset fetch failed",
+                extra={"asset": refs.asset.file, "error": str(exc)[:200]},
+            )
+            return None
+        await twilio_client.try_send_text(phone, messages.swapped_from_bank(refs.asset.label))
+        log.info("picture swapped from the bank", extra={"asset": refs.asset.file})
+        return data, "image/jpeg"
+
+    await twilio_client.try_send_text(phone, messages.composing_from_bank(refs.names))
+    result = await image_gen.edit_multi(
+        refs.urls, asset_bank.compose_prompt(feedback, refs), aspect_ratio=aspect_ratio
+    )
+    if not result.ok or not result.image_bytes:
+        log.error("bank composition failed", extra={"refs": refs.names, "error": result.error})
+        return None
+    log.info("picture composed from the bank", extra={"refs": refs.names})
+    return result.image_bytes, "image/png"
 
 
 async def _stored_photo(context: Row, meta: dict[str, Any]) -> tuple[bytes | None, str]:
@@ -302,6 +354,9 @@ async def _edit_photo_post(
     if replacement is not None:
         photo_bytes, media_type = replacement
         still_placeholder = False
+    elif wants_picture and (bank := await _picture_from_bank(phone, feedback, aspect_ratio="3:4")):
+        photo_bytes, media_type = bank
+        still_placeholder = False
     elif wants_picture:
         await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
         result = await image_gen.edit(photo_url, feedback, aspect_ratio="3:4")
@@ -413,6 +468,8 @@ async def _edit_generated_image(
 
     if replacement is not None:
         photo_bytes, media_type = replacement
+    elif wants_picture and (bank := await _picture_from_bank(phone, feedback)):
+        photo_bytes, media_type = bank
     elif wants_picture and raw_url:
         await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
         result = await image_gen.edit(str(raw_url), feedback)

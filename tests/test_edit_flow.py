@@ -703,3 +703,127 @@ async def test_an_undelivered_preview_is_remembered_for_re_sending(
     assert wired.saved_meta["undelivered"] == ["whatsapp:+1"]
     # the work still happened and is stored
     assert wired.saved_meta["generated"]["caption"] == "EDITED CAPTION"
+
+
+# --------------------------------------------------------------------------- #
+# reaching into the image bank instead of redrawing
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_naming_a_shot_we_own_uses_it_instead_of_redrawing(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """ "Change the picture to the hero lamb" used to reach the image model as
+    "redraw this into something lamb-like". The actual photograph was in storage
+    the whole time; using it costs nothing and cannot drift."""
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("a named bank shot must not be sent to the image model")
+
+    fetched: dict[str, str] = {}
+
+    async def fake_download(url: str) -> bytes:
+        fetched["url"] = url
+        return b"lamb-jpeg"
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
+    monkeypatch.setattr(approval.image_gen, "edit_multi", must_not_run)
+    monkeypatch.setattr(approval.image_gen, "download", fake_download)
+
+    await approval.handle_edit_request(
+        "whatsapp:+1", _generated_convo(), "change the picture to the hero lamb"
+    )
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"lamb-jpeg"
+    assert fetched["url"].endswith("/pool/prod-lamb-hero.jpg")
+
+
+@pytest.mark.asyncio
+async def test_a_person_and_a_product_are_composed_from_both_photographs(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """ "Priya holding the lamb" is the case that needs BOTH references — one
+    reference gives you our Priya holding an invented cut, or our lamb held by a
+    stranger."""
+    seen: dict[str, Any] = {}
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("a composition must not fall through to single-image img2img")
+
+    async def fake_edit_multi(urls: list[str], prompt: str, **kw: Any) -> Any:
+        seen["urls"] = urls
+        seen["prompt"] = prompt
+        return SimpleNamespace(ok=True, image_bytes=b"composed-png")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
+    monkeypatch.setattr(approval.image_gen, "edit_multi", fake_edit_multi)
+
+    await approval.handle_edit_request(
+        "whatsapp:+1", _generated_convo(), "make it a picture of Priya holding the lamb"
+    )
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"composed-png"
+    assert len(seen["urls"]) == 2
+    assert "/characters/priya/" in seen["urls"][0]  # identity first
+    assert seen["urls"][1].endswith("/pool/prod-lamb-hero.jpg")
+
+
+@pytest.mark.asyncio
+async def test_an_edit_that_names_nothing_still_redraws_the_current_picture(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """The bank must not hijack ordinary visual edits — "make it brighter" names
+    no photograph and has to keep going to img2img."""
+    called: dict[str, Any] = {}
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def fake_image_edit(url: str, prompt: str, **kw: Any) -> Any:
+        called["url"] = url
+        return SimpleNamespace(ok=True, image_bytes=b"brighter-png")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "edit", fake_image_edit)
+
+    await approval.handle_edit_request("whatsapp:+1", _generated_convo(), "make it brighter")
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"brighter-png"
+    assert called["url"] == "https://cdn.test/p1-raw.png"
+
+
+@pytest.mark.asyncio
+async def test_asking_for_a_new_image_outright_skips_the_bank(
+    wired_generated: _Captures, monkeypatch
+) -> None:
+    """ "Generate a fresh lamb shot" names a subject we own, but the operator
+    asked for something made — their word wins over the lookup."""
+
+    async def classify_visual(feedback: str) -> str:
+        return "visual"
+
+    async def must_not_run(*a: Any, **kw: Any) -> Any:  # pragma: no cover - guard
+        raise AssertionError("an explicit request for a new image must not use the bank")
+
+    async def fake_image_edit(url: str, prompt: str, **kw: Any) -> Any:
+        return SimpleNamespace(ok=True, image_bytes=b"fresh-png")
+
+    monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
+    monkeypatch.setattr(approval.image_gen, "download", must_not_run)
+    monkeypatch.setattr(approval.image_gen, "edit_multi", must_not_run)
+    monkeypatch.setattr(approval.image_gen, "edit", fake_image_edit)
+
+    await approval.handle_edit_request(
+        "whatsapp:+1", _generated_convo(), "generate a fresh lamb shot from scratch"
+    )
+
+    assert wired_generated.render_kwargs.get("photo_bytes") == b"fresh-png"

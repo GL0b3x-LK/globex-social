@@ -44,6 +44,18 @@ def voice_heard(text: str) -> str:
 # --- AI image generation ---
 GENERATING_IMAGE = "🎨 Generating your image… give me a moment (this takes ~20–30s)."
 REGENERATING_IMAGE = "🎨 Updating the image… one sec."
+
+
+def composing_from_bank(names: list[str]) -> str:
+    """Name the photographs being used, so a wrong match is caught in the status
+    line rather than a minute later in the preview."""
+    return f"🎨 Building this from our own shots ({', '.join(names)})… one moment."
+
+
+def swapped_from_bank(name: str) -> str:
+    return f"🖼️ Swapped in our *{name}* shot."
+
+
 IMAGE_GEN_FAILED = (
     "🎨 I couldn't generate the image just now, so here's a designed version instead. "
     "Reply *try again* if you'd like me to retry the image."

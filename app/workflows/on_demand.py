@@ -24,7 +24,7 @@ from app.messaging.state_machine import Action, route
 from app.messaging.transcription import Outcome
 from app.publishing import platforms as plat
 from app.templates import renderer as render_mod
-from app.workflows import approval, intake, messages, redelivery, render_pipeline
+from app.workflows import approval, asset_bank, intake, messages, redelivery, render_pipeline
 from app.workflows import video as video_flow
 
 # VHS HUD overlay (transparent 9:16), composited onto Karen's video by ffmpeg.
@@ -553,9 +553,28 @@ async def _preview_generated(
     memory: str | None = None,
     target_platforms: list[plat.Platform] | None = None,
 ) -> None:
-    """Generate an image via kie.ai, then overlay the brand template on it."""
-    await twilio_client.try_send_text(from_phone, messages.GENERATING_IMAGE)
-    result = await image_gen.generate(image_prompt)
+    """Generate an image via kie.ai, then overlay the brand template on it.
+
+    When the request names something we own — a person from the character
+    library, a shot from the asset pool, or both — those photographs go in as
+    references instead of the scene being invented from the text. "Priya holding
+    the lamb" then reproduces the Priya we approved and the lamb we photographed,
+    rather than a new stranger holding a new cut of meat. Asking outright for
+    something new ("generate a fresh one") still gets a fresh one.
+    """
+    refs = asset_bank.resolve_refs(request_text)
+    from_bank = bool(refs) and not asset_bank.wants_new_image(request_text)
+    await twilio_client.try_send_text(
+        from_phone,
+        messages.composing_from_bank(refs.names) if from_bank else messages.GENERATING_IMAGE,
+    )
+    if from_bank:
+        log.info("composing from the bank", extra={"refs": refs.names})
+        result = await image_gen.edit_multi(
+            refs.urls, asset_bank.compose_prompt(image_prompt, refs)
+        )
+    else:
+        result = await image_gen.generate(image_prompt)
     generated = await generator.generate_freeform(request_text, memory=memory)
     if not result.ok or not result.image_bytes:
         # Don't leave Karen hanging — fall back to a designed version.
