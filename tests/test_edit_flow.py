@@ -827,3 +827,12 @@ async def test_asking_for_a_new_image_outright_skips_the_bank(
     )
 
     assert wired_generated.render_kwargs.get("photo_bytes") == b"fresh-png"
+
+
+def test_an_edit_that_names_a_template_gets_that_template() -> None:
+    """ "Put this on TS-p2" must not depend on the model choosing to comply —
+    asked by name in a fresh request, it didn't."""
+    current = _post()  # ts_p1_bolddip
+    revised = _post(caption="New caption")  # model left the template alone
+    editor.normalize(revised, current, "put this on TS-p2 please")
+    assert revised.template_variant == "ts_p2_cut_navyborder"

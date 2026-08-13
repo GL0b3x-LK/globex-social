@@ -248,4 +248,18 @@ async def generate_freeform(
         if still := banned_claims(post):
             log.error("post still contains forbidden claims after rewrite", extra={"terms": still})
     style.enforce(post)
+    # A template named in the request is an instruction, applied in code where
+    # the model gets no vote. Asked outright for TS-p2-cut-navyborder_4x5, the
+    # model still emitted TS-p1 — and the operator then reported wrong fonts, a
+    # wrong logo position and a missing divider, all of which were just TS-p1
+    # being TS-p1 on a request that said TS-p2.
+    from app.templates.catalog import named_template  # local import: no AI->templates cycle
+
+    if named := named_template(request):
+        if named != post.template_variant:
+            log.info(
+                "request names a template; overriding the model's choice",
+                extra={"model_chose": post.template_variant, "named": named},
+            )
+        post.template_variant = named
     return post

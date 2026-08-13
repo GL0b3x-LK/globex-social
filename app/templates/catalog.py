@@ -260,3 +260,34 @@ DEFAULT_FINAL = "ts_p1_bolddip"
 
 def is_final(variant: str) -> bool:
     return variant in FINAL_VARIANTS
+
+
+# How the templates are actually referred to in a WhatsApp message — the client
+# names ("TS-p2-cut-navyborder_4x5"), the short forms ("p2", "TS-2"), and the
+# descriptive handles ("the navy border one", "the editorial layout").
+_TEMPLATE_HANDLES: tuple[tuple[str, str], ...] = (
+    (r"\b(?:ts[-_ ]?)?p1\b|\bbold[-_ ]?dip\b", "ts_p1_bolddip"),
+    (r"\b(?:ts[-_ ]?)?p2\b|\bnavy[-_ ]?border\b", "ts_p2_cut_navyborder"),
+    (r"\b(?:ts[-_ ]?)?p3\b|\beditorial\b", "ts_p3_editorial"),
+    (r"\bms[-_ ]?3\b|\banniv[-_ ]?photo\b", "ms_3_anniv_photo"),
+)
+
+
+def named_template(text: str) -> str | None:
+    """The approved template this message names, if it names exactly one.
+
+    A named template is an instruction, not a suggestion — but the model treated
+    it as one: asked in so many words for TS-p2-cut-navyborder_4x5, it emitted
+    TS-p1 (its prompt calls TS-p1 "the workhorse", and the workhorse won). The
+    operator then reported wrong fonts, a wrong logo position and a missing
+    divider — every one of them just TS-p1 being TS-p1. So the name is applied
+    in code after generation, where the model gets no vote.
+
+    Naming TWO templates returns None: "more like p2 than p1" is a comparison,
+    and guessing which one they meant is the model's mistake all over again.
+    """
+    import re as _re
+
+    lowered = (text or "").lower()
+    hits = {v for pattern, v in _TEMPLATE_HANDLES if _re.search(pattern, lowered)}
+    return hits.pop() if len(hits) == 1 else None

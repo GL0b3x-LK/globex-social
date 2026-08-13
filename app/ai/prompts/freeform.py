@@ -15,7 +15,7 @@ authoritative; only the from-scratch path was choosing.
 
 FREEFORM_PROMPT = """TASK: Karen sent a free-form request (and maybe a photo). Pick the right approved template, then write the post.
 
-Choose ONE template_variant. These four are the ONLY templates Globex publishes — there is no other option, and every one of them is built around a photograph:
+Choose ONE template_variant. If the request NAMES a template — "TS-p2", "use the editorial one", "MS-3" — that IS the choice; you have no discretion. Otherwise pick from these four. They are the ONLY templates Globex publishes — there is no other option, and every one of them is built around a photograph:
 
 - "TS-p1-bolddip_4x5" — photo-first with a bold rounded dip at the photo's bottom-left; ALL-CAPS letterspaced headline, optional cyan booth pill. The workhorse: use it for trade shows, products, capability and brand messages, stats, holidays and anything that doesn't clearly call for one of the others.
 - "TS-p2-cut-navyborder_4x5" — square-cut photo in a thin navy frame with a full-width cyan divider, bold title-case headline, centered logo. Use when the message is calmer and more editorial than TS-p1: a considered statement, a thank-you, a market or partnership note.

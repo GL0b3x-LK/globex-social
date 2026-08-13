@@ -142,12 +142,25 @@ def split_hashtags(caption: str, existing: list[str]) -> tuple[str, list[str]]:
 
 def _pin_unrequested(revised: GeneratedPost, current: GeneratedPost, feedback: str) -> None:
     """Undo model drift on fields the operator never mentioned."""
+    from app.templates.catalog import named_template  # local import: no AI->templates cycle
+
     # A null eyebrow from the editor means "I didn't touch it" — removing the
     # label is the empty string. Left alone, every later edit that simply omitted
     # the field would drop back to the template's standard label and quietly undo
     # a correction the operator had already made.
     if revised.eyebrow is None and current.eyebrow is not None:
         revised.eyebrow = current.eyebrow
+    # A template named in the feedback is applied outright — "put this on TS-p2"
+    # must not depend on the model choosing to comply (asked by name in a fresh
+    # request, it didn't).
+    if named := named_template(feedback):
+        if revised.template_variant != named:
+            log.info(
+                "edit names a template; applied",
+                extra={"from": revised.template_variant, "to": named},
+            )
+        revised.template_variant = named
+        return
     if revised.template_variant != current.template_variant and not any(
         w in feedback.lower() for w in _LAYOUT_WORDS
     ):

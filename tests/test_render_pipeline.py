@@ -159,3 +159,66 @@ async def test_a_template_with_no_label_slot_carries_no_label(captured) -> None:
     assert captured["variant"] == "ts_p1_bolddip"
     assert captured["slots"]["eyebrow"] == ""
     assert post.eyebrow == ""
+
+
+# --------------------------------------------------------------------------- #
+# a named template binds
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("use template TS-p2-cut-navyborder_4x5 for this", "ts_p2_cut_navyborder"),
+        ("put it on ts-p2 please", "ts_p2_cut_navyborder"),
+        ("use p2", "ts_p2_cut_navyborder"),
+        ("the navy border one", "ts_p2_cut_navyborder"),
+        ("TS-p1-bolddip_4x5 with the booth pill", "ts_p1_bolddip"),
+        ("make it the editorial layout", "ts_p3_editorial"),
+        ("MS-3-anniv-photo_4x5 for Jane", "ms_3_anniv_photo"),
+    ],
+)
+def test_a_named_template_is_recognised(text: str, expected: str) -> None:
+    assert catalog.named_template(text) == expected
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "post about our duck retail pack",  # names nothing
+        "make it more like p2 than p1",  # names two — a comparison, not a choice
+        "",
+    ],
+)
+def test_no_single_named_template_means_no_pin(text: str) -> None:
+    assert catalog.named_template(text) is None
+
+
+async def test_a_named_template_overrides_the_models_choice(monkeypatch) -> None:
+    """Asked in so many words for TS-p2-cut-navyborder_4x5, the model emitted
+    TS-p1 — and every complaint that followed (wrong font, logo far right, no
+    divider, the dip curvature) was TS-p1 faithfully rendering a request that
+    said TS-p2. The name binds in code now; the model gets no vote."""
+    from app.ai import generator
+
+    async def model_prefers_the_workhorse(**kwargs):
+        return GeneratedPost(
+            caption="c",
+            hashtags=["#Globex"],
+            template_variant="TS-p1-bolddip_4x5",
+            headline="The Full Cut Sheet",
+            rationale="r",
+        )
+
+    async def no_learned_rules() -> str:
+        return ""
+
+    from app.ai import learning
+
+    monkeypatch.setattr(generator, "generate_structured", model_prefers_the_workhorse)
+    monkeypatch.setattr(learning, "rules_block_async", no_learned_rules)
+
+    post = await generator.generate_freeform(
+        "a cut sheet post — use template TS-p2-cut-navyborder_4x5"
+    )
+    assert post.template_variant == "ts_p2_cut_navyborder"
