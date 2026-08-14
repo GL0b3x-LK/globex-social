@@ -1,13 +1,20 @@
 """Calendar-driven drafting and publishing (Phase 6).
 
-Daily: pick calendar entries inside the lead window, generate copy, render on the
-entry's approved template with a matching photo from the curated asset pool, and
-send the preview to the approver's WhatsApp. The normal approval flow takes over
-from there — NOTHING publishes without an explicit "approve" (contract rule).
+Weekdays at 7am New York: pick the calendar entries due between now and the next
+working day — so a Tuesday post previews on Monday and a Monday post on Friday,
+never over the weekend when nobody is there to approve it — generate copy, render
+on the entry's approved template with a matching photo from the curated asset
+pool, and send the preview to the approver's WhatsApp. That gives them a full
+business day to edit and approve. The normal approval flow takes over from there
+— NOTHING publishes without an explicit "approve" (contract rule).
 
-Approved scheduled posts wait for their calendar date: handle_approval sees
-render_meta.publish_on in the future and holds; publish_due_posts() fires the
-Blotato publish on the day itself.
+Approving does not publish. An approved scheduled post waits for its moment —
+1am New York on its calendar date — however early the yes came: handle_approval
+sees render_meta.publish_on still ahead and holds, and publish_due_posts() fires
+the Blotato publish when the day arrives.
+
+Every date here is the client's, via app.clock: the server runs UTC, whose day
+rolls over at 8pm New York — four hours before a post is due to go out.
 """
 
 from __future__ import annotations
@@ -20,6 +27,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from app import clock
 from app.ai import generator, style
 from app.ai.generator import ContentCategory
 from app.config import get_settings
@@ -190,7 +198,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
     """
     from app.workflows.on_demand import _finalize_preview  # local import: avoid cycle
 
-    when = date.today() if publish_today else (entry.post_date or entry.planned_date)
+    when = clock.today() if publish_today else (entry.post_date or entry.planned_date)
     category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
     generated = await generator.generate_post(
         category,
@@ -230,8 +238,12 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
             f"you approve\n({entry_title(entry)} · week {entry.week} · {entry.category})\n\n"
         )
     else:
+        # The time is spelled out because approving is not publishing: the post
+        # waits for its slot however early the yes arrives, and an approver who
+        # expects it to go out on approval reads the delay as a failure.
+        go_live = clock.publish_moment(when).strftime("%a %d %b, %-I%p").replace("AM", "am")
         prefix = (
-            f"🗓 Scheduled post — goes out {when.strftime('%a %d %b')} once you approve\n"
+            f"🗓 Scheduled post — approve any time before then; it goes out {go_live}\n"
             f"({entry_title(entry)})\n\n"
         )
     prefix += sheet_note
@@ -248,6 +260,11 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         event=(EVENT_TYPE, entry.event_id),
         extra_render_meta={
             "publish_on": when.isoformat(),
+            # The internal test run publishes on approval, which is the whole
+            # point of it — without this a test post approved between midnight
+            # and 1am would sit waiting for a slot that had just passed, and the
+            # demo would look broken for an hour a day.
+            "publish_now": publish_today,
             "caption_locked": caption_locked,
             # Which pool shot fronted this post, so the next draft can pick a
             # different one (see recently_used).
@@ -294,10 +311,17 @@ async def draft_next_for_test() -> bool:
 
 
 async def draft_due_posts(today: date | None = None) -> int:
-    """Draft every calendar entry inside the lead window that has no post yet."""
-    settings = get_settings()
-    today = today or date.today()
-    due = calendar_source.entries_due(today, settings.draft_lead_days)
+    """Draft every calendar entry up to the next working day that has no post yet.
+
+    The window reaches the next WORKING day rather than a fixed number of days
+    ahead, so Friday's 7am run covers Saturday, Sunday and Monday: a Monday post
+    is previewed while somebody is still at work to approve it. Today is inside
+    the window too — a post that somehow reached its own date undrafted is better
+    late than silently skipped.
+    """
+    today = today or clock.today()
+    lead = (clock.next_working_day(today) - today).days
+    due = calendar_source.entries_due(today, lead)
     fresh = await asyncio.to_thread(calendar_source.undrafted, due)
     for entry in sorted(fresh, key=lambda e: e.post_date or e.planned_date):
         try:
@@ -308,8 +332,13 @@ async def draft_due_posts(today: date | None = None) -> int:
 
 
 async def publish_due_posts(today: date | None = None) -> int:
-    """Publish approved scheduled posts whose calendar date has arrived."""
-    today = today or date.today()
+    """Publish approved scheduled posts whose calendar date has arrived.
+
+    Runs at 1am New York. A post whose date has passed still publishes — a
+    yes given after the sweep, or a day the service spent restarting, must not
+    leave an approved post stranded forever.
+    """
+    today = today or clock.today()
     approved = await asyncio.to_thread(posts.list_by_status, "approved")
     published = 0
     for post in approved:

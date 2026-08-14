@@ -320,6 +320,20 @@ def test_the_test_run_walks_the_approved_order(monkeypatch) -> None:
     assert drafted == [1]  # seq 0 was already drafted
 
 
+def test_the_draft_window_reaches_the_next_working_day(monkeypatch) -> None:
+    """Friday's 7am run must cover Saturday, Sunday AND Monday: a Monday post
+    previewed on Sunday is a post nobody is at work to approve."""
+    windows: list[tuple[date, int]] = []
+    monkeypatch.setattr(
+        calendar_source, "entries_due", lambda today, lead: windows.append((today, lead)) or []
+    )
+
+    asyncio.run(scheduled.draft_due_posts(today=date(2026, 8, 14)))  # a Friday
+    asyncio.run(scheduled.draft_due_posts(today=date(2026, 8, 17)))  # a Monday
+
+    assert windows == [(date(2026, 8, 14), 3), (date(2026, 8, 17), 1)]
+
+
 def test_the_test_run_reports_when_the_calendar_is_exhausted(monkeypatch) -> None:
     """Returning False is what removes the job — otherwise it fires forever."""
     monkeypatch.setattr(

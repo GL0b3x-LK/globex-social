@@ -149,7 +149,12 @@ def start() -> AsyncIOScheduler | None:
 
     sched.add_job(
         _draft_job,
-        CronTrigger(hour=settings.draft_hour, minute=0, timezone=settings.timezone),
+        # Weekdays only: the lead is a working day, and Friday's run already
+        # covers the whole weekend plus Monday (see clock.next_working_day). A
+        # weekend run would find nothing left to draft anyway.
+        CronTrigger(
+            day_of_week="mon-fri", hour=settings.draft_hour, minute=0, timezone=settings.timezone
+        ),
         id="calendar_draft",
         coalesce=True,
         misfire_grace_time=3600 * 6,  # a restart within 6h still runs today's job
@@ -168,8 +173,12 @@ def start() -> AsyncIOScheduler | None:
         extra={
             "draft_hour": settings.draft_hour,
             "publish_hour": settings.publish_hour,
-            "lead_days": settings.draft_lead_days,
+            "lead": "previous working day",
             "tz": settings.timezone,
+            # Stated on every boot: a schedule nobody can see is one nobody
+            # notices has stopped.
+            "next_draft": str(sched.get_job("calendar_draft").next_run_time),
+            "next_publish": str(sched.get_job("calendar_publish").next_run_time),
         },
     )
     return sched

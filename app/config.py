@@ -88,9 +88,13 @@ class Settings(BaseSettings):
     # skipped while the client decides when to go live. Setting it re-flows the
     # whole year from that date (see app/db/calendar_source.py).
     calendar_launch_date: str | None = None
-    draft_lead_days: int = 3  # draft/preview posts this many days before post_date
+    # The client's cadence: the draft lands at 7am on the previous WORKING day
+    # (so a Monday post previews on Friday), giving them a full business day to
+    # edit and approve, and an approved post then waits — however early the yes
+    # came — until 1am on the date itself. The lead is a rule, not a number:
+    # see clock.next_working_day.
     draft_hour: int = 7  # local hour (timezone above) the daily draft job runs
-    publish_hour: int = 9  # local hour an approved post goes live on its date
+    publish_hour: int = 1  # local hour an approved post goes live on its date
 
     # --- Calendar sheet bridge (Apps Script web app on the client's Sheet) ---
     # Both set = the "Exact Caption" column becomes live: client-authored

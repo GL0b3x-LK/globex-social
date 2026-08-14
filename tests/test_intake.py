@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import datetime, time, timedelta
 from types import SimpleNamespace
 
 import pytest
 
+from app import clock
 from app.ai.generator import GeneratedPost
 from app.ai.intent import Intent, IntentType
 from app.workflows import approval, intake, scheduled
@@ -115,7 +116,7 @@ def world(monkeypatch):
     monkeypatch.setattr("app.publishing.publisher.publish_post", fake_publish)
     monkeypatch.setattr(
         "app.workflows.scheduled.get_settings",
-        lambda: SimpleNamespace(authorized_numbers_list=[PHONE], draft_lead_days=3),
+        lambda: SimpleNamespace(authorized_numbers_list=[PHONE]),
     )
     return SimpleNamespace(
         convos=convos,
@@ -203,13 +204,63 @@ def _pending_post(world, publish_on: str | None):
 
 
 async def test_approving_future_scheduled_post_holds_publication(world) -> None:
-    future = (date.today() + timedelta(days=2)).isoformat()
+    future = (clock.today() + timedelta(days=2)).isoformat()
     pid = _pending_post(world, future)
     convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}
     await approval.handle_approval(PHONE, convo)
     assert world.posts[pid]["status"] == "approved"
     assert world.published == []  # held for the calendar date
     assert "go out automatically" in world.sent_text[-1]
+
+
+def _freeze(monkeypatch, moment: datetime) -> None:
+    """Pin the client's wall clock, so a boundary test is not a flaky one."""
+    monkeypatch.setattr(clock, "now", lambda: moment)
+
+
+async def test_evening_approval_still_holds_until_1am(world, monkeypatch) -> None:
+    """9pm in New York is already tomorrow in UTC — the server's day, not the
+    client's. Comparing dates on the server clock released the hold and published
+    four hours early; the hold is against the 1am moment itself."""
+    tomorrow = clock.today() + timedelta(days=1)
+    _freeze(monkeypatch, datetime.combine(tomorrow - timedelta(days=1), time(21), clock.tz()))
+    pid = _pending_post(world, tomorrow.isoformat())
+    convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}
+    await approval.handle_approval(PHONE, convo)
+    assert world.published == []
+    assert "1am" in world.sent_text[-1]
+
+
+async def test_approval_after_the_slot_publishes_at_once(world, monkeypatch) -> None:
+    """A yes given on the day, after the 1am sweep has already run, must not wait
+    another 24 hours for the next one."""
+    today = clock.today()
+    _freeze(monkeypatch, datetime.combine(today, time(9), clock.tz()))
+    pid = _pending_post(world, today.isoformat())
+    convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}
+    await approval.handle_approval(PHONE, convo)
+    assert world.published == [pid]
+
+
+async def test_approval_at_midnight_on_the_day_still_waits_for_1am(world, monkeypatch) -> None:
+    today = clock.today()
+    _freeze(monkeypatch, datetime.combine(today, time(0, 30), clock.tz()))
+    pid = _pending_post(world, today.isoformat())
+    convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}
+    await approval.handle_approval(PHONE, convo)
+    assert world.published == []
+
+
+async def test_a_test_run_post_publishes_on_approval_whatever_the_hour(world, monkeypatch) -> None:
+    """The internal run's promise is "publishes as soon as you approve". Before
+    1am the calendar gate would otherwise hold it for an hour."""
+    today = clock.today()
+    _freeze(monkeypatch, datetime.combine(today, time(0, 30), clock.tz()))
+    pid = _pending_post(world, today.isoformat())
+    world.posts[pid]["render_meta"]["publish_now"] = True
+    convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}
+    await approval.handle_approval(PHONE, convo)
+    assert world.published == [pid]
 
 
 async def test_approving_ondemand_post_publishes_immediately(world) -> None:
@@ -220,8 +271,8 @@ async def test_approving_ondemand_post_publishes_immediately(world) -> None:
 
 
 async def test_publish_due_posts_fires_only_on_the_day(world) -> None:
-    due = _pending_post(world, date.today().isoformat())
-    future = _pending_post(world, (date.today() + timedelta(days=3)).isoformat())
+    due = _pending_post(world, clock.today().isoformat())
+    future = _pending_post(world, (clock.today() + timedelta(days=3)).isoformat())
     for pid in (due, future):
         world.posts[pid]["status"] = "approved"
     count = await scheduled.publish_due_posts()

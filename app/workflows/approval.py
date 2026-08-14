@@ -7,9 +7,9 @@ the stored GeneratedPost in context) so it survives restarts.
 from __future__ import annotations
 
 import asyncio
-from datetime import date as _date
 from typing import Any
 
+from app import clock
 from app.ai import editor, image_gen, learning
 from app.ai.generator import GeneratedPost
 from app.db import approvals, posts, storage
@@ -148,13 +148,19 @@ async def handle_approval(
     await asyncio.to_thread(posts.set_status, post_id, "approved")
     await asyncio.to_thread(approvals.record, post_id, "approved")
 
-    # Calendar-scheduled posts hold until their date; the scheduler publishes them.
+    # Calendar-scheduled posts hold until their moment; the scheduler publishes
+    # them. "Their moment" is 1am New York on the post date, not merely "a later
+    # date": the server clock is UTC and rolls over at 8pm New York, so a date
+    # comparison released the hold — and published — four hours early for any
+    # approval given that evening.
     post = await asyncio.to_thread(posts.get, post_id)
-    publish_on = ((post or {}).get("render_meta") or {}).get("publish_on")
-    if publish_on and _date.fromisoformat(publish_on) > _date.today():
+    meta = (post or {}).get("render_meta") or {}
+    publish_on = meta.get("publish_on")
+    if publish_on and not meta.get("publish_now") and not clock.is_due(publish_on):
         await conversation.transition(phone, state=ConversationState.IDLE)
         await conversation.clear_post(phone)
-        pretty = _date.fromisoformat(publish_on).strftime("%A %d %B")
+        moment = clock.publish_moment(publish_on)
+        pretty = moment.strftime("%A %d %B at %-I%p").replace("AM", "am").replace("PM", "pm")
         await twilio_client.try_send_text(
             phone, f"✅ Approved — it will go out automatically on {pretty}."
         )
