@@ -22,7 +22,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-from datetime import date
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -189,16 +189,23 @@ def _entry_brief(entry: CalendarEntry) -> str:
     )
 
 
-async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = False) -> None:
+async def draft_calendar_entry(entry: CalendarEntry, *, in_sequence: bool = False) -> None:
     """Draft one calendar entry and send it for approval.
 
-    ``publish_today`` is the internal test run: the post carries today's date, so
-    approving it publishes straight away instead of parking it until its real
-    calendar date months from now. The approval gate itself is unchanged.
+    ``in_sequence`` is the sequential run, which walks the approved order one
+    post a day instead of waiting months for each entry's real calendar date.
+    The cadence it imitates is the client's exactly: drafted at 7am, dated
+    TOMORROW, so approving parks it until 1am the next morning like any other
+    scheduled post. It used to carry today's date and publish on approval —
+    which made it a demo of a flow the client will never see.
     """
     from app.workflows.on_demand import _finalize_preview  # local import: avoid cycle
 
-    when = clock.today() if publish_today else (entry.post_date or entry.planned_date)
+    when = (
+        clock.today() + timedelta(days=1)
+        if in_sequence
+        else (entry.post_date or entry.planned_date)
+    )
     category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
     generated = await generator.generate_post(
         category,
@@ -232,16 +239,17 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         sheet_note += "\n"
 
     photo = pick_photo(entry, exclude=await asyncio.to_thread(recently_used))
-    if publish_today:
+    # The time is spelled out because approving is not publishing: the post waits
+    # for its slot however early the yes arrives, and an approver who expects it
+    # to go out on approval reads the delay as a failure.
+    go_live = clock.publish_moment(when).strftime("%a %d %b, %-I%p").replace("AM", "am")
+    if in_sequence:
         prefix = (
-            f"🧪 *Test post {entry.seq + 1}/{total_planned()}* — publishes as soon as "
-            f"you approve\n({entry_title(entry)} · week {entry.week} · {entry.category})\n\n"
+            f"🗓 *Post {entry.seq + 1}/{total_planned()}* — approve any time today; "
+            f"it goes out {go_live}\n"
+            f"({entry_title(entry)} · week {entry.week} · {entry.category})\n\n"
         )
     else:
-        # The time is spelled out because approving is not publishing: the post
-        # waits for its slot however early the yes arrives, and an approver who
-        # expects it to go out on approval reads the delay as a failure.
-        go_live = clock.publish_moment(when).strftime("%a %d %b, %-I%p").replace("AM", "am")
         prefix = (
             f"🗓 Scheduled post — approve any time before then; it goes out {go_live}\n"
             f"({entry_title(entry)})\n\n"
@@ -260,11 +268,6 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
         event=(EVENT_TYPE, entry.event_id),
         extra_render_meta={
             "publish_on": when.isoformat(),
-            # The internal test run publishes on approval, which is the whole
-            # point of it — without this a test post approved between midnight
-            # and 1am would sit waiting for a slot that had just passed, and the
-            # demo would look broken for an hour a day.
-            "publish_now": publish_today,
             "caption_locked": caption_locked,
             # Which pool shot fronted this post, so the next draft can pick a
             # different one (see recently_used).
@@ -289,25 +292,46 @@ async def draft_calendar_entry(entry: CalendarEntry, *, publish_today: bool = Fa
     )
 
 
-async def draft_next_for_test() -> bool:
-    """Draft the single next un-drafted calendar post, for the internal test run.
+async def draft_next_in_sequence() -> bool:
+    """Draft the single next un-drafted calendar post, in the approved order.
 
-    Walks the client-approved order rather than the calendar's dates, so the team
-    sees the real sequence of posts without waiting a year for it. Returns False
-    when the calendar is exhausted, which stops the run rather than looping.
+    Walks the client-approved sequence rather than the calendar's dates, so the
+    team sees the real run of posts without waiting a year for it — but at the
+    real cadence (7am draft, 1am publish the next day), so what they are
+    reviewing is the flow the client will actually get. Returns False when the
+    calendar is exhausted, which stops the run rather than looping.
     """
     entries = sorted(calendar_source.load_calendar(), key=lambda e: e.seq)
     fresh = await asyncio.to_thread(calendar_source.undrafted, list(entries))
     if not fresh:
-        log.info("test run: calendar exhausted, nothing left to draft")
+        log.info("sequential run: calendar exhausted, nothing left to draft")
         return False
     entry = fresh[0]
-    await draft_calendar_entry(entry, publish_today=True)
+    await draft_calendar_entry(entry, in_sequence=True)
     log.info(
-        "test draft sent",
+        "sequential draft sent",
         extra={"seq": entry.seq, "title": entry.title, "remaining": len(fresh) - 1},
     )
     return True
+
+
+async def drafted_since(moment: datetime) -> bool:
+    """Has any calendar post been drafted since ``moment``?
+
+    Answers "did today's slot actually run?" after a restart. APScheduler holds
+    its jobs in memory, so a boot recomputes the next fire time from now — a
+    deploy at 9am on a 7am grid does not run the missed slot, it schedules
+    tomorrow's, and the day's post is lost with nothing in the logs saying so.
+    That was survivable at one post an hour; at one a day it is the whole day.
+    """
+    recent = await asyncio.to_thread(posts.recent, 40)
+    for post in recent:
+        if post.get("event_type") != EVENT_TYPE:
+            continue
+        created = post.get("created_at")
+        if created and datetime.fromisoformat(created) >= moment:
+            return True
+    return False
 
 
 async def draft_due_posts(today: date | None = None) -> int:

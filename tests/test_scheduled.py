@@ -7,12 +7,14 @@ from datetime import date, timedelta
 
 import pytest
 
+from app import clock
 from app.ai.generator import GeneratedPost
 from app.db import calendar_source
 from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES, TEMPLATES
 from app.workflows import render_pipeline, scheduled
 
 FINAL_VARIANTS = set(CALENDAR_TEMPLATE_ALIASES.values())
+_HOUR = timedelta(hours=1)
 
 
 def _gp(**over) -> GeneratedPost:
@@ -244,9 +246,11 @@ def test_recipients_default_to_the_single_approver(monkeypatch) -> None:
         get_settings.cache_clear()
 
 
-def test_a_test_post_carries_todays_date_so_approval_publishes_now(monkeypatch) -> None:
-    """A calendar post normally holds until its date. Approving a test post has to
-    publish there and then, or nothing goes out for months."""
+def test_a_sequential_post_is_dated_tomorrow_so_it_holds_until_1am(monkeypatch) -> None:
+    """The sequential run imitates the client cadence rather than short-circuiting
+    it: drafted today, dated tomorrow, so approving parks it until 1am like every
+    other scheduled post. It used to carry today's date and publish on approval,
+    which demonstrated a flow the client will never see."""
     captured: dict = {}
 
     async def fake_finalize(*_a, **kw):
@@ -267,10 +271,12 @@ def test_a_test_post_carries_todays_date_so_approval_publishes_now(monkeypatch) 
     monkeypatch.setattr(scheduled.generator, "generate_post", fake_generate)
 
     entry = calendar_source.load_calendar()[0]
-    asyncio.run(scheduled.draft_calendar_entry(entry, publish_today=True))
+    asyncio.run(scheduled.draft_calendar_entry(entry, in_sequence=True))
 
-    assert captured["extra_render_meta"]["publish_on"] == date.today().isoformat()
-    assert "Test post" in captured["caption_prefix"]
+    tomorrow = clock.today() + timedelta(days=1)
+    assert captured["extra_render_meta"]["publish_on"] == tomorrow.isoformat()
+    assert not clock.is_due(tomorrow)  # approving it today cannot publish it
+    assert "1am" in captured["caption_prefix"]
 
 
 def test_a_normal_calendar_post_still_holds_for_its_date(monkeypatch) -> None:
@@ -297,7 +303,7 @@ def test_a_normal_calendar_post_still_holds_for_its_date(monkeypatch) -> None:
     asyncio.run(scheduled.draft_calendar_entry(entry))
 
     assert captured["extra_render_meta"]["publish_on"] == entry.planned_date.isoformat()
-    assert "Test post" not in captured["caption_prefix"]
+    assert "Post 1/" not in captured["caption_prefix"]
 
 
 def test_the_test_run_walks_the_approved_order(monkeypatch) -> None:
@@ -305,7 +311,7 @@ def test_the_test_run_walks_the_approved_order(monkeypatch) -> None:
     already drafted — so a restart never re-sends what was already reviewed."""
     drafted: list[int] = []
 
-    async def fake_draft(entry, *, publish_today=False):
+    async def fake_draft(entry, *, in_sequence=False):
         drafted.append(entry.seq)
 
     already = {calendar_source.load_calendar()[0].event_id}
@@ -316,7 +322,7 @@ def test_the_test_run_walks_the_approved_order(monkeypatch) -> None:
         lambda event_id, event_type: {"id": "x"} if event_id in already else None,
     )
 
-    assert asyncio.run(scheduled.draft_next_for_test()) is True
+    assert asyncio.run(scheduled.draft_next_in_sequence()) is True
     assert drafted == [1]  # seq 0 was already drafted
 
 
@@ -334,12 +340,29 @@ def test_the_draft_window_reaches_the_next_working_day(monkeypatch) -> None:
     assert windows == [(date(2026, 8, 14), 3), (date(2026, 8, 17), 1)]
 
 
-def test_the_test_run_reports_when_the_calendar_is_exhausted(monkeypatch) -> None:
+def test_drafted_since_sees_only_calendar_posts(monkeypatch) -> None:
+    """What the boot catch-up asks: did today's slot actually send anything? An
+    on-demand post Karen asked for is not an answer to that question."""
+    slot = clock.now() - timedelta(hours=2)
+    rows = [
+        {"event_type": None, "created_at": (slot + timedelta(minutes=5)).isoformat()},
+        {"event_type": calendar_source.EVENT_TYPE, "created_at": (slot - _HOUR).isoformat()},
+    ]
+    monkeypatch.setattr(scheduled.posts, "recent", lambda limit=40: rows)
+    assert asyncio.run(scheduled.drafted_since(slot)) is False
+
+    rows.append(
+        {"event_type": calendar_source.EVENT_TYPE, "created_at": (slot + _HOUR).isoformat()}
+    )
+    assert asyncio.run(scheduled.drafted_since(slot)) is True
+
+
+def test_the_sequential_run_reports_when_the_calendar_is_exhausted(monkeypatch) -> None:
     """Returning False is what removes the job — otherwise it fires forever."""
     monkeypatch.setattr(
         calendar_source.posts_db, "find_for_event", lambda event_id, event_type: {"id": "x"}
     )
-    assert asyncio.run(scheduled.draft_next_for_test()) is False
+    assert asyncio.run(scheduled.draft_next_in_sequence()) is False
 
 
 def test_one_unreachable_recipient_does_not_cost_the_others_their_preview(monkeypatch) -> None:
@@ -493,3 +516,64 @@ def test_an_unparseable_start_falls_back_to_midnight_rather_than_stopping() -> N
     booted = datetime(today.year, today.month, today.day, 10, 47, tzinfo=tz)
     first = trigger.get_next_fire_time(None, booted)
     assert (first.hour, first.minute) == (11, 0)
+
+
+def test_a_daily_grid_survives_a_deploy_and_still_lands_at_7am() -> None:
+    """Anchored at 7am, a restart at any hour schedules the NEXT 7am — never an
+    interval counted from the deploy, which is how a redeploy used to walk the
+    slot forward through the day."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app.scheduler.automation import _test_grid
+
+    tz = ZoneInfo("America/New_York")
+    trigger = _test_grid(24.0, "America/New_York", "2026-08-14T07:00")
+
+    redeployed = datetime(2026, 8, 15, 15, 20, tzinfo=tz)
+    assert trigger.get_next_fire_time(None, redeployed) == datetime(2026, 8, 16, 7, 0, tzinfo=tz)
+
+
+def test_the_boot_catch_up_runs_a_slot_the_restart_would_have_eaten(monkeypatch) -> None:
+    """The gap the catch-up closes: APScheduler recomputes the next fire time from
+    now, so a deploy at 9am on a 7am daily grid schedules TOMORROW and today's post
+    is lost. Nothing else notices — the log looks healthy."""
+    from datetime import datetime, time
+    from types import SimpleNamespace
+
+    from app.scheduler import automation
+
+    ran: list[str] = []
+    tz = clock.tz()
+    next_run = datetime.combine(clock.today() + timedelta(days=1), time(7), tz)
+
+    monkeypatch.setattr(
+        automation,
+        "_scheduler",
+        SimpleNamespace(get_job=lambda _id: SimpleNamespace(next_run_time=next_run)),
+    )
+    monkeypatch.setattr(
+        automation,
+        "get_settings",
+        lambda: SimpleNamespace(test_interval_hours=24.0, timezone="America/New_York"),
+    )
+
+    async def fake_sequence() -> None:
+        ran.append("drafted")
+
+    monkeypatch.setattr(automation, "_sequence_job", fake_sequence)
+
+    # Today's 7am slot passed with nothing drafted -> the catch-up fires it.
+    monkeypatch.setattr(automation.scheduled, "drafted_since", lambda _m: _true(False))
+    asyncio.run(automation._catch_up_job())
+    assert ran == ["drafted"]
+
+    # Already drafted since that slot -> nothing happens, no double post.
+    ran.clear()
+    monkeypatch.setattr(automation.scheduled, "drafted_since", lambda _m: _true(True))
+    asyncio.run(automation._catch_up_job())
+    assert ran == []
+
+
+async def _true(value: bool) -> bool:
+    return value

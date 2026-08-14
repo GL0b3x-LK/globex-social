@@ -156,7 +156,7 @@ async def handle_approval(
     post = await asyncio.to_thread(posts.get, post_id)
     meta = (post or {}).get("render_meta") or {}
     publish_on = meta.get("publish_on")
-    if publish_on and not meta.get("publish_now") and not clock.is_due(publish_on):
+    if publish_on and not clock.is_due(publish_on):
         await conversation.transition(phone, state=ConversationState.IDLE)
         await conversation.clear_post(phone)
         moment = clock.publish_moment(publish_on)

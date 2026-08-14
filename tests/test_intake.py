@@ -251,18 +251,6 @@ async def test_approval_at_midnight_on_the_day_still_waits_for_1am(world, monkey
     assert world.published == []
 
 
-async def test_a_test_run_post_publishes_on_approval_whatever_the_hour(world, monkeypatch) -> None:
-    """The internal run's promise is "publishes as soon as you approve". Before
-    1am the calendar gate would otherwise hold it for an hour."""
-    today = clock.today()
-    _freeze(monkeypatch, datetime.combine(today, time(0, 30), clock.tz()))
-    pid = _pending_post(world, today.isoformat())
-    world.posts[pid]["render_meta"]["publish_now"] = True
-    convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}
-    await approval.handle_approval(PHONE, convo)
-    assert world.published == [pid]
-
-
 async def test_approving_ondemand_post_publishes_immediately(world) -> None:
     pid = _pending_post(world, None)
     convo = {"phone_number": PHONE, "current_post_id": pid, "context": {}}

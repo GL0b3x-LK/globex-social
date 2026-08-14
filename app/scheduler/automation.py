@@ -11,11 +11,12 @@ Gated by settings.scheduler_enabled so dev servers and tests never fire drafts.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import get_settings
@@ -83,16 +84,38 @@ async def _redelivery_job() -> None:
         log.info("re-delivery job done", extra={"delivered": sent})
 
 
-async def _test_job() -> None:
-    """Internal test run: one calendar post per interval, in approved order.
+async def _sequence_job() -> None:
+    """Sequential run: one calendar post per slot, in the client-approved order.
 
-    Stops itself when the calendar is exhausted so a forgotten test run cannot
-    keep firing against an empty calendar.
+    Stops itself when the calendar is exhausted so a forgotten run cannot keep
+    firing against an empty calendar.
     """
-    more = await scheduled.draft_next_for_test()
+    more = await scheduled.draft_next_in_sequence()
     if not more and _scheduler is not None:
-        _scheduler.remove_job("calendar_test")
-        log.info("test run finished; job removed")
+        _scheduler.remove_job("calendar_sequence")
+        log.info("sequential run finished; job removed")
+
+
+async def _catch_up_job() -> None:
+    """On boot: run the slot that has already passed today, if it never ran.
+
+    APScheduler keeps its jobs in memory, so a restart recomputes the next fire
+    time from now — it does not run a slot missed while the process was down or
+    being redeployed. At one post an hour that cost an hour; at one post a day a
+    single mid-morning deploy silently costs the day's post. So the boot asks the
+    database what it actually sent, rather than trusting the schedule.
+    """
+    job = _scheduler.get_job("calendar_sequence") if _scheduler else None
+    if job is None or job.next_run_time is None:
+        return
+    settings = get_settings()
+    previous = job.next_run_time - timedelta(hours=settings.test_interval_hours)
+    if previous > datetime.now(ZoneInfo(settings.timezone)):
+        return  # the run has not started yet; nothing can have been missed
+    if await scheduled.drafted_since(previous):
+        return
+    log.warning("slot missed while the service was down; drafting now", extra={"slot": previous})
+    await _sequence_job()
 
 
 def start() -> AsyncIOScheduler | None:
@@ -116,33 +139,54 @@ def start() -> AsyncIOScheduler | None:
         max_instances=1,
     )
 
+    # The publish sweep runs on BOTH schedules. It used to be skipped in test
+    # mode, which was only safe while test posts published on approval; now that
+    # they hold for 1am like every other post, leaving it out would mean nothing
+    # ever went live — an approved post waiting forever for a job that was not
+    # there.
+    sched.add_job(
+        _publish_job,
+        CronTrigger(hour=settings.publish_hour, minute=0, timezone=settings.timezone),
+        id="calendar_publish",
+        coalesce=True,
+        misfire_grace_time=3600 * 6,
+    )
+
     if settings.test_mode:
-        # The internal run replaces the calendar jobs rather than joining them:
-        # test posts already carry today's date, so the daily publish sweep would
-        # have nothing to do, and the daily draft would post on real dates too.
+        # The sequential run replaces the DRAFT job only: it walks the approved
+        # order one post per slot instead of drafting by real calendar dates.
         trigger = _test_grid(
             settings.test_interval_hours, settings.timezone, settings.test_start_at
         )
         sched.add_job(
-            _test_job,
+            _sequence_job,
             trigger,
-            id="calendar_test",
+            id="calendar_sequence",
             coalesce=True,
             max_instances=1,  # a slow draft must not overlap the next interval
             misfire_grace_time=int(settings.test_interval_hours * 3600),
         )
         sched.start()
         _scheduler = sched
+        # A restart is the one thing that can silently skip a slot, so the boot
+        # checks for a missed one — shortly after, to let the app finish starting.
+        sched.add_job(
+            _catch_up_job,
+            DateTrigger(run_date=datetime.now(ZoneInfo(settings.timezone)) + timedelta(seconds=45)),
+            id="calendar_catch_up",
+        )
         log.warning(
-            "TEST MODE scheduler started — one calendar post per interval",
+            "SEQUENTIAL scheduler started — one calendar post per slot",
             extra={
                 "every_hours": settings.test_interval_hours,
+                "publish_hour": settings.publish_hour,
                 "recipients": len(settings.approval_recipients_list),
                 "tz": settings.timezone,
                 # Logged so a deploy always says, on the spot, when the next post
                 # is due — the failure it replaces was invisible until someone
                 # noticed a post had not arrived.
-                "next_post": str(sched.get_job("calendar_test").next_run_time),
+                "next_post": str(sched.get_job("calendar_sequence").next_run_time),
+                "next_publish": str(sched.get_job("calendar_publish").next_run_time),
             },
         )
         return sched
@@ -158,13 +202,6 @@ def start() -> AsyncIOScheduler | None:
         id="calendar_draft",
         coalesce=True,
         misfire_grace_time=3600 * 6,  # a restart within 6h still runs today's job
-    )
-    sched.add_job(
-        _publish_job,
-        CronTrigger(hour=settings.publish_hour, minute=0, timezone=settings.timezone),
-        id="calendar_publish",
-        coalesce=True,
-        misfire_grace_time=3600 * 6,
     )
     sched.start()
     _scheduler = sched

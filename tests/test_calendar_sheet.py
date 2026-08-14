@@ -75,7 +75,7 @@ async def test_a_client_caption_posts_verbatim(monkeypatch, drafted) -> None:
 
     monkeypatch.setattr(scheduled.calendar_sheet, "exact_caption", sheet_says)
     entry = load_calendar()[0]
-    await scheduled.draft_calendar_entry(entry, publish_today=True)
+    await scheduled.draft_calendar_entry(entry, in_sequence=True)
 
     generated = drafted["generated"]
     assert generated.caption == "Karen's exact words. As typed."
@@ -93,7 +93,7 @@ async def test_a_struck_phrase_in_the_client_caption_is_flagged_not_rewritten(
 
     monkeypatch.setattr(scheduled.calendar_sheet, "exact_caption", sheet_says)
     entry = load_calendar()[0]
-    await scheduled.draft_calendar_entry(entry, publish_today=True)
+    await scheduled.draft_calendar_entry(entry, in_sequence=True)
 
     assert drafted["generated"].caption == "Halal certified, shipped to 90+ countries"
     assert "⚠️" in drafted["caption_prefix"]
@@ -106,7 +106,7 @@ async def test_an_empty_cell_leaves_the_ai_caption_alone(monkeypatch, drafted) -
 
     monkeypatch.setattr(scheduled.calendar_sheet, "exact_caption", sheet_empty)
     entry = load_calendar()[0]
-    await scheduled.draft_calendar_entry(entry, publish_today=True)
+    await scheduled.draft_calendar_entry(entry, in_sequence=True)
 
     assert drafted["generated"].caption == "AI caption"
     assert drafted["generated"].hashtags == ["#Globex"]
