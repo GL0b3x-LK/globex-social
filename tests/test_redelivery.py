@@ -62,7 +62,9 @@ def wired(monkeypatch) -> _Fake:
     monkeypatch.setattr(redelivery.posts, "get", fake.get)
     monkeypatch.setattr(redelivery.posts, "set_render_meta", fake.set_render_meta)
     monkeypatch.setattr(redelivery.posts, "list_by_status", fake.list_by_status)
-    monkeypatch.setattr(redelivery.twilio_client, "try_send_media", fake.send_media)
+    # The retry goes out via send_preview now: the window is shut by definition
+    # when a preview is owed, so it must be able to fall back to the template.
+    monkeypatch.setattr(redelivery.twilio_client, "try_send_preview", fake.send_media)
     return fake
 
 
@@ -144,3 +146,54 @@ async def test_bookkeeping_failure_never_breaks_the_turn(wired: _Fake, monkeypat
 
     monkeypatch.setattr(redelivery.posts, "get", boom)
     await redelivery.record("p1", "whatsapp:+44", delivered=False)  # does not raise
+
+
+# --------------------------------------------------------------------------- #
+# the async-failure gap: Twilio accepts, then fails out of band
+# --------------------------------------------------------------------------- #
+
+
+async def test_a_failed_status_callback_queues_the_post_for_redelivery(monkeypatch) -> None:
+    """The hole that hid three days of undelivered posts. Twilio returned 201 +
+    SID for each one and failed them afterwards (63016/63015); the code treated
+    the SID as proof of delivery, so `undelivered` was never set and the retry
+    job had nothing to chase."""
+    from app.messaging import webhook
+
+    recorded: list[tuple[str, str, bool]] = []
+
+    async def fake_by_sid(sid):
+        return {"post_id": "post-1", "phone_number": "whatsapp:+447877178815"}
+
+    async def fake_record(post_id, phone, *, delivered):
+        recorded.append((post_id, phone, delivered))
+
+    monkeypatch.setattr(webhook.history, "by_sid", fake_by_sid)
+    monkeypatch.setattr(webhook.redelivery, "record", fake_record)
+
+    class _Req:
+        async def form(self):
+            return {"MessageSid": "SM1", "MessageStatus": "failed", "ErrorCode": "63015"}
+
+    await webhook.status_callback(_Req(), None)
+    assert recorded == [("post-1", "whatsapp:+447877178815", False)]
+
+
+async def test_a_delivered_status_callback_changes_nothing(monkeypatch) -> None:
+    from app.messaging import webhook
+
+    recorded: list = []
+    monkeypatch.setattr(
+        webhook.redelivery, "record", lambda *a, **k: recorded.append(a) or _noop()
+    )
+
+    class _Req:
+        async def form(self):
+            return {"MessageSid": "SM1", "MessageStatus": "delivered"}
+
+    await webhook.status_callback(_Req(), None)
+    assert recorded == []
+
+
+async def _noop() -> None:
+    return None

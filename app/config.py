@@ -96,6 +96,11 @@ class Settings(BaseSettings):
     draft_hour: int = 7  # local hour (timezone above) the daily draft job runs
     publish_hour: int = 1  # local hour an approved post goes live on its date
 
+    # The approved WhatsApp template (Content SID, "HX…") used when the 24-hour
+    # service window is shut. Unset = business-initiated previews cannot be
+    # delivered at all — better than a send Twilio accepts and drops in silence.
+    whatsapp_template_sid: str | None = None
+
     # --- Calendar sheet bridge (Apps Script web app on the client's Sheet) ---
     # Both set = the "Exact Caption" column becomes live: client-authored
     # captions post verbatim, and published captions are written back.

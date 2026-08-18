@@ -255,6 +255,10 @@ async def draft_calendar_entry(entry: CalendarEntry, *, in_sequence: bool = Fals
             f"({entry_title(entry)})\n\n"
         )
     prefix += sheet_note
+    # The one line that names this post when it goes out as a template — the
+    # template body reads "Scheduled post {identity} — approve any time before it
+    # goes out", so it carries what the free-form prefix would have said.
+    identity = f"{entry.seq + 1}/{total_planned()}: {entry_title(entry)} (out {go_live})"
     is_placeholder = photo.name.startswith("placeholder")
     if is_placeholder:
         prefix += "📷 Placeholder image — reply with the employee's photo to swap it in.\n\n"
@@ -265,6 +269,7 @@ async def draft_calendar_entry(entry: CalendarEntry, *, in_sequence: bool = Fals
         image_bytes=photo.read_bytes(),
         image_media_type="image/jpeg",
         treatment="calendar",
+        identity=identity,
         event=(EVENT_TYPE, entry.event_id),
         extra_render_meta={
             "publish_on": when.isoformat(),

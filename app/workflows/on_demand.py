@@ -726,6 +726,7 @@ async def _finalize_preview(
     extra_render_meta: dict[str, Any] | None = None,  # e.g. {"publish_on": "2026-08-17"}
     caption_prefix: str = "",  # prepended to the preview caption ("Scheduled for Mon 17 Aug…")
     recipients: list[str] | None = None,  # everyone who should see it; default just the sender
+    identity: str | None = None,  # one-line name for the approved template ("74/156: …")
 ) -> None:
     """Create the post, render (with overlay if an image is present), store, and preview."""
     post = await asyncio.to_thread(
@@ -818,7 +819,18 @@ async def _finalize_preview(
             )
             # post_id rides along so the transcript row links message -> post;
             # that link is what swipe-replying to THIS preview resolves through.
-            await twilio_client.send_media(phone, caption, image_url, post_id=post_id)
+            # send_preview picks the route WhatsApp allows: free-form inside the
+            # 24-hour window, the approved template outside it. A scheduled draft
+            # lands on a day-old thread, where free-form is accepted by Twilio and
+            # then dropped — the silent failure that cost three days of posts.
+            await twilio_client.send_preview(
+                phone,
+                caption,
+                image_url,
+                identity=identity or generated.headline,
+                caption=generated.caption,
+                post_id=post_id,
+            )
             delivered += 1
         except Exception as exc:  # noqa: BLE001 — one bad number is not a failed post
             log.error(

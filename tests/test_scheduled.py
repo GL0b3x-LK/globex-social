@@ -538,14 +538,14 @@ def test_the_boot_catch_up_runs_a_slot_the_restart_would_have_eaten(monkeypatch)
     """The gap the catch-up closes: APScheduler recomputes the next fire time from
     now, so a deploy at 9am on a 7am daily grid schedules TOMORROW and today's post
     is lost. Nothing else notices — the log looks healthy."""
-    from datetime import datetime, time
     from types import SimpleNamespace
 
     from app.scheduler import automation
 
     ran: list[str] = []
-    tz = clock.tz()
-    next_run = datetime.combine(clock.today() + timedelta(days=1), time(7), tz)
+    # Relative to now, not a wall-clock hour: pinned to "tomorrow 7am" this test
+    # only passed when it happened to be run after 7am.
+    next_run = clock.now() + timedelta(hours=1)
 
     monkeypatch.setattr(
         automation,

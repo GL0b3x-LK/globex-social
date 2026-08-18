@@ -51,6 +51,28 @@ def recent(phone_number: str, limit: int = 25) -> list[Row]:
     return list(reversed(rows(resp)))
 
 
+def last_inbound_at(phone_number: str) -> str | None:
+    """When this person last messaged us, ISO-8601, or None if they never have.
+
+    This is the WhatsApp 24-hour service window in a single query: business
+    messages are only allowed free-form inside it, and outside it WhatsApp
+    accepts the send and fails it asynchronously (error 63016) — which is how
+    three days of scheduled posts were silently never delivered.
+    """
+    resp = (
+        get_supabase()
+        .table(_TABLE)
+        .select("created_at")
+        .eq("phone_number", phone_number)
+        .eq("role", "karen")  # 'karen' is the inbound role for every operator
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    row = maybe_row(resp)
+    return str(row["created_at"]) if row else None
+
+
 def by_sid(twilio_sid: str) -> Row | None:
     """Resolve a Twilio message SID (e.g. an OriginalRepliedMessageSid) to its row."""
     return maybe_row(

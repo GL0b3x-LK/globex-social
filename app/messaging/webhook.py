@@ -11,8 +11,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import Response
 
 from app.logging_config import get_logger
+from app.messaging import history
 from app.messaging.validator import validate_twilio_request
-from app.workflows import on_demand
+from app.workflows import on_demand, redelivery
 
 log = get_logger("app.messaging.webhook")
 
@@ -65,14 +66,40 @@ async def incoming_message(
     return Response(content=_EMPTY_TWIML, media_type=_XML)
 
 
+# Twilio's terminal failure states. A send is accepted with a 201 and a SID and
+# only fails later, out of band — the whole reason a preview could be "sent"
+# successfully and never arrive.
+_FAILED_STATUSES = frozenset({"failed", "undelivered"})
+
+
 @router.post("/status")
 async def status_callback(
     request: Request,
     _: None = Depends(validate_twilio_request),
 ) -> Response:
+    """Twilio's out-of-band verdict on a message we already think we sent.
+
+    Believing the 201 is what hid three days of undelivered scheduled posts: the
+    window was shut, WhatsApp rejected each one after the fact, and nothing in
+    the system ever learned. A failure here marks the post as owed again, which
+    is all the existing re-delivery job needs to chase it.
+    """
     form = await request.form()
-    log.info(
-        "delivery status",
-        extra={"message_sid": form.get("MessageSid"), "status": form.get("MessageStatus")},
+    sid = str(form.get("MessageSid") or "")
+    status = str(form.get("MessageStatus") or "")
+    error = form.get("ErrorCode")
+    if status not in _FAILED_STATUSES:
+        log.info("delivery status", extra={"message_sid": sid, "status": status})
+        return Response(content=_EMPTY_TWIML, media_type=_XML)
+
+    log.error(
+        "message failed after Twilio accepted it",
+        extra={"message_sid": sid, "status": status, "error_code": error},
     )
+    row = await history.by_sid(sid) if sid else None
+    post_id = (row or {}).get("post_id")
+    phone = (row or {}).get("phone_number")
+    if post_id and phone:
+        await redelivery.record(str(post_id), str(phone), delivered=False)
+        log.info("queued for re-delivery", extra={"post_id": post_id, "to": phone})
     return Response(content=_EMPTY_TWIML, media_type=_XML)

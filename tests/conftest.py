@@ -34,7 +34,29 @@ def _no_real_whatsapp_sends(monkeypatch):
 
     monkeypatch.setattr(twilio_client, "_send_text_sync", lambda to, body: "SMtest")
     monkeypatch.setattr(twilio_client, "_send_media_sync", lambda to, body, media_url: "MMtest")
+    monkeypatch.setattr(
+        twilio_client, "_send_template_sync", lambda to, content_sid, variables: "MMtest"
+    )
     monkeypatch.setattr(history, "record_outbound", _no_history)
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _open_service_window(monkeypatch):
+    """Tests assume WhatsApp's 24-hour window is OPEN unless they say otherwise.
+
+    A preview now routes on the window — free-form inside it, approved template
+    outside — and the window is read from the message history, which unit tests
+    have no database for. Defaulting to open keeps every existing test asserting
+    what it always did (a free-form send); `tests/test_whatsapp_window.py` puts
+    the real function back to test the routing itself.
+    """
+    from app.messaging import twilio_client
+
+    async def _open(_to: str) -> bool:
+        return True
+
+    monkeypatch.setattr(twilio_client, "within_window", _open)
     yield
 
 

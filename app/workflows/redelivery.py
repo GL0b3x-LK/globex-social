@@ -73,8 +73,16 @@ async def retry_undelivered() -> int:
         title = ((meta.get("calendar") or {}).get("title")) or "your draft"
         caption = f"📬 Catching up — this preview never reached you:\n\n{post.get('caption') or ''}"
         for phone in _owed(post):
-            sid = await twilio_client.try_send_media(
-                phone, caption.strip(), str(post["image_url"]), post_id=str(post["id"])
+            # By definition the window was shut when this failed, and it usually
+            # still is — so the retry goes through send_preview, which falls back
+            # to the approved template rather than re-failing the same way.
+            sid = await twilio_client.try_send_preview(
+                phone,
+                caption.strip(),
+                str(post["image_url"]),
+                identity=title,
+                caption=str(post.get("caption") or ""),
+                post_id=str(post["id"]),
             )
             if sid is None:
                 log.info(

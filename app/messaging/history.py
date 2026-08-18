@@ -67,6 +67,10 @@ async def recent(phone: str, limit: int = 25) -> list[Row]:
     return await asyncio.to_thread(messages_db.recent, phone, limit)
 
 
+async def last_inbound_at(phone: str) -> str | None:
+    return await asyncio.to_thread(messages_db.last_inbound_at, phone)
+
+
 async def by_sid(twilio_sid: str) -> Row | None:
     return await asyncio.to_thread(messages_db.by_sid, twilio_sid)
 
