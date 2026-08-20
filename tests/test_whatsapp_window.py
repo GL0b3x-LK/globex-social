@@ -126,9 +126,7 @@ async def test_a_shut_window_with_no_template_configured_raises(monkeypatch, sen
         twilio_client, "get_settings", lambda: SimpleNamespace(whatsapp_template_sid=None)
     )
     with pytest.raises(RuntimeError, match="silently dropped"):
-        await twilio_client.send_preview(
-            PHONE, "body", IMAGE, identity="x", caption="y"
-        )
+        await twilio_client.send_preview(PHONE, "body", IMAGE, identity="x", caption="y")
     assert not sends.media and not sends.template
 
 
@@ -137,7 +135,9 @@ async def test_try_send_preview_reports_failure_instead_of_raising(monkeypatch, 
     monkeypatch.setattr(
         twilio_client, "get_settings", lambda: SimpleNamespace(whatsapp_template_sid=None)
     )
-    assert await twilio_client.try_send_preview(PHONE, "b", IMAGE, identity="x", caption="y") is None
+    assert (
+        await twilio_client.try_send_preview(PHONE, "b", IMAGE, identity="x", caption="y") is None
+    )
 
 
 # --------------------------------------------------------------------------- #

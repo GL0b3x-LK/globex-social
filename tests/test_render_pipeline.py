@@ -35,12 +35,13 @@ def captured(monkeypatch):
         seen["slots"] = slots
         return b"\x89PNG\r\n\x1a\n"
 
-    async def fake_upload(post_id, png, *, suffix=""):
-        seen["suffix"] = suffix
-        return f"https://img.test/{post_id}{suffix}.png"
+    def fake_upload(path, data, content_type, **kw):
+        seen["path"] = path
+        seen["content_type"] = content_type
+        return f"https://img.test/{path}"
 
     monkeypatch.setattr("app.workflows.render_pipeline.render_mod.renderer.render", fake_render)
-    monkeypatch.setattr("app.workflows.render_pipeline.storage.upload_png", fake_upload)
+    monkeypatch.setattr("app.workflows.render_pipeline.storage.upload_bytes", fake_upload)
     return seen
 
 
@@ -222,3 +223,56 @@ async def test_a_named_template_overrides_the_models_choice(monkeypatch) -> None
         "a cut sheet post — use template TS-p2-cut-navyborder_4x5"
     )
     assert post.template_variant == "ts_p2_cut_navyborder"
+
+
+# --------------------------------------------------------------------------- #
+# WhatsApp's 5MB media ceiling
+# --------------------------------------------------------------------------- #
+
+
+def _png_of(width: int, height: int, *, noise: bool) -> bytes:
+    """A PNG that compresses well (flat) or badly (noise)."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    if noise:
+        import os
+
+        img = Image.frombytes("RGB", (width, height), os.urandom(width * height * 3))
+    else:
+        img = Image.new("RGB", (width, height), (0, 45, 112))
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_a_normal_render_is_sent_untouched() -> None:
+    """Most posts are 1-3MB and must not be re-encoded — the PNG is what the
+    approved templates were calibrated against."""
+    png = _png_of(400, 500, noise=False)
+    data, ext, content_type = render_pipeline.within_delivery_limit(png)
+    assert data is png
+    assert (ext, content_type) == ("png", "image/png")
+
+
+def test_an_oversized_render_is_re_encoded_under_the_limit() -> None:
+    """The failure this closes: a 5.12MB trade-show photo that Twilio accepted
+    and WhatsApp then rejected with 63021, taking the day's post with it."""
+    png = _png_of(2160, 2700, noise=True)
+    assert len(png) > render_pipeline.WHATSAPP_MEDIA_LIMIT, "fixture must exceed the limit"
+
+    data, ext, content_type = render_pipeline.within_delivery_limit(png)
+    assert len(data) < render_pipeline.WHATSAPP_MEDIA_LIMIT
+    assert (ext, content_type) == ("jpg", "image/jpeg")
+
+
+def test_the_re_encoded_image_keeps_its_dimensions() -> None:
+    """Quality may drop; the 4:5 canvas may not — the templates are pixel-calibrated."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    png = _png_of(2160, 2700, noise=True)
+    data, _, _ = render_pipeline.within_delivery_limit(png)
+    assert Image.open(BytesIO(data)).size == (2160, 2700)

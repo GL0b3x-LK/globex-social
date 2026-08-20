@@ -56,7 +56,17 @@ async def resend(post: dict, recipients: list[str]) -> int:
                 state=ConversationState.AWAITING_APPROVAL,
                 current_post_id=post["id"],
             )
-            await twilio_client.send_media(phone, caption, image_url, post_id=post["id"])
+            # send_preview, not send_media: a preview is owed precisely because
+            # delivery failed, and by now the 24-hour window is usually shut —
+            # a free-form re-send just fails again with 63016.
+            await twilio_client.send_preview(
+                phone,
+                caption,
+                image_url,
+                identity=title,
+                caption=str(post.get("caption") or ""),
+                post_id=post["id"],
+            )
             delivered += 1
             print(f"  sent -> {phone}")
         except Exception as exc:  # noqa: BLE001 — one bad number is not a failed resend

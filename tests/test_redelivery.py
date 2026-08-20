@@ -183,9 +183,7 @@ async def test_a_delivered_status_callback_changes_nothing(monkeypatch) -> None:
     from app.messaging import webhook
 
     recorded: list = []
-    monkeypatch.setattr(
-        webhook.redelivery, "record", lambda *a, **k: recorded.append(a) or _noop()
-    )
+    monkeypatch.setattr(webhook.redelivery, "record", lambda *a, **k: recorded.append(a) or _noop())
 
     class _Req:
         async def form(self):

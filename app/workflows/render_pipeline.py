@@ -145,6 +145,56 @@ async def _photo_for(post: GeneratedPost, variant: str) -> tuple[bytes, str] | N
         return None
 
 
+# WhatsApp will not carry an image over 5MB. Twilio accepts the send, returns a
+# SID, and fails the message out of band with error 63021 — so the post renders,
+# stores, and is never seen. The margin below the limit is deliberate: the ceiling
+# is enforced on what WhatsApp receives, not on what we uploaded.
+WHATSAPP_MEDIA_LIMIT = 5 * 1024 * 1024
+_SAFE_BYTES = 4_500_000
+
+
+def within_delivery_limit(png: bytes) -> tuple[bytes, str, str]:
+    """The rendered image in a form WhatsApp will actually deliver.
+
+    A 2160x2700 render is normally 1-3MB, but a photograph with enough fine
+    detail compresses badly and crosses the ceiling — one busy trade-show shot
+    was 5.12MB and took the whole morning's post down with it. Re-encoding to
+    JPEG holds the same pixels at roughly a quarter the size, and every platform
+    we publish to re-encodes to JPEG regardless.
+
+    Returns (bytes, extension, content type).
+    """
+    if len(png) <= _SAFE_BYTES:
+        return png, "png", "image/png"
+
+    from io import BytesIO
+
+    from PIL import Image
+
+    image = Image.open(BytesIO(png)).convert("RGB")
+    for quality in (92, 85, 75):
+        buf = BytesIO()
+        image.save(buf, format="JPEG", quality=quality, optimize=True)
+        if buf.tell() <= _SAFE_BYTES:
+            log.info(
+                "render exceeds WhatsApp's media limit; re-encoded as JPEG",
+                extra={"png_bytes": len(png), "jpeg_bytes": buf.tell(), "quality": quality},
+            )
+            return buf.getvalue(), "jpg", "image/jpeg"
+
+    # Nothing realistic reaches here (a 4:5 render at quality 75 is ~1MB), but a
+    # picture nobody can receive is worth more as a smaller picture than as a
+    # failed send.
+    image.thumbnail((1620, 2025))
+    buf = BytesIO()
+    image.save(buf, format="JPEG", quality=85, optimize=True)
+    log.warning(
+        "render still too large after re-encoding; downscaled",
+        extra={"png_bytes": len(png), "jpeg_bytes": buf.tell()},
+    )
+    return buf.getvalue(), "jpg", "image/jpeg"
+
+
 async def render_and_store(
     post_id: str | UUID,
     post: GeneratedPost,
@@ -193,5 +243,8 @@ async def render_and_store(
     _adapt_final_slots(variant, slots, post)
     dimensions = PLATFORM_DIMENSIONS[TEMPLATES[variant].canvas]
     png = await render_mod.renderer.render(variant, slots, dimensions=dimensions)
+    data, ext, content_type = within_delivery_limit(png)
     suffix = f"-r{uuid4().hex[:6]}" if fresh else ""
-    return await storage.upload_png(post_id, png, suffix=suffix)
+    return await asyncio.to_thread(
+        storage.upload_bytes, f"{post_id}{suffix}.{ext}", data, content_type
+    )
