@@ -20,7 +20,7 @@ from typing import Any
 
 from app.db import posts
 from app.logging_config import get_logger
-from app.messaging import twilio_client
+from app.messaging import messenger
 
 log = get_logger("app.workflows.redelivery")
 
@@ -76,7 +76,7 @@ async def retry_undelivered() -> int:
             # By definition the window was shut when this failed, and it usually
             # still is — so the retry goes through send_preview, which falls back
             # to the approved template rather than re-failing the same way.
-            sid = await twilio_client.try_send_preview(
+            sid = await messenger.try_send_preview(
                 phone,
                 caption.strip(),
                 str(post["image_url"]),

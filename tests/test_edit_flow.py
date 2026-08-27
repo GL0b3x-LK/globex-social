@@ -179,7 +179,7 @@ def wired(monkeypatch) -> _Captures:
     monkeypatch.setattr(approval.editor, "classify_edit_kind", fake_classify)
     monkeypatch.setattr(approval.render_pipeline, "render_and_store", fake_render)
     monkeypatch.setattr(approval.image_gen, "download", fake_download)
-    monkeypatch.setattr(approval.twilio_client, "send_media", fake_send_media)
+    monkeypatch.setattr(approval.messenger, "send_media", fake_send_media)
     monkeypatch.setattr(approval.conversation, "transition", fake_transition)
     monkeypatch.setattr(approval.posts, "update", lambda pid, **kw: {})
     monkeypatch.setattr(approval.posts, "set_image_url", lambda pid, url: {})
@@ -284,7 +284,7 @@ async def test_picture_feedback_on_a_photo_post_goes_to_the_image_model(
     monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
     monkeypatch.setattr(approval.editor, "apply_edit", fail_apply_edit)
     monkeypatch.setattr(approval.image_gen, "edit", fake_img_edit)
-    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+    monkeypatch.setattr(approval.messenger, "send_text", fake_send_text)
     monkeypatch.setattr(
         approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
     )
@@ -322,7 +322,7 @@ async def test_a_failed_photo_edit_leaves_the_post_reviewable(
 
     monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
     monkeypatch.setattr(approval.image_gen, "edit", failing_img_edit)
-    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+    monkeypatch.setattr(approval.messenger, "send_text", fake_send_text)
 
     convo = {
         "current_post_id": "p1",
@@ -362,8 +362,8 @@ async def test_a_failed_status_message_does_not_abandon_the_edit(
 
     monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
     monkeypatch.setattr(approval.image_gen, "edit", fake_img_edit)
-    monkeypatch.setattr(approval.twilio_client, "send_text", dead_line)
-    monkeypatch.setattr(approval.twilio_client, "send_media", dead_line)
+    monkeypatch.setattr(approval.messenger, "send_text", dead_line)
+    monkeypatch.setattr(approval.messenger, "send_media", dead_line)
     monkeypatch.setattr(
         approval.storage, "upload_bytes", lambda path, data, ctype: f"https://cdn.test/{path}"
     )
@@ -483,7 +483,7 @@ async def test_a_visual_edit_on_a_placeholder_asks_for_the_real_photo(
 
     monkeypatch.setattr(approval.editor, "classify_edit_kind", classify_visual)
     monkeypatch.setattr(approval.image_gen, "edit", must_not_run)
-    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+    monkeypatch.setattr(approval.messenger, "send_text", fake_send_text)
     _wire_post_row(
         monkeypatch,
         wired,
@@ -691,7 +691,7 @@ async def test_an_undelivered_preview_is_remembered_for_re_sending(
     async def dead_send(*a: Any, **kw: Any) -> str:
         raise RuntimeError("HTTP 429 error: exceeded the 50 daily messages limit")
 
-    monkeypatch.setattr(approval.twilio_client, "send_media", dead_send)
+    monkeypatch.setattr(approval.messenger, "send_media", dead_send)
 
     convo = {
         "current_post_id": "p1",

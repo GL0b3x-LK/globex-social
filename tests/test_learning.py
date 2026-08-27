@@ -131,7 +131,7 @@ def learn_wired(store, monkeypatch) -> _Msgs:
             cap.context_patches.append(kw["context_patch"])
         return {}
 
-    monkeypatch.setattr(approval.twilio_client, "send_text", fake_send_text)
+    monkeypatch.setattr(approval.messenger, "send_text", fake_send_text)
     monkeypatch.setattr(approval.conversation, "transition", fake_transition)
     return cap
 
@@ -201,7 +201,7 @@ def od_wired(store, monkeypatch) -> _Msgs:
             cap.context_patches.append(kw["context_patch"])
         return {}
 
-    monkeypatch.setattr(on_demand.twilio_client, "send_text", fake_send_text)
+    monkeypatch.setattr(on_demand.messenger, "send_text", fake_send_text)
     monkeypatch.setattr(on_demand.conversation, "transition", fake_transition)
     return cap
 

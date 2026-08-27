@@ -18,7 +18,7 @@ from app.ai.intent import Intent, IntentType
 from app.config import get_settings
 from app.db import approvals, posts, storage
 from app.logging_config import get_logger
-from app.messaging import conversation, history, media, transcription, twilio_client, video
+from app.messaging import conversation, history, media, messenger, transcription, video
 from app.messaging.conversation import ConversationState
 from app.messaging.state_machine import Action, route
 from app.messaging.transcription import Outcome
@@ -70,7 +70,7 @@ async def handle_incoming_message(
         )
     except Exception:
         log.exception("message handling failed", extra={"from": from_phone})
-        await twilio_client.try_send_text(from_phone, messages.UNEXPECTED_ERROR)
+        await messenger.try_send_text(from_phone, messages.UNEXPECTED_ERROR)
 
 
 async def _handle_incoming(
@@ -227,14 +227,14 @@ async def _handle_incoming(
     elif action is Action.ANSWER:
         await _answer_question(from_phone, body, memory, replied_post_id)
     elif action is Action.GREET:
-        await twilio_client.try_send_text(from_phone, messages.GREETING)
+        await messenger.try_send_text(from_phone, messages.GREETING)
     elif action is Action.NUDGE_PENDING:
-        await twilio_client.try_send_text(from_phone, messages.NUDGE_PENDING)
+        await messenger.try_send_text(from_phone, messages.NUDGE_PENDING)
     elif action is Action.NOTHING_PENDING:
-        await twilio_client.try_send_text(from_phone, messages.NOTHING_PENDING)
+        await messenger.try_send_text(from_phone, messages.NOTHING_PENDING)
     elif action is Action.CLARIFY:
         await conversation.transition(from_phone, state=ConversationState.AWAITING_CLARIFICATION)
-        await twilio_client.try_send_text(from_phone, messages.CLARIFY)
+        await messenger.try_send_text(from_phone, messages.CLARIFY)
 
     await _update_summary(from_phone)
 
@@ -279,14 +279,14 @@ async def _handle_rule_answer(from_phone: str, convo: dict[str, Any], body: str)
     bare = len(normalized.split()) <= _BARE_ANSWER_WORDS
     if any(w in normalized for w in _ALWAYS_PHRASES):
         rule = await asyncio.to_thread(learning.save_rule, str(pending), source=from_phone)
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone,
             f"📌 Done — every future post follows: {rule.rule}\n"
             "Reply *rules* anytime to see everything I've learned.",
         )
         return bare
     if normalized in _ONCE_EXACT or any(w in normalized for w in _ONCE_PHRASES):
-        await twilio_client.try_send_text(from_phone, "👍 Just this once then.")
+        await messenger.try_send_text(from_phone, "👍 Just this once then.")
         return bare
     return False  # not an answer — the question dies quietly, the message flows on
 
@@ -297,7 +297,7 @@ async def _handle_rule_commands(from_phone: str, body: str) -> bool:
 
     normalized = body.strip().lower()
     if normalized in ("rules", "show rules", "what have you learned", "what have you learned?"):
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone, await asyncio.to_thread(learning.format_rules_list)
         )
         return True
@@ -305,7 +305,7 @@ async def _handle_rule_commands(from_phone: str, body: str) -> bool:
         rule = await asyncio.to_thread(
             learning.save_rule, match.group(1).strip(), source_feedback=body, source=from_phone
         )
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone,
             f"📌 Added — every future post follows: {rule.rule}\n"
             "Reply *rules* to see them all, or *forget rule N* to drop one.",
@@ -314,14 +314,14 @@ async def _handle_rule_commands(from_phone: str, body: str) -> bool:
     match = _FORGET_RULE.match(body.strip())
     if match:
         removed = await asyncio.to_thread(learning.remove_rule, int(match.group(1)))
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone,
             f"🗑 Forgotten: {removed.rule}" if removed else "There's no rule with that number.",
         )
         return True
     if normalized == "forget that":
         removed = await asyncio.to_thread(learning.remove_rule, None)
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone,
             f"🗑 Forgotten: {removed.rule}" if removed else "Nothing learned recently to forget.",
         )
@@ -403,11 +403,11 @@ async def _answer_question(
     show_id = result.referenced_post_id or focus_post_id
     show = await asyncio.to_thread(posts.get, show_id) if show_id else None
     if show and show.get("image_url"):
-        await twilio_client.try_send_media(
+        await messenger.try_send_media(
             from_phone, result.answer, show["image_url"], post_id=show_id
         )
     else:
-        await twilio_client.try_send_text(from_phone, result.answer)
+        await messenger.try_send_text(from_phone, result.answer)
 
 
 async def _transcribe_voice(from_phone: str, audio: Media) -> str | None:
@@ -415,21 +415,21 @@ async def _transcribe_voice(from_phone: str, audio: Media) -> str | None:
     transcript on success, or None after sending a friendly failure reply."""
     url, content_type = audio
     try:
-        audio_bytes, content_type = await media.download_twilio_media(url)
+        audio_bytes, content_type = await media.download_media(url)
     except Exception as exc:  # noqa: BLE001 — a fetch failure shouldn't crash the task
         log.error("voice note download failed", extra={"error": str(exc)})
-        await twilio_client.try_send_text(from_phone, messages.VOICE_FAILED)
+        await messenger.try_send_text(from_phone, messages.VOICE_FAILED)
         return None
 
     result = await transcription.transcribe(audio_bytes, content_type)
     if not result.ok:
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone, _VOICE_FAILURE_MESSAGE.get(result.outcome, messages.VOICE_FAILED)
         )
         return None
 
     # Echo all (the chosen behaviour): show Karen what was understood, then act.
-    await twilio_client.try_send_text(from_phone, messages.voice_heard(result.text))
+    await messenger.try_send_text(from_phone, messages.voice_heard(result.text))
     return result.text
 
 
@@ -469,7 +469,7 @@ async def _generate_and_preview(
             state=ConversationState.AWAITING_CLARIFICATION,
             context_patch={"pending_request": request_text},
         )
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone, plan.clarification or messages.VISUAL_CLARIFY_DEFAULT
         )
         return
@@ -502,7 +502,7 @@ async def _resolve_visual_clarification(from_phone: str, pending_request: str, a
         await conversation.transition(
             from_phone, state=ConversationState.IDLE, context_patch={"pending_request": None}
         )
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             from_phone, "👍 No problem — tell me when you'd like to make a post."
         )
         return
@@ -527,7 +527,7 @@ async def _preview_with_user_photo(
     photo_bytes: bytes | None = None
     photo_type = "image/jpeg"
     try:
-        photo_bytes, photo_type = await media.download_twilio_media(photo[0])
+        photo_bytes, photo_type = await media.download_media(photo[0])
     except Exception as exc:  # noqa: BLE001 — a bad photo shouldn't kill the draft
         log.error("media download failed; continuing without photo", extra={"error": str(exc)})
         photo_bytes = None
@@ -577,7 +577,7 @@ async def _preview_generated(
     # while a suitable one sits in storage is waste twice over.
     stored = None if (compose or wants_new) else await asset_bank.choose(request_text)
     if stored is not None:
-        await twilio_client.try_send_text(from_phone, messages.swapped_from_bank(stored.label))
+        await messenger.try_send_text(from_phone, messages.swapped_from_bank(stored.label))
         try:
             photo = await image_gen.download(stored.url)
         except Exception as exc:  # noqa: BLE001 — a bad fetch generates instead
@@ -599,7 +599,7 @@ async def _preview_generated(
     # real thing wherever the request named one: a lamb on a marble table is
     # still better built from our lamb than from the model's idea of lamb.
     anchored = compose or (bool(refs) and not wants_new)
-    await twilio_client.try_send_text(
+    await messenger.try_send_text(
         from_phone,
         messages.composing_from_bank(refs.names) if anchored else messages.GENERATING_IMAGE,
     )
@@ -613,7 +613,7 @@ async def _preview_generated(
     generated = await generator.generate_freeform(request_text, memory=memory)
     if not result.ok or not result.image_bytes:
         # Don't leave Karen hanging — fall back to a designed version.
-        await twilio_client.try_send_text(from_phone, messages.IMAGE_GEN_FAILED)
+        await messenger.try_send_text(from_phone, messages.IMAGE_GEN_FAILED)
         await _finalize_preview(
             from_phone,
             request_text,
@@ -644,12 +644,12 @@ async def _preview_vhs_video(
     target_platforms: list[plat.Platform] | None = None,
 ) -> None:
     """Composite the VHS HUD overlay onto Karen's submitted video, then preview it."""
-    await twilio_client.try_send_text(from_phone, messages.PROCESSING_VIDEO)
+    await messenger.try_send_text(from_phone, messages.PROCESSING_VIDEO)
     try:
-        video_bytes, _ = await media.download_twilio_media(clip[0], timeout=60.0)
+        video_bytes, _ = await media.download_media(clip[0], timeout=60.0)
     except Exception as exc:  # noqa: BLE001 — a fetch failure shouldn't crash the task
         log.error("video download failed", extra={"error": str(exc)})
-        await twilio_client.try_send_text(from_phone, messages.VIDEO_FAILED)
+        await messenger.try_send_text(from_phone, messages.VIDEO_FAILED)
         return
 
     overlay = await render_mod.renderer.render_file(
@@ -657,7 +657,7 @@ async def _preview_vhs_video(
     )
     mp4 = await video.composite_vhs(video_bytes, overlay)
     if not mp4:
-        await twilio_client.try_send_text(from_phone, messages.VIDEO_FAILED)
+        await messenger.try_send_text(from_phone, messages.VIDEO_FAILED)
         return
 
     generated = await generator.generate_freeform(request_text, memory=memory)
@@ -696,7 +696,7 @@ async def _preview_vhs_video(
     # Same reason as `_answer_question`: the video is built and stored by this
     # point, so a failed send is a delivery problem to log, not a reason to tell
     # the operator their request blew up.
-    sid = await twilio_client.try_send_media(from_phone, caption, media_url, post_id=post_id)
+    sid = await messenger.try_send_media(from_phone, caption, media_url, post_id=post_id)
     await redelivery.record(post_id, from_phone, delivered=sid is not None)
     log.info("vhs video preview sent", extra={"post_id": post_id, "delivered": sid is not None})
 
@@ -823,7 +823,7 @@ async def _finalize_preview(
             # 24-hour window, the approved template outside it. A scheduled draft
             # lands on a day-old thread, where free-form is accepted by Twilio and
             # then dropped — the silent failure that cost three days of posts.
-            await twilio_client.send_preview(
+            await messenger.send_preview(
                 phone,
                 caption,
                 image_url,

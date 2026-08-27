@@ -38,6 +38,15 @@ def _no_real_whatsapp_sends(monkeypatch):
         twilio_client, "_send_template_sync", lambda to, content_sid, variables: "MMtest"
     )
     monkeypatch.setattr(history, "record_outbound", _no_history)
+
+    # Same guarantee for the Telegram transport: no test may reach
+    # api.telegram.org. _api is the single choke point every send goes through.
+    from app.messaging import telegram_client
+
+    async def _fake_api(method, payload, *, timeout=15.0):
+        return {"message_id": 1}
+
+    monkeypatch.setattr(telegram_client, "_api", _fake_api)
     yield
 
 

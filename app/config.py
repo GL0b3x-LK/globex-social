@@ -63,6 +63,17 @@ class Settings(BaseSettings):
     authorized_numbers: str  # comma-separated; parsed via authorized_numbers_list
     twilio_validate_signature: bool = True  # verify X-Twilio-Signature; disable only in dev
 
+    # --- Telegram (parallel transport alongside WhatsApp) ---
+    # One bot token for the whole system (from @BotFather). Recipients are
+    # addressed as "telegram:<chat_id>" in AUTHORIZED_NUMBERS /
+    # APPROVAL_RECIPIENTS, exactly where "whatsapp:+…" addresses live — the
+    # transport is chosen per-address at send time (see messaging/messenger.py).
+    # Unset = the Telegram webhook rejects everything and no send routes there.
+    telegram_bot_token: str | None = None
+    # Shared secret Telegram echoes back in the X-Telegram-Bot-Api-Secret-Token
+    # header of every webhook call — the whole authentication story (no HMAC).
+    telegram_webhook_secret: str | None = None
+
     # --- Blotato (publishing to IG/FB/LinkedIn) ---
     blotato_api_key: str
     blotato_base_url: str = "https://backend.blotato.com/v2"

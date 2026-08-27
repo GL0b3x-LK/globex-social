@@ -16,7 +16,7 @@ from app.ai import generator
 from app.ai import intent as ai_intent
 from app.ai.intent import IntentType
 from app.logging_config import get_logger
-from app.messaging import conversation, media, twilio_client
+from app.messaging import conversation, media, messenger
 from app.messaging.conversation import ConversationState
 from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES
 from app.workflows import scheduled
@@ -79,7 +79,7 @@ async def maybe_start(from_phone: str, request: str | None, photo: Media | None)
     await conversation.transition(
         from_phone, state=ConversationState.INTAKE, context_patch={"intake": data}
     )
-    await twilio_client.send_text(from_phone, _QUESTIONS[step or "about"])
+    await messenger.send_text(from_phone, _QUESTIONS[step or "about"])
     log.info("intake started", extra={"seeded": bool(data)})
     return True
 
@@ -98,7 +98,7 @@ async def handle_answer(
             await conversation.transition(
                 from_phone, state=ConversationState.IDLE, context_patch={"intake": None}
             )
-            await twilio_client.send_text(from_phone, CANCELLED)
+            await messenger.send_text(from_phone, CANCELLED)
             return
 
     # A photo attached at ANY step answers the picture question.
@@ -121,17 +121,17 @@ async def handle_answer(
         if variant is None and choice in ("auto", "you pick", "any"):
             variant = "auto"
         if variant is None:
-            await twilio_client.send_text(from_phone, Q_TEMPLATE)
+            await messenger.send_text(from_phone, Q_TEMPLATE)
             return
         data["template"] = variant
 
     remaining = _next_step(data)
     await conversation.transition(from_phone, context_patch={"intake": data})
     if remaining:
-        await twilio_client.send_text(from_phone, _QUESTIONS[remaining])
+        await messenger.send_text(from_phone, _QUESTIONS[remaining])
         return
 
-    await twilio_client.send_text(from_phone, BUILDING)
+    await messenger.send_text(from_phone, BUILDING)
     await _build(from_phone, data)
 
 
@@ -160,7 +160,7 @@ async def _build(from_phone: str, data: dict[str, Any]) -> None:
 
     photo_spec = data.get("photo") or {"kind": "pool"}
     if photo_spec["kind"] == "attached":
-        image_bytes, media_type = await media.download_twilio_media(photo_spec["url"])
+        image_bytes, media_type = await media.download_media(photo_spec["url"])
     else:
         hint = photo_spec.get("hint", "")
         path = scheduled.pick_photo_for_text(f"{brief} {hint}")

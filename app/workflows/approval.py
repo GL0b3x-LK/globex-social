@@ -14,7 +14,7 @@ from app.ai import editor, image_gen, learning
 from app.ai.generator import GeneratedPost
 from app.db import approvals, posts, storage
 from app.logging_config import get_logger
-from app.messaging import conversation, media, twilio_client
+from app.messaging import conversation, media, messenger
 from app.messaging.conversation import ConversationState
 from app.publishing import platforms as plat
 from app.publishing import publisher
@@ -51,7 +51,7 @@ async def _deliver_preview(
     post is marked undelivered and ``redelivery`` re-sends it once sending works
     again, instead of the operator silently never seeing what they asked for.
     """
-    sid = await twilio_client.try_send_media(
+    sid = await messenger.try_send_media(
         phone,
         caption if caption is not None else messages.preview_caption(post),
         image_url,
@@ -98,11 +98,11 @@ async def _picture_from_bank(
                 extra={"asset": refs.asset.file, "error": str(exc)[:200]},
             )
             return None
-        await twilio_client.try_send_text(phone, messages.swapped_from_bank(refs.asset.label))
+        await messenger.try_send_text(phone, messages.swapped_from_bank(refs.asset.label))
         log.info("picture swapped from the bank", extra={"asset": refs.asset.file})
         return data, "image/jpeg"
 
-    await twilio_client.try_send_text(phone, messages.composing_from_bank(refs.names))
+    await messenger.try_send_text(phone, messages.composing_from_bank(refs.names))
     result = await image_gen.edit_multi(
         refs.urls, asset_bank.compose_prompt(feedback, refs), aspect_ratio=aspect_ratio
     )
@@ -138,7 +138,7 @@ async def handle_approval(
 ) -> None:
     post_id = convo.get("current_post_id")
     if not post_id:
-        await twilio_client.try_send_text(phone, messages.NOTHING_PENDING)
+        await messenger.try_send_text(phone, messages.NOTHING_PENDING)
         return
     # Last-chance platform override at approval ("approve — just LinkedIn").
     if target_platforms:
@@ -161,7 +161,7 @@ async def handle_approval(
         await conversation.clear_post(phone)
         moment = clock.publish_moment(publish_on)
         pretty = moment.strftime("%A %d %B at %-I%p").replace("AM", "am").replace("PM", "pm")
-        await twilio_client.try_send_text(
+        await messenger.try_send_text(
             phone, f"✅ Approved — it will go out automatically on {pretty}."
         )
         log.info("post approved (scheduled)", extra={"post_id": post_id, "publish_on": publish_on})
@@ -170,7 +170,7 @@ async def handle_approval(
     results = await publisher.publish_post(post_id)  # real multi-platform publish via Blotato
     await conversation.transition(phone, state=ConversationState.IDLE)
     await conversation.clear_post(phone)
-    await twilio_client.try_send_text(phone, messages.publish_status(results))
+    await messenger.try_send_text(phone, messages.publish_status(results))
     log.info("post approved", extra={"post_id": post_id})
 
 
@@ -192,7 +192,7 @@ async def _maybe_learn(phone: str, feedback: str) -> None:
             rule = await asyncio.to_thread(
                 learning.save_rule, decision.rule, source_feedback=feedback, source=phone
             )
-            await twilio_client.try_send_text(
+            await messenger.try_send_text(
                 phone,
                 f"📌 Noted for every future post: {rule.rule}\n"
                 "Reply *forget that* if it was just for this one, "
@@ -200,7 +200,7 @@ async def _maybe_learn(phone: str, feedback: str) -> None:
             )
         elif decision.scope == "unsure" and decision.rule:
             await conversation.transition(phone, context_patch={"pending_rule": decision.rule})
-            await twilio_client.try_send_text(
+            await messenger.try_send_text(
                 phone,
                 f"Should I do this on every post from now on — “{decision.rule}”?\n"
                 "Reply *always* if so; otherwise it's just this once.",
@@ -222,7 +222,7 @@ async def handle_edit_request(
     context = convo.get("context") or {}
     stored = context.get("generated")
     if not post_id or not stored:
-        await twilio_client.try_send_text(phone, messages.NOTHING_PENDING)
+        await messenger.try_send_text(phone, messages.NOTHING_PENDING)
         return
 
     # Platform change mid-draft ("actually just LinkedIn") — update the target now.
@@ -242,10 +242,10 @@ async def handle_edit_request(
     replacement: tuple[bytes, str] | None = None
     if photo is not None:
         try:
-            replacement = await media.download_twilio_media(photo[0])
+            replacement = await media.download_media(photo[0])
         except Exception as exc:  # noqa: BLE001 — a bad download must not lose the edit
             log.error("attached photo download failed", extra={"error": str(exc)[:200]})
-            await twilio_client.try_send_text(phone, messages.PHOTO_DOWNLOAD_FAILED)
+            await messenger.try_send_text(phone, messages.PHOTO_DOWNLOAD_FAILED)
 
     if context.get("treatment") == "generated_image":
         await _edit_generated_image(
@@ -346,7 +346,7 @@ async def _edit_photo_post(
     # until a real one arrives. Running img2img on it invents a person and puts a
     # fabricated face on a named employee's post, one "approve" from publishing.
     if wants_picture and replacement is None and is_placeholder:
-        await twilio_client.try_send_text(phone, messages.PLACEHOLDER_NEEDS_PHOTO)
+        await messenger.try_send_text(phone, messages.PLACEHOLDER_NEEDS_PHOTO)
         if not wants_words:
             await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
             return
@@ -364,10 +364,10 @@ async def _edit_photo_post(
         photo_bytes, media_type = bank
         still_placeholder = False
     elif wants_picture:
-        await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
+        await messenger.try_send_text(phone, messages.REGENERATING_IMAGE)
         result = await image_gen.edit(photo_url, feedback, aspect_ratio="3:4")
         if not result.ok or not result.image_bytes:
-            await twilio_client.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
+            await messenger.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
             if not wants_words:
                 await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
                 return
@@ -477,10 +477,10 @@ async def _edit_generated_image(
     elif wants_picture and (bank := await _picture_from_bank(phone, feedback)):
         photo_bytes, media_type = bank
     elif wants_picture and raw_url:
-        await twilio_client.try_send_text(phone, messages.REGENERATING_IMAGE)
+        await messenger.try_send_text(phone, messages.REGENERATING_IMAGE)
         result = await image_gen.edit(str(raw_url), feedback)
         if not result.ok or not result.image_bytes:
-            await twilio_client.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
+            await messenger.try_send_text(phone, messages.IMAGE_EDIT_FAILED)
             if not wants_words:
                 await conversation.transition(phone, state=ConversationState.AWAITING_APPROVAL)
                 return
@@ -575,11 +575,11 @@ async def _edit_vhs_caption(
         context_patch={"generated": revised.model_dump()},
     )
     if media_url:
-        await twilio_client.try_send_media(
+        await messenger.try_send_media(
             phone, messages.preview_caption(revised), media_url, post_id=post_id
         )
     else:  # shouldn't happen — fall back to text so Karen still sees the revised copy
-        await twilio_client.try_send_text(phone, messages.preview_caption(revised))
+        await messenger.try_send_text(phone, messages.preview_caption(revised))
     log.info("vhs caption edit applied", extra={"post_id": post_id})
     await _maybe_learn(phone, feedback)
 
@@ -591,5 +591,5 @@ async def handle_cancellation(phone: str, convo: Row) -> None:
         await asyncio.to_thread(approvals.record, post_id, "cancelled")
     await conversation.transition(phone, state=ConversationState.IDLE)
     await conversation.clear_post(phone)
-    await twilio_client.try_send_text(phone, "👍 Cancelled. Tell me when you want a new post.")
+    await messenger.try_send_text(phone, "👍 Cancelled. Tell me when you want a new post.")
     log.info("post cancelled", extra={"post_id": post_id})

@@ -34,7 +34,7 @@ from app.config import get_settings
 from app.db import calendar_source, posts
 from app.db.calendar_source import EVENT_TYPE, CalendarEntry
 from app.logging_config import get_logger
-from app.messaging import twilio_client
+from app.messaging import messenger
 from app.publishing import calendar_sheet, publisher
 from app.templates.catalog import CALENDAR_TEMPLATE_ALIASES
 from app.video import library
@@ -378,7 +378,7 @@ async def publish_due_posts(today: date | None = None) -> int:
         results = await publisher.publish_post(post["id"])
         published += 1
         title = (meta.get("calendar") or {}).get("title", "scheduled post")
-        await twilio_client.send_text(
+        await messenger.send_text(
             approver_phone(),
             f"🚀 Published today's scheduled post ({title})\n" + messages.publish_status(results),
         )

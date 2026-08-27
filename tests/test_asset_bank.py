@@ -197,7 +197,7 @@ def image_request(monkeypatch):
     monkeypatch.setattr(on_demand.image_gen, "edit_multi", fake_edit_multi)
     monkeypatch.setattr(on_demand.generator, "generate_freeform", fake_freeform)
     monkeypatch.setattr(on_demand, "_finalize_preview", fake_finalize)
-    monkeypatch.setattr(on_demand.twilio_client, "try_send_text", noop)
+    monkeypatch.setattr(on_demand.messenger, "try_send_text", noop)
     return seen
 
 

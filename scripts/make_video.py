@@ -38,7 +38,7 @@ class _Printer:
 
 
 async def run(request: str, *, script_only: bool, phone: str) -> int:
-    flow.twilio_client = _Printer()  # type: ignore[assignment]
+    flow.messenger = _Printer()  # type: ignore[assignment]
 
     resolved = await flow.resolve(request)
     if resolved.question:

@@ -64,7 +64,7 @@ def wired(monkeypatch) -> _Fake:
     monkeypatch.setattr(redelivery.posts, "list_by_status", fake.list_by_status)
     # The retry goes out via send_preview now: the window is shut by definition
     # when a preview is owed, so it must be able to fall back to the template.
-    monkeypatch.setattr(redelivery.twilio_client, "try_send_preview", fake.send_media)
+    monkeypatch.setattr(redelivery.messenger, "try_send_preview", fake.send_media)
     return fake
 
 

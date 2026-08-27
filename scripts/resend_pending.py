@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.db import posts as posts_db  # noqa: E402
 from app.logging_config import configure_logging, get_logger  # noqa: E402
-from app.messaging import conversation, twilio_client  # noqa: E402
+from app.messaging import conversation, messenger  # noqa: E402
 from app.messaging.conversation import ConversationState  # noqa: E402
 from app.workflows import scheduled  # noqa: E402
 
@@ -59,7 +59,7 @@ async def resend(post: dict, recipients: list[str]) -> int:
             # send_preview, not send_media: a preview is owed precisely because
             # delivery failed, and by now the 24-hour window is usually shut —
             # a free-form re-send just fails again with 63016.
-            await twilio_client.send_preview(
+            await messenger.send_preview(
                 phone,
                 caption,
                 image_url,

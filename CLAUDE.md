@@ -120,6 +120,8 @@ TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_WHATSAPP_NUMBER=
 AUTHORIZED_NUMBERS=
+TELEGRAM_BOT_TOKEN=      # from @BotFather; unset = Telegram transport off
+TELEGRAM_WEBHOOK_SECRET= # echoed back by Telegram on every webhook call
 BLOTATO_API_KEY=
 SUPABASE_URL=
 SUPABASE_KEY=
@@ -130,7 +132,7 @@ ENVIRONMENT=development|production
 - **Never auto-publish without approval.** Every post must go through the WhatsApp approval flow. This is a contract requirement, not a preference.
 - **Never use colors outside the brand palette** in templates. Karen will reject anything off-brand immediately.
 - **Never generate employee birthday posts.** Karen explicitly killed these. Don't resurface them.
-- **Never hardcode authorized phone numbers** in source code. `AUTHORIZED_NUMBERS` is a comma-separated allowlist (`whatsapp:+19178592787,whatsapp:+...`). Karen's number is the primary entry; dev/test numbers can be added so the developer can debug against the production bot without disrupting Karen.
+- **Never hardcode authorized phone numbers** in source code. `AUTHORIZED_NUMBERS` is a comma-separated allowlist (`whatsapp:+19178592787,telegram:847213905,...`) — each address names its own transport, dispatched in `app/messaging/messenger.py`. Karen's number is the primary entry; dev/test numbers can be added so the developer can debug against the production bot without disrupting Karen.
 - **Never store API keys in code.** Use .env files locally, Railway env vars in production.
 - **Never use `print()` for logging.** Use Python's `logging` module with structured output.
 

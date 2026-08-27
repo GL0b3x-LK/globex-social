@@ -381,7 +381,7 @@ def test_one_unreachable_recipient_does_not_cost_the_others_their_preview(monkey
     async def noop(*_a, **_kw):
         return None
 
-    monkeypatch.setattr(on_demand.twilio_client, "send_media", flaky_send_media)
+    monkeypatch.setattr("app.messaging.twilio_client.send_media", flaky_send_media)
     monkeypatch.setattr(on_demand.conversation, "transition", noop)
     monkeypatch.setattr(on_demand, "_apply_target", noop)
     monkeypatch.setattr(on_demand.approvals, "record", lambda *a, **kw: None)

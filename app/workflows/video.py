@@ -28,7 +28,7 @@ from app.db import posts as posts_db
 from app.db import storage
 from app.db import videos as videos_db
 from app.logging_config import get_logger
-from app.messaging import twilio_client
+from app.messaging import messenger
 from app.video import assembly, captions, keyframes, library, providers, voices
 from app.video import script as script_engine
 from app.video.models import (
@@ -204,7 +204,7 @@ async def start(phone: str, message: str) -> str | None:
     if resolved.question:
         return resolved.question
 
-    await twilio_client.send_text(phone, "🎬 Writing the script — about a minute…")
+    await messenger.send_text(phone, "🎬 Writing the script — about a minute…")
 
     doc, problems = await script_engine.write_script(
         resolved.brief, resolved.character, resolved.product
@@ -224,7 +224,7 @@ async def start(phone: str, message: str) -> str | None:
         stage="script_review",
     )
     for message in script_messages(doc, resolved.character, estimate_cost(doc)):
-        await twilio_client.send_text(phone, message)
+        await messenger.send_text(phone, message)
     return None
 
 
@@ -241,7 +241,7 @@ def load(
 
 async def revise_script(video_id: str, phone: str, feedback: str) -> None:
     meta, doc, character, product = load(video_id)
-    await twilio_client.send_text(phone, "✏️ Rewriting…")
+    await messenger.send_text(phone, "✏️ Rewriting…")
     revised, problems = await script_engine.revise(
         doc, feedback, character, product, int(meta.get("target_seconds") or 30)
     )
@@ -251,8 +251,8 @@ async def revise_script(video_id: str, phone: str, feedback: str) -> None:
         script=revised.model_dump(mode="json"),
         script_version=int(meta.get("script_version") or 1) + 1,
     )
-    await twilio_client.send_text(phone, f"Changed: {summary}")
-    await twilio_client.send_text(phone, script_preview(revised, character, estimate_cost(revised)))
+    await messenger.send_text(phone, f"Changed: {summary}")
+    await messenger.send_text(phone, script_preview(revised, character, estimate_cost(revised)))
     if problems:
         log.warning("revision has problems", extra={"problems": problems})
 
@@ -333,16 +333,16 @@ async def produce(video_id: str, phone: str) -> None:
     meta, doc, character, product = load(video_id)
     videos_db.patch_meta(video_id, stage="generating")
 
-    await twilio_client.send_text(phone, "🎥 Building it. I'll send the cut when it's ready.")
+    await messenger.send_text(phone, "🎥 Building it. I'll send the cut when it's ready.")
 
     frames = await keyframes.render_all(video_id, doc.scenes, character, product)
     if not frames:
-        await twilio_client.send_text(
+        await messenger.send_text(
             phone, "I couldn't build the opening frames. Nothing was charged — try again?"
         )
         videos_db.patch_meta(video_id, stage="failed")
         return
-    await twilio_client.send_text(phone, f"🖼 Frames ready ({len(frames)}/{len(doc.scenes)})")
+    await messenger.send_text(phone, f"🖼 Frames ready ({len(frames)}/{len(doc.scenes)})")
 
     audio_urls, audio_chunks, words = await _voice_for(video_id, doc, character)
 
@@ -398,7 +398,7 @@ async def produce(video_id: str, phone: str) -> None:
         idx: work / f"scene_{idx}.mp4" for idx in clips if (work / f"scene_{idx}.mp4").exists()
     }
     if not clips:
-        await twilio_client.send_text(
+        await messenger.send_text(
             phone, "The clips didn't come back. I've stopped so nothing more is spent."
         )
         videos_db.patch_meta(video_id, stage="failed")
@@ -520,7 +520,7 @@ async def assemble_and_preview(
             captions=cap_path,
         )
         if not ok or not master.exists():
-            await twilio_client.send_text(phone, "The assembly step failed — I'm looking at it.")
+            await messenger.send_text(phone, "The assembly step failed — I'm looking at it.")
             return
 
         master_url = await asyncio.to_thread(
@@ -555,8 +555,8 @@ async def assemble_and_preview(
     )
 
     spend = videos_db.meta(posts_db.get(video_id) or {}).get("spend", 0.0)
-    await twilio_client.send_media(phone, f"🎬 {doc.title}", preview_url, post_id=video_id)
-    await twilio_client.send_text(
+    await messenger.send_media(phone, f"🎬 {doc.title}", preview_url, post_id=video_id)
+    await messenger.send_text(
         phone,
         f"~{seconds:.0f}s · spent ${spend:.2f} so far\n\n"
         "Reply *approve* to publish, or tell me what to change "
@@ -640,7 +640,7 @@ async def handle_video_feedback(video_id: str, phone: str, feedback: str) -> Non
 
     spec = EditSpec.model_validate(meta["edit_spec"])
     decision = await classify_edit(feedback, doc)
-    await twilio_client.send_text(phone, decision.reply)
+    await messenger.send_text(phone, decision.reply)
 
     if decision.edit_class is EditClass.post:
         new_spec = apply_post_edit(spec, decision, doc)
@@ -682,14 +682,14 @@ async def _redo_scene(video_id, phone, decision, doc, character, product, spec) 
     idx = decision.scene_idx
     scene = next((s for s in doc.scenes if s.idx == idx), None) if idx else None
     if scene is None:
-        await twilio_client.send_text(phone, "Which scene number should I redo?")
+        await messenger.send_text(phone, "Which scene number should I redo?")
         return
 
-    await twilio_client.send_text(phone, f"🎬 Redoing scene {idx} (~${COST_SPEAKING:.0f})…")
+    await messenger.send_text(phone, f"🎬 Redoing scene {idx} (~${COST_SPEAKING:.0f})…")
     scene.action = f"{scene.action}. {decision.instruction}"
     frame = await keyframes.render_scene(video_id, scene, character, product)
     if frame is None:
-        await twilio_client.send_text(phone, "That frame didn't come out — nothing charged.")
+        await messenger.send_text(phone, "That frame didn't come out — nothing charged.")
         return
 
     meta = videos_db.meta(posts_db.get(video_id) or {})
@@ -705,7 +705,7 @@ async def _redo_scene(video_id, phone, decision, doc, character, product, spec) 
         result = await provider.broll_scene(frame.url, motion, scene.seconds)
         cost = COST_BROLL
     if not result.ok or not result.url:
-        await twilio_client.send_text(phone, "The scene didn't generate. Try different wording?")
+        await messenger.send_text(phone, "The scene didn't generate. Try different wording?")
         return
 
     data = await providers.download(result.url)
@@ -745,11 +745,11 @@ async def publish(video_id: str, phone: str) -> None:
     meta = videos_db.meta(posts_db.get(video_id) or {})
     master = meta.get("master_url")
     if not master:
-        await twilio_client.send_text(phone, "There's no finished cut to publish yet.")
+        await messenger.send_text(phone, "There's no finished cut to publish yet.")
         return
 
     posts_db.set_status(video_id, "approved")
-    await twilio_client.send_text(phone, "✅ Approved — publishing…")
+    await messenger.send_text(phone, "✅ Approved — publishing…")
 
     targets = [Platform.instagram, Platform.facebook, Platform.linkedin]
     results = await blotato.publish(
@@ -770,7 +770,7 @@ async def publish(video_id: str, phone: str) -> None:
     if failed:
         lines.append("Didn't go out: " + "; ".join(failed))
         lines.append("Reply *retry <platform>* to try again.")
-    await twilio_client.send_text(phone, "\n".join(lines))
+    await messenger.send_text(phone, "\n".join(lines))
 
 
 async def cancel(video_id: str, phone: str) -> None:
@@ -778,7 +778,7 @@ async def cancel(video_id: str, phone: str) -> None:
     posts_db.set_status(video_id, "cancelled")
     videos_db.patch_meta(video_id, stage="cancelled")
     note = f" ${spend:.2f} was already spent on it." if spend else " Nothing was charged."
-    await twilio_client.send_text(phone, f"Cancelled.{note}")
+    await messenger.send_text(phone, f"Cancelled.{note}")
 
 
 # --------------------------------------------------------------------------- #
@@ -792,7 +792,7 @@ async def begin(phone: str, request: str) -> None:
 
     question = await start(phone, request)
     if question:
-        await twilio_client.send_text(phone, question)
+        await messenger.send_text(phone, question)
         await conversation.transition(
             phone,
             state=conversation.ConversationState.AWAITING_CLARIFICATION,
@@ -819,7 +819,7 @@ async def handle_while_in_video(phone: str, body: str, intent_type: str) -> bool
     stage = videos_db.meta(row).get("stage")
 
     if stage == "generating":
-        await twilio_client.send_text(
+        await messenger.send_text(
             phone, "Still building that one — I'll send it the moment it's ready."
         )
         return True

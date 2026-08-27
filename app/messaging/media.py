@@ -15,6 +15,24 @@ from app.logging_config import get_logger
 log = get_logger("app.messaging.media")
 
 
+async def download_media(url: str, *, timeout: float = 10.0) -> tuple[bytes, str]:
+    """Fetch an attachment from whichever transport it arrived on.
+
+    Telegram attachments are carried as "telegram-file:<file_id>" pseudo-URLs
+    (the real download URL embeds the bot token, so it is never stored) and
+    resolved via getFile at download time; anything else is a Twilio media URL.
+    Dispatching here — not in the workflows — is what keeps "download the photo
+    Karen attached" a one-liner regardless of the app she sent it from.
+    """
+    if url.startswith("telegram-file:"):
+        from app.messaging import telegram_client  # local import: avoid cycle via history
+
+        return await telegram_client.download_file(
+            url.removeprefix("telegram-file:"), timeout=timeout
+        )
+    return await download_twilio_media(url, timeout=timeout)
+
+
 async def download_twilio_media(url: str, *, timeout: float = 10.0) -> tuple[bytes, str]:
     """Fetch a Twilio media URL; return (bytes, content_type). Raises on HTTP error.
 
