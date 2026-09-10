@@ -45,14 +45,16 @@
       "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-port-ship.jpg"
     },
     {
-      "file": "brand-quality-control.jpg",
+      "file": "prod-duck-breast-qc-hands.jpg",
       "tags": [
-        "brand",
-        "quality",
-        "control",
+        "product",
+        "duck",
+        "breast",
+        "raw",
         "hands",
         "inspection",
-        "product"
+        "quality",
+        "control"
       ],
       "url": "https://dmgftqalbwldhxptlupg.supabase.co/storage/v1/object/public/post-images/pool/brand-quality-control.jpg"
     },
