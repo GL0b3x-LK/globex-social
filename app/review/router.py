@@ -102,7 +102,17 @@ def _view(row: dict[str, Any]) -> dict[str, Any]:
 
 async def _load(batch: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     found = await asyncio.to_thread(posts.list_review_batch, batch)
-    notes = await asyncio.to_thread(post_feedback.list_for_batch, batch)
+    if not found:
+        return [], []
+    # The feedback store is the one piece with its own table. If it is not
+    # there yet, the posts still show — reviewers can read; saving is what
+    # tells them (clearly) that it is not ready, rather than the whole page
+    # going down with a 500.
+    try:
+        notes = await asyncio.to_thread(post_feedback.list_for_batch, batch)
+    except Exception as exc:  # noqa: BLE001 — degrade, don't hide the posts
+        log.error("feedback store unavailable", extra={"batch": batch, "error": str(exc)[:200]})
+        notes = []
     return [_view(r) for r in found], notes
 
 
@@ -137,14 +147,18 @@ async def save_feedback(batch: str, body: FeedbackIn) -> JSONResponse:
         row = await asyncio.to_thread(posts.get, body.post_id)
         if not row or (row.get("render_meta") or {}).get("review_batch") != batch:
             raise HTTPException(status_code=404)
-    saved = await asyncio.to_thread(
-        post_feedback.upsert,
-        batch=batch,
-        post_id=body.post_id or None,
-        author=body.author.strip(),
-        verdict=body.verdict or None,
-        note=body.note,
-    )
+    try:
+        saved = await asyncio.to_thread(
+            post_feedback.upsert,
+            batch=batch,
+            post_id=body.post_id or None,
+            author=body.author.strip(),
+            verdict=body.verdict or None,
+            note=body.note,
+        )
+    except Exception as exc:  # noqa: BLE001 — a clear refusal beats a stack trace
+        log.error("feedback save failed", extra={"batch": batch, "error": str(exc)[:200]})
+        raise HTTPException(status_code=503, detail="feedback store not ready") from exc
     log.info(
         "review feedback saved",
         extra={

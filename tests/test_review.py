@@ -124,3 +124,24 @@ def test_the_markdown_digest_groups_notes_by_post(client):
     assert "## General" in md and "Less emoji overall." in md
     assert "## 1/2 Post 1 title" in md and "**Len** (looks good)" in md
     assert "1 of 2 posts have feedback" in md
+
+
+def test_the_page_still_renders_when_the_feedback_store_is_missing(client, monkeypatch):
+    def boom(batch):
+        raise RuntimeError("relation post_feedback does not exist")
+
+    monkeypatch.setattr(review.post_feedback, "list_for_batch", boom)
+    resp = client.get(f"/review/{BATCH}?k=secret-token")
+    assert resp.status_code == 200 and "Post 1 title" in resp.text
+
+
+def test_a_save_against_a_missing_store_is_refused_clearly_not_crashed(client, monkeypatch):
+    def boom(**kw):
+        raise RuntimeError("relation post_feedback does not exist")
+
+    monkeypatch.setattr(review.post_feedback, "upsert", boom)
+    resp = client.post(
+        f"/review/{BATCH}/feedback",
+        json={"k": "secret-token", "post_id": _post(1)["id"], "author": "Karen", "note": "x"},
+    )
+    assert resp.status_code == 503
