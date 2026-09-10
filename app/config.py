@@ -99,6 +99,10 @@ class Settings(BaseSettings):
     # skipped while the client decides when to go live. Setting it re-flows the
     # whole year from that date (see app/db/calendar_source.py).
     calendar_launch_date: str | None = None
+    # Which calendar JSON the scheduler walks. Unset = app/data/calendar.json.
+    # Lets a new client calendar be imported and exercised (review batches)
+    # without re-pointing the live daily run until that is decided.
+    calendar_file: str | None = None
     # The client's cadence: the draft lands at 7am on the previous WORKING day
     # (so a Monday post previews on Friday), giving them a full business day to
     # edit and approve, and an approved post then waits — however early the yes
@@ -111,6 +115,11 @@ class Settings(BaseSettings):
     # service window is shut. Unset = business-initiated previews cannot be
     # delivered at all — better than a send Twilio accepts and drops in silence.
     whatsapp_template_sid: str | None = None
+
+    # --- Client review page (/review/<batch>?k=<token>) ---
+    # The shareable link's secret. Unset = derived from the Supabase key, so
+    # the page works with no extra configuration; set it to rotate the link.
+    review_token: str | None = None
 
     # --- Calendar sheet bridge (Apps Script web app on the client's Sheet) ---
     # Both set = the "Exact Caption" column becomes live: client-authored

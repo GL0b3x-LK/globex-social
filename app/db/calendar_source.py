@@ -59,6 +59,9 @@ class CalendarEntry:
     purpose: str
     anchored: bool  # real-world-dated (holiday/show/anniversary/season)
     post_date: date | None = None  # live date; only set once a launch date exists
+    # Client-authored caption from the calendar's "Exact Caption" column: posted
+    # verbatim, outranking the model. None = the model writes it.
+    exact_caption: str | None = None
 
     @property
     def event_id(self) -> str:
@@ -70,10 +73,14 @@ class CalendarEntry:
         return str(uuid.uuid5(_NS, f"{self.seq}|{self.title}"))
 
 
-@lru_cache(maxsize=1)
-def load_calendar() -> tuple[CalendarEntry, ...]:
-    """Every approved entry, unscheduled (post_date is None)."""
-    doc = json.loads(CALENDAR_PATH.read_text(encoding="utf-8"))
+def calendar_path() -> Path:
+    override = get_settings().calendar_file
+    return Path(override) if override else CALENDAR_PATH
+
+
+def load_calendar_file(path: Path) -> tuple[CalendarEntry, ...]:
+    """Every entry in one calendar file, unscheduled (post_date is None)."""
+    doc = json.loads(path.read_text(encoding="utf-8"))
     return tuple(
         CalendarEntry(
             seq=p["seq"],
@@ -85,9 +92,16 @@ def load_calendar() -> tuple[CalendarEntry, ...]:
             template=p["template"],
             purpose=p["purpose"],
             anchored=p["anchored"],
+            exact_caption=(p.get("exact_caption") or "").strip() or None,
         )
         for p in doc["posts"]
     )
+
+
+@lru_cache(maxsize=1)
+def load_calendar() -> tuple[CalendarEntry, ...]:
+    """The live calendar (see calendar_path), cached for the process lifetime."""
+    return load_calendar_file(calendar_path())
 
 
 def launch_date() -> date | None:

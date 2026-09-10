@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -29,7 +30,7 @@ from typing import Any
 
 from app import clock
 from app.ai import generator, style
-from app.ai.generator import ContentCategory
+from app.ai.generator import ContentCategory, GeneratedPost
 from app.config import get_settings
 from app.db import calendar_source, posts
 from app.db.calendar_source import EVENT_TYPE, CalendarEntry
@@ -189,6 +190,87 @@ def _entry_brief(entry: CalendarEntry) -> str:
     )
 
 
+@dataclass(frozen=True)
+class ComposedPost:
+    """Everything the engine decided for one calendar entry, before any row exists."""
+
+    generated: GeneratedPost
+    photo: Path
+    when: date
+    caption_locked: bool  # the client's own caption is in use, verbatim
+    struck: list[str]  # struck-list terms that caption contains, if any
+
+    @property
+    def is_placeholder(self) -> bool:
+        return self.photo.name.startswith("placeholder")
+
+
+async def compose_calendar_post(
+    entry: CalendarEntry, when: date, *, use_sheet_bridge: bool = True
+) -> ComposedPost:
+    """Run the engine on one calendar entry: copy, template, caption, photograph.
+
+    The calendar row is the creative instruction; its template column is
+    authoritative over the model's choice; and a client-written caption — on
+    the entry itself, or looked up in the live sheet — outranks the model and
+    is posted verbatim, hashtags cleared so nothing is appended to their words.
+    ``use_sheet_bridge=False`` skips the live-sheet lookup, for a calendar
+    whose captions are already on its entries (the imported workbook).
+    """
+    category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
+    generated = await generator.generate_post(
+        category,
+        context={
+            "post_date": when.isoformat(),
+            "calendar_title": entry_title(entry),
+            "marketing_purpose": entry.purpose,
+        },
+        user_message=_entry_brief(entry),
+    )
+    generated.template_variant = CALENDAR_TEMPLATE_ALIASES.get(entry.template, entry.template)
+
+    sheet_caption = entry.exact_caption
+    if sheet_caption is None and use_sheet_bridge:
+        sheet_caption = await calendar_sheet.exact_caption(entry.title)
+    struck: list[str] = []
+    if sheet_caption is not None:
+        generated.caption = sheet_caption
+        generated.hashtags = []
+        struck = library.banned_terms_in(sheet_caption)
+
+    photo = pick_photo(entry, exclude=await asyncio.to_thread(recently_used))
+    return ComposedPost(
+        generated=generated,
+        photo=photo,
+        when=when,
+        caption_locked=sheet_caption is not None,
+        struck=struck,
+    )
+
+
+def calendar_render_meta(entry: CalendarEntry, composed: ComposedPost) -> dict[str, Any]:
+    """The render_meta every calendar-born post carries, whichever path built it."""
+    return {
+        "publish_on": composed.when.isoformat(),
+        "caption_locked": composed.caption_locked,
+        # Which pool shot fronted this post, so the next draft can pick a
+        # different one (see recently_used).
+        "pool_asset": composed.photo.name,
+        # Marked so an edit never sends this stand-in card to the image model:
+        # asked to "improve" a gray placeholder, it invents a person and the
+        # post ends up carrying a fabricated face for a named employee.
+        "photo_is_placeholder": composed.is_placeholder,
+        "calendar": {
+            "week": entry.week,
+            "title": entry_title(entry),
+            "category": entry.category,
+            "template": entry.template,
+            "seq": entry.seq,
+            "planned_date": entry.planned_date.isoformat(),
+        },
+    }
+
+
 async def draft_calendar_entry(entry: CalendarEntry, *, in_sequence: bool = False) -> None:
     """Draft one calendar entry and send it for approval.
 
@@ -206,39 +288,20 @@ async def draft_calendar_entry(entry: CalendarEntry, *, in_sequence: bool = Fals
         if in_sequence
         else (entry.post_date or entry.planned_date)
     )
-    category = _CATEGORY_PROMPTS.get(entry.category, ContentCategory.promotional)
-    generated = await generator.generate_post(
-        category,
-        context={
-            "post_date": when.isoformat(),
-            "calendar_title": entry_title(entry),
-            "marketing_purpose": entry.purpose,
-        },
-        user_message=_entry_brief(entry),
-    )
-    # The calendar's template column is authoritative — never the model's choice.
-    generated.template_variant = CALENDAR_TEMPLATE_ALIASES.get(entry.template, entry.template)
+    composed = await compose_calendar_post(entry, when)
+    generated = composed.generated
 
-    # The sheet's "Exact Caption" column outranks the model: anything the client
-    # wrote there IS the caption, posted verbatim. Hashtags are cleared so the
-    # publish-time join cannot append anything to their words.
     sheet_note = ""
-    sheet_caption = await calendar_sheet.exact_caption(entry.title)
-    caption_locked = sheet_caption is not None
-    if sheet_caption is not None:
-        generated.caption = sheet_caption
-        generated.hashtags = []
+    if composed.caption_locked:
         sheet_note = "📋 Caption supplied in the calendar sheet — posting it exactly as written.\n"
-        struck = library.banned_terms_in(sheet_caption)
-        if struck:
+        if composed.struck:
             # Verbatim means verbatim, but the approver decides with eyes open.
             sheet_note += (
-                f"⚠️ It contains {', '.join(repr(t) for t in struck)} — on the struck "
+                f"⚠️ It contains {', '.join(repr(t) for t in composed.struck)} — on the struck "
                 "list, but posting as instructed if you approve.\n"
             )
         sheet_note += "\n"
 
-    photo = pick_photo(entry, exclude=await asyncio.to_thread(recently_used))
     # The time is spelled out because approving is not publishing: the post waits
     # for its slot however early the yes arrives, and an approver who expects it
     # to go out on approval reads the delay as a failure.
@@ -259,35 +322,18 @@ async def draft_calendar_entry(entry: CalendarEntry, *, in_sequence: bool = Fals
     # template body reads "Scheduled post {identity} — approve any time before it
     # goes out", so it carries what the free-form prefix would have said.
     identity = f"{entry.seq + 1}/{total_planned()}: {entry_title(entry)} (out {go_live})"
-    is_placeholder = photo.name.startswith("placeholder")
-    if is_placeholder:
+    if composed.is_placeholder:
         prefix += "📷 Placeholder image — reply with the employee's photo to swap it in.\n\n"
     await _finalize_preview(
         approver_phone(),
         _entry_brief(entry),
         generated,
-        image_bytes=photo.read_bytes(),
+        image_bytes=composed.photo.read_bytes(),
         image_media_type="image/jpeg",
         treatment="calendar",
         identity=identity,
         event=(EVENT_TYPE, entry.event_id),
-        extra_render_meta={
-            "publish_on": when.isoformat(),
-            "caption_locked": caption_locked,
-            # Which pool shot fronted this post, so the next draft can pick a
-            # different one (see recently_used).
-            "pool_asset": photo.name,
-            # Marked so an edit never sends this stand-in card to the image model:
-            # asked to "improve" a gray placeholder, it invents a person and the
-            # post ends up carrying a fabricated face for a named employee.
-            "photo_is_placeholder": is_placeholder,
-            "calendar": {
-                "week": entry.week,
-                "title": entry_title(entry),
-                "category": entry.category,
-                "template": entry.template,
-            },
-        },
+        extra_render_meta=calendar_render_meta(entry, composed),
         caption_prefix=prefix,
         recipients=approver_phones(),
     )

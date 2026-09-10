@@ -107,6 +107,24 @@ create table if not exists approval_history (
 create index if not exists idx_approval_history_post on approval_history (post_id);
 
 -- ---------------------------------------------------------------------------
+-- post_feedback — the client's notes on a review batch (the /review page).
+-- One row per reviewer per post; post_id NULL is a note on the batch as a
+-- whole. Upserted in place so a reviewer can change their mind.
+-- ---------------------------------------------------------------------------
+create table if not exists post_feedback (
+    id         uuid primary key default gen_random_uuid(),
+    batch      text        not null,
+    post_id    uuid        references posts (id) on delete cascade,
+    author     text        not null,
+    verdict    text        check (verdict in ('approved','changes')),
+    note       text,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    unique nulls not distinct (batch, post_id, author)
+);
+create index if not exists idx_post_feedback_batch on post_feedback (batch);
+
+-- ---------------------------------------------------------------------------
 -- conversations — per-phone WhatsApp state. Survives Railway restarts.
 -- ---------------------------------------------------------------------------
 create table if not exists conversations (

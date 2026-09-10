@@ -711,8 +711,7 @@ async def _apply_target(
         context_patch["target_platforms"] = values
 
 
-async def _finalize_preview(
-    from_phone: str,
+async def build_post(
     request_text: str,
     generated: GeneratedPost,
     *,
@@ -722,13 +721,17 @@ async def _finalize_preview(
     treatment: str = "typographic",
     image_prompt: str | None = None,
     target_platforms: list[plat.Platform] | None = None,
-    event: tuple[str, str] | None = None,  # (event_type, event_id) — scheduler idempotency
-    extra_render_meta: dict[str, Any] | None = None,  # e.g. {"publish_on": "2026-08-17"}
-    caption_prefix: str = "",  # prepended to the preview caption ("Scheduled for Mon 17 Aug…")
-    recipients: list[str] | None = None,  # everyone who should see it; default just the sender
-    identity: str | None = None,  # one-line name for the approved template ("74/156: …")
-) -> None:
-    """Create the post, render (with overlay if an image is present), store, and preview."""
+    event: tuple[str, str] | None = None,
+    extra_render_meta: dict[str, Any] | None = None,
+    status: str = "pending_approval",
+) -> tuple[str, str, dict[str, Any]]:
+    """Create the post row, render it (overlay on the photo if there is one), store
+    the image and the full render inputs. Returns (post_id, image_url, context).
+
+    This is the engine's whole build step, separated from delivery so a post can
+    be produced without a WhatsApp/Telegram thread in front of it — the client
+    review batch renders thirty of them into a web page instead of a chat.
+    """
     post = await asyncio.to_thread(
         posts.create,
         content=request_text,
@@ -737,7 +740,7 @@ async def _finalize_preview(
         template_type=generated.template_variant,
         event_type=event[0] if event else None,
         event_id=event[1] if event else None,
-        status="pending_approval",
+        status=status,
     )
     post_id = post["id"]
     await asyncio.to_thread(approvals.record, post_id, "generated")
@@ -798,6 +801,39 @@ async def _finalize_preview(
         context_patch["photo_url"] = photo_url
         context_patch["photo_media_type"] = image_media_type
     await _apply_target(post_id, target_platforms, context_patch)
+    return post_id, image_url, context_patch
+
+
+async def _finalize_preview(
+    from_phone: str,
+    request_text: str,
+    generated: GeneratedPost,
+    *,
+    image_bytes: bytes | None = None,
+    image_media_type: str = "image/jpeg",
+    raw_image_bytes: bytes | None = None,
+    treatment: str = "typographic",
+    image_prompt: str | None = None,
+    target_platforms: list[plat.Platform] | None = None,
+    event: tuple[str, str] | None = None,  # (event_type, event_id) — scheduler idempotency
+    extra_render_meta: dict[str, Any] | None = None,  # e.g. {"publish_on": "2026-08-17"}
+    caption_prefix: str = "",  # prepended to the preview caption ("Scheduled for Mon 17 Aug…")
+    recipients: list[str] | None = None,  # everyone who should see it; default just the sender
+    identity: str | None = None,  # one-line name for the approved template ("74/156: …")
+) -> None:
+    """Create the post, render (with overlay if an image is present), store, and preview."""
+    post_id, image_url, context_patch = await build_post(
+        request_text,
+        generated,
+        image_bytes=image_bytes,
+        image_media_type=image_media_type,
+        raw_image_bytes=raw_image_bytes,
+        treatment=treatment,
+        image_prompt=image_prompt,
+        target_platforms=target_platforms,
+        event=event,
+        extra_render_meta=extra_render_meta,
+    )
 
     caption = (
         caption_prefix

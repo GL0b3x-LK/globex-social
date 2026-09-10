@@ -15,6 +15,7 @@ from app.config import get_settings
 from app.db.client import ping as supabase_ping
 from app.logging_config import configure_logging, correlation_id_var, get_logger
 from app.messaging import telegram_webhook, webhook
+from app.review import router as review
 from app.scheduler import automation
 from app.templates.renderer import renderer
 
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Globex SM Automation", version="0.1.0", lifespan=lifespan)
 app.include_router(webhook.router)
 app.include_router(telegram_webhook.router)
+app.include_router(review.router)
 
 
 @app.middleware("http")

@@ -85,6 +85,19 @@ def set_target_platforms(post_id: str, platforms: list[str]) -> Row:
     return update(post_id, target_platforms=platforms)
 
 
+def list_review_batch(batch: str) -> list[Row]:
+    """Every post built for one client review batch, in calendar order."""
+    found = rows(
+        get_supabase()
+        .table(_TABLE)
+        .select("*")
+        .eq("render_meta->>review_batch", batch)
+        .order("created_at")
+        .execute()
+    )
+    return sorted(found, key=lambda r: int((r.get("render_meta") or {}).get("calendar_seq", 0)))
+
+
 def find_for_event(event_id: str, event_type: str) -> Row | None:
     """Scheduler idempotency: has a post already been made for this event?"""
     return maybe_row(

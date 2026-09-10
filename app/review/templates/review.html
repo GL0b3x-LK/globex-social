@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Globex · Post review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#002D70; --sky:#5BC0DE; --ink:#0f172a; --muted:#5b6475; --line:#e3e7ee;
+    --bg:#f5f7fa; --card:#ffffff; --ok:#1f7a4d; --warn:#b45309;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Poppins,system-ui,-apple-system,Segoe UI,sans-serif}
+  a{color:var(--navy)}
+  .top{position:sticky;top:0;z-index:5;background:var(--navy);color:#fff;padding:14px 16px;box-shadow:0 2px 12px rgba(0,45,112,.25)}
+  .top .wrap{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+  .brand{font-weight:700;letter-spacing:.02em;font-size:16px}
+  .brand small{display:block;font-weight:400;font-size:12px;opacity:.8}
+  .who{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .who label{font-size:12px;opacity:.85}
+  .who input{border:0;border-radius:8px;padding:8px 10px;font:inherit;font-size:14px;min-width:150px}
+  .progress{flex-basis:100%;display:flex;align-items:center;gap:10px;font-size:12px}
+  .bar{flex:1;height:6px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--sky);transition:width .3s}
+  .filters{max-width:1180px;margin:14px auto 0;padding:0 16px;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--muted)}
+  .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .intro{max-width:1180px;margin:12px auto 0;padding:0 16px;color:var(--muted);font-size:14px}
+  .grid{max-width:1180px;margin:14px auto 40px;padding:0 16px;display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .card.hidden{display:none}
+  .img{background:#e9edf3;aspect-ratio:4/5;width:100%;display:block;object-fit:cover}
+  .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12px;color:var(--muted);align-items:center}
+  .meta b{color:var(--navy);font-size:13px}
+  .tag{background:#eef6fa;color:var(--navy);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600}
+  .tag.warn{background:#fff4e5;color:var(--warn)}
+  h3{margin:0;font-size:16px;line-height:1.3;color:var(--navy)}
+  .cap{white-space:pre-wrap;font-size:14px;max-height:9.5em;overflow:hidden;position:relative}
+  .cap.open{max-height:none}
+  .cap:not(.open)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.5em;background:linear-gradient(transparent,#fff)}
+  .more{align-self:flex-start;background:none;border:0;color:var(--navy);font:inherit;font-size:13px;padding:0;cursor:pointer;text-decoration:underline}
+  .tags{font-size:12px;color:var(--muted);word-break:break-word}
+  .fb{border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+  .verdict{display:flex;gap:8px}
+  .verdict button{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:9px 8px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+  .verdict button.ok.on{border-color:var(--ok);background:#e9f6ef;color:var(--ok)}
+  .verdict button.chg.on{border-color:var(--sky);background:#e9f6fb;color:var(--navy)}
+  textarea{width:100%;min-height:74px;border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:14px;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--sky)}
+  .status{font-size:12px;color:var(--muted);min-height:1.2em}
+  .status.ok{color:var(--ok)} .status.err{color:#b91c1c}
+  .others{font-size:13px;background:#f7f9fc;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+  .others div b{color:var(--navy)}
+  .general{max-width:1180px;margin:0 auto 60px;padding:0 16px}
+  .general .card{padding:16px}
+  .general h2{margin:0 0 6px;font-size:18px;color:var(--navy)}
+  .general p{margin:0 0 10px;color:var(--muted);font-size:14px}
+  footer{max-width:1180px;margin:0 auto 30px;padding:0 16px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">Globex International <small>Post review · {{ posts|length }} posts · batch {{ batch }}</small></div>
+    <div class="who">
+      <label for="who">Your name</label>
+      <input id="who" placeholder="e.g. Karen" autocomplete="name">
+    </div>
+    <div class="progress"><span id="done">0 of {{ posts|length }} reviewed</span><div class="bar"><i id="barfill"></i></div></div>
+  </div>
+</header>
+
+<p class="intro">Every post below is exactly what the system produced from the new calendar — image and caption. Under each one, tap <b>Looks good</b> or <b>Needs changes</b> and write what you'd change (wording, image, date, anything). Notes save automatically.</p>
+
+<div class="filters">
+  <button class="chip on" data-f="all">All</button>
+  <button class="chip" data-f="todo">Not reviewed</button>
+  <button class="chip" data-f="changes">Needs changes</button>
+  <button class="chip" data-f="approved">Looks good</button>
+</div>
+
+<main class="grid" id="grid">
+{% for p in posts %}
+  <article class="card" data-id="{{ p.id }}">
+    {% if p.image_url %}<a href="{{ p.image_url }}" target="_blank" rel="noopener"><img class="img" loading="lazy" src="{{ p.image_url }}" alt="Post {{ p.n }} image"></a>{% else %}<div class="img"></div>{% endif %}
+    <div class="body">
+      <div class="meta"><b>#{{ p.n }}</b><span>{{ p.date }}</span><span class="tag">{{ p.category }}</span><span class="tag">{{ p.template }}</span>
+        {% if p.caption_locked %}<span class="tag">Your caption, verbatim</span>{% endif %}
+        {% if p.placeholder %}<span class="tag warn">Placeholder photo</span>{% endif %}
+        {% if p.struck %}<span class="tag warn">Contains: {{ p.struck|join(', ') }}</span>{% endif %}
+      </div>
+      <h3>{{ p.title }}</h3>
+      <div class="cap">{{ p.caption }}</div>
+      <button class="more" type="button">Show full caption</button>
+      {% if p.hashtags %}<div class="tags">{{ p.hashtags }}</div>{% endif %}
+      <div class="fb">
+        <div class="verdict">
+          <button type="button" class="ok" data-v="approved">👍 Looks good</button>
+          <button type="button" class="chg" data-v="changes">✏️ Needs changes</button>
+        </div>
+        <textarea placeholder="What should change? Wording, image, date — anything."></textarea>
+        <div class="status"></div>
+        <div class="others" hidden></div>
+      </div>
+    </div>
+  </article>
+{% endfor %}
+</main>
+
+<section class="general">
+  <div class="card">
+    <h2>Anything overall?</h2>
+    <p>Tone across the set, the images in general, things you'd like to see more or less of.</p>
+    <textarea id="gen" placeholder="General notes on the whole batch…"></textarea>
+    <div class="status" id="genstatus"></div>
+    <div class="others" id="genothers" hidden></div>
+  </div>
+</section>
+<footer>Nothing here publishes. These are drafts for your review — the approved schedule still goes through the usual yes before anything goes live.</footer>
+
+<script id="data" type="application/json">{{ {"batch": batch, "token": token, "feedback": feedback}|tojson }}</script>
+<script>
+(function(){
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const who = document.getElementById('who');
+  try { who.value = localStorage.getItem('globex.reviewer') || ''; } catch(e){}
+  who.addEventListener('input', () => { try{ localStorage.setItem('globex.reviewer', who.value.trim()); }catch(e){} paintAll(); });
+
+  // feedback rows: {post_id, author, verdict, note}
+  let rows = D.feedback.slice();
+  const mine = (pid) => rows.find(r => (r.post_id||null) === pid && r.author.toLowerCase() === who.value.trim().toLowerCase());
+  const others = (pid) => rows.filter(r => (r.post_id||null) === pid && r.author.toLowerCase() !== who.value.trim().toLowerCase());
+  const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function needName(card){
+    const st = card.querySelector('.status'); st.textContent = 'Add your name at the top first'; st.className = 'status err';
+    who.focus(); return true;
+  }
+  async function save(card, pid, verdict, note){
+    const st = card.querySelector('.status') || document.getElementById('genstatus');
+    const author = who.value.trim();
+    if(!author) return needName(card);
+    st.textContent = 'Saving…'; st.className = 'status';
+    try{
+      const res = await fetch(`/review/${encodeURIComponent(D.batch)}/feedback`, {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({k: D.token, post_id: pid, author, verdict: verdict||null, note: note||null})});
+      if(!res.ok) throw new Error(res.status);
+      const {saved} = await res.json();
+      rows = rows.filter(r => !((r.post_id||null)===pid && r.author.toLowerCase()===author.toLowerCase()));
+      rows.push(saved);
+      st.textContent = 'Saved ✓'; st.className = 'status ok';
+      paintProgress();
+    }catch(e){ st.textContent = 'Not saved — check your connection and try again'; st.className = 'status err'; }
+  }
+  const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+  function paintCard(card){
+    const pid = card.dataset.id, me = mine(pid);
+    card.querySelectorAll('.verdict button').forEach(b => b.classList.toggle('on', !!me && me.verdict === b.dataset.v));
+    const ta = card.querySelector('textarea');
+    if(document.activeElement !== ta) ta.value = me && me.note ? me.note : '';
+    const o = others(pid), box = card.querySelector('.others');
+    box.hidden = !o.length;
+    box.innerHTML = o.map(r => `<div><b>${esc(r.author)}</b> ${r.verdict==='approved'?'👍':r.verdict==='changes'?'✏️':''} ${esc(r.note||'')}</div>`).join('');
+    card.dataset.state = me ? (me.verdict || (me.note ? 'changes' : 'todo')) : 'todo';
+  }
+  function paintProgress(){
+    const cards = [...document.querySelectorAll('.card[data-id]')];
+    const reviewed = new Set(rows.filter(r => r.post_id).map(r => r.post_id)).size;
+    document.getElementById('done').textContent = `${reviewed} of ${cards.length} reviewed`;
+    document.getElementById('barfill').style.width = (cards.length ? 100*reviewed/cards.length : 0) + '%';
+  }
+  function paintGeneral(){
+    const me = mine(null), ta = document.getElementById('gen');
+    if(document.activeElement !== ta) ta.value = me && me.note ? me.note : '';
+    const o = others(null), box = document.getElementById('genothers');
+    box.hidden = !o.length; box.innerHTML = o.map(r => `<div><b>${esc(r.author)}</b> ${esc(r.note||'')}</div>`).join('');
+  }
+  function paintAll(){ document.querySelectorAll('.card[data-id]').forEach(paintCard); paintGeneral(); paintProgress(); applyFilter(); }
+
+  document.querySelectorAll('.card[data-id]').forEach(card => {
+    const pid = card.dataset.id;
+    card.querySelector('.more').addEventListener('click', e => { const c = card.querySelector('.cap'); c.classList.toggle('open'); e.target.textContent = c.classList.contains('open') ? 'Show less' : 'Show full caption'; });
+    card.querySelectorAll('.verdict button').forEach(b => b.addEventListener('click', () => {
+      const me = mine(pid); const v = me && me.verdict === b.dataset.v ? null : b.dataset.v;
+      save(card, pid, v, card.querySelector('textarea').value).then(() => paintCard(card));
+    }));
+    card.querySelector('textarea').addEventListener('input', debounce(() => {
+      const me = mine(pid); save(card, pid, me ? me.verdict : null, card.querySelector('textarea').value).then(() => paintCard(card));
+    }, 900));
+  });
+  document.getElementById('gen').addEventListener('input', debounce(() => save(document.querySelector('.general .card'), null, null, document.getElementById('gen').value), 900));
+
+  let filter = 'all';
+  function applyFilter(){ document.querySelectorAll('.card[data-id]').forEach(c => c.classList.toggle('hidden', filter !== 'all' && c.dataset.state !== filter)); }
+  document.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => { filter = ch.dataset.f; document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === ch)); applyFilter(); }));
+  paintAll();
+})();
+</script>
+</body>
+</html>
