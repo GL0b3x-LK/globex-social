@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import base64
+import re
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.ai import style
 from app.ai.client import generate_structured
@@ -90,12 +91,62 @@ class GeneratedPost(BaseModel):
     )
     rationale: str = Field(description="One sentence: why this post fits the brief and brand.")
 
+    @field_validator(
+        "caption",
+        "headline",
+        "eyebrow",
+        "subhead",
+        "figure",
+        "figure_unit",
+        "rationale",
+        mode="before",
+    )
+    @classmethod
+    def _no_markup(cls, value: Any) -> Any:
+        """Plain text only. A tool call once came back with its own scaffolding
+        inside a field — 'HAPPY NEW YEAR 2027</headline>\n<parameter Name="eyebrow">…'
+        — and that string rendered onto the picture. Rejecting it here turns it
+        into the corrective retry the structured loop already knows how to run."""
+        if isinstance(value, str) and _MARKUP.search(value):
+            raise ValueError(
+                "contains markup or tool scaffolding ('<...>'); return plain text only"
+            )
+        return value
+
 
 _EMIT_DESC = (
     "Emit the finished post: caption, hashtags, template_variant, the on-image "
     "eyebrow/headline/subhead (plus figure/figure_unit for number-led posts), and a "
     "one-line rationale."
 )
+
+
+# Tag-like fragments and tool-call scaffolding. "<3" and "2 < 3" are not tags.
+_MARKUP = re.compile(r"</?[A-Za-z][^<>]*>|<parameter\b", re.IGNORECASE)
+
+# One line on every approved layout. The editorial masthead holds ~30 characters
+# of 60px Satoshi Black; the others are roomier. Past this the headline wraps and
+# lands on the line beneath it (the template fit guard then shrinks it, but a
+# shrunken headline is a worse post than a shorter one).
+HEADLINE_MAX_WORDS = 6
+HEADLINE_MAX_CHARS = 34
+
+
+def headline_problem(headline: str) -> str | None:
+    """Why this headline cannot sit on one line, or None if it can."""
+    text = " ".join(headline.split())
+    words = len(text.split())
+    if words > HEADLINE_MAX_WORDS or len(text) > HEADLINE_MAX_CHARS:
+        return (
+            f"headline is {words} words / {len(text)} characters; the on-image headline "
+            f"must fit one line — at most {HEADLINE_MAX_WORDS} words and "
+            f"{HEADLINE_MAX_CHARS} characters. Shorten it; move detail into the subhead."
+        )
+    return None
+
+
+def _layout_problem(post: GeneratedPost) -> str | None:
+    return headline_problem(post.headline)
 
 
 def system_for(category: ContentCategory) -> str:
@@ -194,6 +245,7 @@ async def generate_post(
         tool_name="emit_post",
         tool_description=_EMIT_DESC,
         max_tokens=1500,
+        check=_layout_problem,
     )
     terms = banned_claims(post)
     if terms:

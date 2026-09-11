@@ -17,6 +17,7 @@ Notes / deviations from the original plan:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import lru_cache
 from typing import Any
 
@@ -64,10 +65,14 @@ async def generate_structured[T: BaseModel](
     tool_description: str,
     max_tokens: int = 1500,
     max_attempts: int = 2,
+    check: Callable[[T], str | None] | None = None,
 ) -> T:
     """Force Claude to emit `output_model` via a single tool call; validate it.
 
     Retries once with a corrective turn if the first emission fails validation.
+    ``check`` is the caller's own acceptance test on a schema-valid object —
+    a headline that would wrap on every approved layout, say. A problem it
+    returns gets the same corrective turn a schema failure does.
     """
     client = get_client()
     settings = get_settings()
@@ -95,35 +100,40 @@ async def generate_structured[T: BaseModel](
             last_error = "no tool_use block in response"
         else:
             try:
-                return output_model.model_validate(tool_input)
+                candidate = output_model.model_validate(tool_input)
             except ValidationError as exc:
-                last_error = str(exc)
-                # A tool_use block MUST be answered by a tool_result in the very
-                # next message. Sending plain text here makes the API reject the
-                # whole retry, so a validation failure became a hard error
-                # instead of the second chance it was meant to be.
-                messages = [
-                    {"role": "user", "content": user_content},
-                    {"role": "assistant", "content": response.content},
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "tool_result",
-                                "tool_use_id": _first_tool_use_id(response) or "",
-                                "content": f"Schema validation failed:\n{exc}",
-                                "is_error": True,
-                            },
-                            {
-                                "type": "text",
-                                "text": (
-                                    f"Call {tool_name} again with corrected, valid input. "
-                                    "Include every required field."
-                                ),
-                            },
-                        ],
-                    },
-                ]
+                last_error = f"Schema validation failed:\n{exc}"
+            else:
+                problem = check(candidate) if check else None
+                if problem is None:
+                    return candidate
+                last_error = problem
+            # A tool_use block MUST be answered by a tool_result in the very
+            # next message. Sending plain text here makes the API reject the
+            # whole retry, so a validation failure became a hard error
+            # instead of the second chance it was meant to be.
+            messages = [
+                {"role": "user", "content": user_content},
+                {"role": "assistant", "content": response.content},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": _first_tool_use_id(response) or "",
+                            "content": last_error,
+                            "is_error": True,
+                        },
+                        {
+                            "type": "text",
+                            "text": (
+                                f"Call {tool_name} again with corrected, valid input. "
+                                "Include every required field."
+                            ),
+                        },
+                    ],
+                },
+            ]
         log.warning(
             "structured generation retry",
             extra={"tool": tool_name, "attempt": attempt, "error": (last_error or "")[:300]},

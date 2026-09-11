@@ -31,6 +31,15 @@ _LAUNCH_ARGS = [
 ]
 
 
+class TextOverlapError(RuntimeError):
+    """Two text blocks still intersect after the template's fit guard ran."""
+
+    def __init__(self, variant: str, pairs: list[str]) -> None:
+        self.variant = variant
+        self.pairs = pairs
+        super().__init__(f"text overlaps on {variant}: {', '.join(pairs)}")
+
+
 class Renderer:
     def __init__(self) -> None:
         self._pw: Playwright | None = None
@@ -117,6 +126,13 @@ class Renderer:
         try:
             await page.set_content(html, wait_until="networkidle")
             await page.evaluate("() => document.fonts.ready")  # ensure webfonts painted
+            # The final templates carry a fit guard (see _final.html): it shrinks
+            # any text block that collides with another and reports what is
+            # still colliding. Anything left is a picture with words painted
+            # over words, which must never leave here as a "rendered" post.
+            overlaps = await page.evaluate("() => (window.__fitText ? window.__fitText() : [])")
+            if overlaps:
+                raise TextOverlapError(template_variant, list(overlaps))
             return await page.screenshot(type="png", animations="disabled")
         finally:
             await page.close()

@@ -400,7 +400,14 @@ def enforce(post: object, *, feedback: str = "") -> object:
     if caption:
         post.caption = fix_terms(caption)  # type: ignore[attr-defined]
     if subhead:
-        post.subhead = fix_terms(subhead)  # type: ignore[attr-defined]
+        fixed = fix_terms(subhead)
+        # The supporting line is Title Case on every approved reference; the
+        # headline may shout (the templates upper-case it where the design does),
+        # the line under it never does. "FROM OCEAN TO PORT | MOVED AT GLOBAL
+        # SCALE" sat beside 28 title-cased siblings in the first review batch.
+        if is_shouted(fixed) and not _mentions_case(feedback):
+            fixed = fix_terms(title_case(fixed.lower()))
+        post.subhead = fixed  # type: ignore[attr-defined]
     if headline:
         fixed = fix_terms(headline)
         if not _mentions_case(feedback):

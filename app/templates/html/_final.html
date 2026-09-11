@@ -41,5 +41,65 @@
   <div class="canvas">
     {% block content %}{% endblock %}
   </div>
+  <script>
+    // Text-fit guard. Every text block on the four approved layouts is
+    // absolutely positioned to match its reference pixel-for-pixel — right for
+    // the copy the references carry, wrong the moment a headline wraps: the
+    // second line paints straight over the line beneath it and the screenshot
+    // ships that way ("TO THE PEOPLE WHO KEEP THE WORLD FED", 2026-09-11).
+    // The renderer calls this after fonts are ready and refuses to screenshot
+    // if anything it returns is still colliding. It only acts on boxes that
+    // actually intersect, so a headline that fits is untouched and the
+    // reference-matching tests stay exact.
+    window.__fitText = function () {
+      const items = Array.from(document.querySelectorAll('.txt, .logo, .badge'));
+      const isText = (el) => el.classList.contains('txt');
+      const size = (el) => parseFloat(getComputedStyle(el).fontSize);
+      const orig = new Map(items.map((el) => [el, size(el)]));
+      const MIN = 0.6, STEP = 0.96, GAP = 6;
+      const box = (el) => el.getBoundingClientRect();
+      const hits = () => {
+        const out = [];
+        for (let i = 0; i < items.length; i++) {
+          for (let j = i + 1; j < items.length; j++) {
+            const a = items[i], b = items[j];
+            if (!isText(a) && !isText(b)) continue;
+            const ra = box(a), rb = box(b);
+            if (!ra.width || !rb.width) continue;
+            const ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+            const oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+            if (ox > 1 && oy > 1) out.push([a, b]);
+          }
+        }
+        return out;
+      };
+      const shrink = (el) => {
+        if (!isText(el)) return false;
+        const next = size(el) * STEP;
+        if (next < orig.get(el) * MIN) return false;
+        el.style.fontSize = next + 'px';
+        return true;
+      };
+      for (let iter = 0; iter < 80; iter++) {
+        const pairs = hits();
+        if (!pairs.length) break;
+        let changed = false;
+        for (const [a, b] of pairs) {
+          // The larger type yields first: a headline shrinks before the line under it.
+          const [big, small] = size(a) >= size(b) ? [a, b] : [b, a];
+          if (shrink(big) || shrink(small)) changed = true;
+        }
+        if (!changed) break;
+      }
+      // Anything still colliding at minimum size moves down to clear the block above it.
+      const canvasTop = box(document.querySelector('.canvas') || document.body).top;
+      for (const [a, b] of hits()) {
+        const [upper, lower] = box(a).top <= box(b).top ? [a, b] : [b, a];
+        if (isText(lower)) lower.style.top = (box(upper).bottom - canvasTop + GAP) + 'px';
+      }
+      const label = (el) => el.tagName.toLowerCase() + '.' + Array.from(el.classList).join('.');
+      return hits().map(([a, b]) => label(a) + ' x ' + label(b));
+    };
+  </script>
 </body>
 </html>
