@@ -129,43 +129,57 @@
   try { who.value = localStorage.getItem('globex.reviewer') || ''; } catch(e){}
   who.addEventListener('input', () => { try{ localStorage.setItem('globex.reviewer', who.value.trim()); }catch(e){} paintAll(); });
 
-  // feedback rows: {post_id, author, verdict, note}
+  // Server rows: {post_id, author, verdict, note}. `local` is what THIS reviewer
+  // has set on this device, applied the instant they tap or type — a tap
+  // followed by fast typing must not lose the tap because the typing's save
+  // fired before the tap's save came back.
   let rows = D.feedback.slice();
-  const mine = (pid) => rows.find(r => (r.post_id||null) === pid && r.author.toLowerCase() === who.value.trim().toLowerCase());
-  const others = (pid) => rows.filter(r => (r.post_id||null) === pid && r.author.toLowerCase() !== who.value.trim().toLowerCase());
+  const local = new Map();   // pid -> {verdict?, note?}
+  const saveSeq = new Map(); // pid -> last save number issued; stale responses are ignored
+  const author = () => who.value.trim();
+  const mine = (pid) => rows.find(r => (r.post_id||null) === pid && r.author.toLowerCase() === author().toLowerCase());
+  const others = (pid) => rows.filter(r => (r.post_id||null) === pid && r.author.toLowerCase() !== author().toLowerCase());
+  const current = (pid) => {
+    const me = mine(pid), l = local.get(pid) || {};
+    return { verdict: 'verdict' in l ? l.verdict : (me ? me.verdict : null),
+             note: 'note' in l ? l.note : (me && me.note ? me.note : '') };
+  };
+  const setLocal = (pid, patch) => local.set(pid, Object.assign({}, local.get(pid) || {}, patch));
   const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  function needName(card){
-    const st = card.querySelector('.status'); st.textContent = 'Add your name at the top first'; st.className = 'status err';
-    who.focus(); return true;
-  }
-  async function save(card, pid, verdict, note){
-    const st = card.querySelector('.status') || document.getElementById('genstatus');
-    const author = who.value.trim();
-    if(!author) return needName(card);
+  async function save(card, pid){
+    const st = card.querySelector('.status');
+    const name = author();
+    if(!name){ st.textContent = 'Add your name at the top first'; st.className = 'status err'; who.focus(); return; }
+    const cur = current(pid);
+    const seq = (saveSeq.get(pid) || 0) + 1; saveSeq.set(pid, seq);
     st.textContent = 'Saving…'; st.className = 'status';
     try{
       const res = await fetch(`/review/${encodeURIComponent(D.batch)}/feedback`, {method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({k: D.token, post_id: pid, author, verdict: verdict||null, note: note||null})});
+        body: JSON.stringify({k: D.token, post_id: pid, author: name, verdict: cur.verdict||null, note: cur.note||null})});
       if(!res.ok) throw new Error(res.status);
       const {saved} = await res.json();
-      rows = rows.filter(r => !((r.post_id||null)===pid && r.author.toLowerCase()===author.toLowerCase()));
+      if(saveSeq.get(pid) !== seq) return; // a newer save is in flight; let it report
+      rows = rows.filter(r => !((r.post_id||null)===pid && r.author.toLowerCase()===name.toLowerCase()));
       rows.push(saved);
       st.textContent = 'Saved ✓'; st.className = 'status ok';
       paintProgress();
-    }catch(e){ st.textContent = 'Not saved — check your connection and try again'; st.className = 'status err'; }
+    }catch(e){
+      if(saveSeq.get(pid) !== seq) return;
+      st.textContent = 'Not saved — check your connection and try again'; st.className = 'status err';
+    }
   }
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
   function paintCard(card){
-    const pid = card.dataset.id, me = mine(pid);
-    card.querySelectorAll('.verdict button').forEach(b => b.classList.toggle('on', !!me && me.verdict === b.dataset.v));
+    const pid = card.dataset.id, cur = current(pid);
+    card.querySelectorAll('.verdict button').forEach(b => b.classList.toggle('on', cur.verdict === b.dataset.v));
     const ta = card.querySelector('textarea');
-    if(document.activeElement !== ta) ta.value = me && me.note ? me.note : '';
+    if(document.activeElement !== ta) ta.value = cur.note || '';
     const o = others(pid), box = card.querySelector('.others');
     box.hidden = !o.length;
     box.innerHTML = o.map(r => `<div><b>${esc(r.author)}</b> ${r.verdict==='approved'?'👍':r.verdict==='changes'?'✏️':''} ${esc(r.note||'')}</div>`).join('');
-    card.dataset.state = me ? (me.verdict || (me.note ? 'changes' : 'todo')) : 'todo';
+    card.dataset.state = cur.verdict || (cur.note ? 'changes' : 'todo');
   }
   function paintProgress(){
     const cards = [...document.querySelectorAll('.card[data-id]')];
@@ -174,8 +188,8 @@
     document.getElementById('barfill').style.width = (cards.length ? 100*reviewed/cards.length : 0) + '%';
   }
   function paintGeneral(){
-    const me = mine(null), ta = document.getElementById('gen');
-    if(document.activeElement !== ta) ta.value = me && me.note ? me.note : '';
+    const cur = current(null), ta = document.getElementById('gen');
+    if(document.activeElement !== ta) ta.value = cur.note || '';
     const o = others(null), box = document.getElementById('genothers');
     box.hidden = !o.length; box.innerHTML = o.map(r => `<div><b>${esc(r.author)}</b> ${esc(r.note||'')}</div>`).join('');
   }
@@ -185,14 +199,15 @@
     const pid = card.dataset.id;
     card.querySelector('.more').addEventListener('click', e => { const c = card.querySelector('.cap'); c.classList.toggle('open'); e.target.textContent = c.classList.contains('open') ? 'Show less' : 'Show full caption'; });
     card.querySelectorAll('.verdict button').forEach(b => b.addEventListener('click', () => {
-      const me = mine(pid); const v = me && me.verdict === b.dataset.v ? null : b.dataset.v;
-      save(card, pid, v, card.querySelector('textarea').value).then(() => paintCard(card));
+      const v = current(pid).verdict === b.dataset.v ? null : b.dataset.v; // tap again to clear
+      setLocal(pid, {verdict: v}); paintCard(card); save(card, pid);
     }));
-    card.querySelector('textarea').addEventListener('input', debounce(() => {
-      const me = mine(pid); save(card, pid, me ? me.verdict : null, card.querySelector('textarea').value).then(() => paintCard(card));
-    }, 900));
+    card.querySelector('textarea').addEventListener('input', e => { setLocal(pid, {note: e.target.value}); card.dataset.state = current(pid).verdict || (e.target.value ? 'changes' : 'todo'); });
+    card.querySelector('textarea').addEventListener('input', debounce(() => save(card, pid), 900));
   });
-  document.getElementById('gen').addEventListener('input', debounce(() => save(document.querySelector('.general .card'), null, null, document.getElementById('gen').value), 900));
+  const gen = document.getElementById('gen'), genCard = document.querySelector('.general .card');
+  gen.addEventListener('input', e => setLocal(null, {note: e.target.value}));
+  gen.addEventListener('input', debounce(() => save(genCard, null), 900));
 
   let filter = 'all';
   function applyFilter(){ document.querySelectorAll('.card[data-id]').forEach(c => c.classList.toggle('hidden', filter !== 'all' && c.dataset.state !== filter)); }
