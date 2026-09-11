@@ -144,7 +144,13 @@ async def save_feedback(batch: str, body: FeedbackIn) -> JSONResponse:
         raise HTTPException(status_code=422, detail="verdict must be approved or changes")
     if body.post_id:
         # A note can only attach to a post that is actually in this batch.
-        row = await asyncio.to_thread(posts.get, body.post_id)
+        try:
+            row = await asyncio.to_thread(posts.get, body.post_id)
+        except Exception as exc:  # noqa: BLE001 — same store, same clear refusal
+            log.error(
+                "feedback post lookup failed", extra={"batch": batch, "error": str(exc)[:200]}
+            )
+            raise HTTPException(status_code=503, detail="feedback store not ready") from exc
         if not row or (row.get("render_meta") or {}).get("review_batch") != batch:
             raise HTTPException(status_code=404)
     try:
